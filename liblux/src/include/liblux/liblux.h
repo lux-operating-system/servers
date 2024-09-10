@@ -67,6 +67,7 @@ typedef struct {
 } FramebufferResponse;
 
 /* wrapper functions */
+pid_t luxGetSelf();
 int luxConnectKernel();
 int luxConnectLumen();
 ssize_t luxSendKernel(void *);

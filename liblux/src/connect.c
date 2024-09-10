@@ -97,3 +97,12 @@ ssize_t luxRecvKernel(void *buffer, size_t len, bool block) {
 
     return 0;
 }
+
+/* luxGetSelf(): returns the current pid without a syscall
+ * params: none
+ * returns: process ID
+ */
+
+pid_t luxGetSelf() {
+    return self;
+}
