@@ -7,4 +7,5 @@ install:
 	@make install -C vfs
 
 clean:
+	@echo "\x1B[0;1;35m [  MAKE ]\x1B[0m clean servers/fs/vfs"
 	@make clean -C vfs

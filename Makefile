@@ -8,4 +8,5 @@ install:
 	@make install -C fs
 
 clean:
+	@echo "\x1B[0;1;35m [  MAKE ]\x1B[0m clean servers/fs"
 	@make clean -C fs
