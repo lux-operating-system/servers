@@ -8,6 +8,28 @@
 /* Client Functions to Request from the Kernel */
 
 #include <liblux/liblux.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* luxLog(): prints a log message
+ * params: level - log severity level
+ * params: msg - message to print
+ * returns: nothing */
+
+void luxLog(int level, const char *msg) {
+    LogCommand *log = malloc(sizeof(LogCommand) + strlen(msg) + 1);
+    if(!log) return;
+
+    log->header.command = COMMAND_LOG;
+    log->header.length = sizeof(LogCommand) + strlen(msg) + 1;
+    log->header.response = 0;
+    log->level = level;
+    strcpy(log->server, luxGetName());
+    strcpy(log->message, msg);
+
+    luxSendKernel(log);
+    //free(log);
+}
 
 /* luxRequestFramebuffer(): requests framebuffer access
  * params: buffer - buffer to store the response in

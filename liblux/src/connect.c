@@ -132,3 +132,12 @@ ssize_t luxRecvKernel(void *buffer, size_t len, bool block) {
 pid_t luxGetSelf() {
     return self;
 }
+
+/* luxGetName(): returns the name of the server
+ * params: none
+ * returns: pointer to name
+ */
+
+const char *luxGetName() {
+    return server;
+}

@@ -16,15 +16,16 @@
 #define SERVER_LUMEN_PATH       "lux:///lumen"      // likewise not a real file
 
 /* these commands are requested by lumen and the servers and fulfilled by the kernel */
-#define COMMAND_SYSINFO         0x0000  // get uptime, mem usage, etc
-#define COMMAND_RAND            0x0001  // random number
-#define COMMAND_IO              0x0002  // request I/O access
-#define COMMAND_PROCESS_IO      0x0003  // get process I/O privileges
-#define COMMAND_PROCESS_LIST    0x0004  // get list of processes/threads
-#define COMMAND_PROCESS_STATUS  0x0005  // get status of process/thread
-#define COMMAND_FRAMEBUFFER     0x0006  // request frame buffer access
+#define COMMAND_LOG             0x0000  // output to kernel log
+#define COMMAND_SYSINFO         0x0001  // get uptime, mem usage, etc
+#define COMMAND_RAND            0x0002  // random number
+#define COMMAND_IO              0x0003  // request I/O access
+#define COMMAND_PROCESS_IO      0x0004  // get process I/O privileges
+#define COMMAND_PROCESS_LIST    0x0005  // get list of processes/threads
+#define COMMAND_PROCESS_STATUS  0x0006  // get status of process/thread
+#define COMMAND_FRAMEBUFFER     0x0007  // request frame buffer access
 
-#define MAX_GENERAL_COMMAND     0x0006
+#define MAX_GENERAL_COMMAND     0x0007
 
 /* these commands are requested by the kernel for lumen to fulfill syscall requests */
 #define COMMAND_STAT            0x8000
@@ -33,6 +34,11 @@
 #define COMMAND_UMOUNT          0x8003
 
 #define MAX_SYSCALL_COMMAND     0x0003
+
+#define KPRINT_LEVEL_DEBUG      0
+#define KPRINT_LEVEL_WARNING    1
+#define KPRINT_LEVEL_ERROR      2
+#define KPRINT_LEVEL_PANIC      3
 
 typedef struct {
     uint16_t command;
@@ -60,6 +66,14 @@ typedef struct {
     int memorySize, memoryUsage;    // in pages
 } SysInfoResponse;
 
+/* log command */
+typedef struct {
+    MessageHeader header;
+    int level;
+    char server[512];       // null terminated
+    char message[];         // variable length, null terminated
+} LogCommand;
+
 /* framebuffer access command */
 typedef struct {
     MessageHeader header;
@@ -69,9 +83,11 @@ typedef struct {
 
 /* wrapper functions */
 pid_t luxGetSelf();
+const char *luxGetName();
 int luxInit(const char *);
 int luxConnectKernel();
 int luxConnectLumen();
 ssize_t luxSendKernel(void *);
 ssize_t luxRecvKernel(void *, size_t, bool);
+void luxLog(int, const char *);
 int luxRequestFramebuffer(FramebufferResponse *);
