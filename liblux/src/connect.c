@@ -33,6 +33,16 @@ int luxInit(const char *name) {
     return 0;
 }
 
+/* luxInitLumen(): initializes liblux for lumen
+ * params: none
+ * returns: 0 on success
+ */
+
+int luxInitLumen() {
+    server = "lumen";
+    return luxConnectKernel();
+}
+
 /* luxConnectKernel(): connects to the kernel socket
  * params: none
  * returns: 0 on success

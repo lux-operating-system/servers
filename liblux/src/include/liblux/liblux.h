@@ -85,6 +85,7 @@ typedef struct {
 pid_t luxGetSelf();
 const char *luxGetName();
 int luxInit(const char *);
+int luxInitLumen();
 int luxConnectKernel();
 int luxConnectLumen();
 ssize_t luxSendKernel(void *);
