@@ -28,4 +28,4 @@ install: liblux.a
 	@cp -R ./src/include/* $(ROOT)/lib/gcc/x86_64-lux/14.2.0/include/
 
 clean:
-	@rm -f vfs $(OBJ)
+	@rm -f liblux.a $(OBJ)

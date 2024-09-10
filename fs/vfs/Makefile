@@ -14,7 +14,7 @@ all: vfs
 
 vfs: $(OBJ)
 	@echo "\x1B[0;1;34m [  LD   ]\x1B[0m vfs"
-	@$(LD) $(LDFLAGS) $(OBJ) -o vfs
+	@$(LD) $(OBJ) -o vfs $(LDFLAGS)
 
 install: vfs
 	@cp vfs ../../out/
