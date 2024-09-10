@@ -15,6 +15,23 @@
 
 static int kernelsd = -1, lumensd = -1;
 static pid_t self = 0;
+static const char *server;
+
+/* luxInit(): initializes liblux
+ * params: name - server name
+ * returns: 0 on success
+ */
+
+int luxInit(const char *name) {
+    if(!name) return -1;
+    if(strlen(name) > 504) return -1;   // total limit is 511, minus 7 for "lux:///" prefix
+
+    server = name;
+    if(luxConnectKernel()) return -1;
+    if(luxConnectLumen()) return -1;
+
+    return 0;
+}
 
 /* luxConnectKernel(): connects to the kernel socket
  * params: none
@@ -54,7 +71,16 @@ int luxConnectLumen() {
     int sd = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
     if(sd <= 0) return -1;
 
-    int status = connect(sd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_un));
+    // bind the local address so lumen knows which server this is
+    struct sockaddr_un local;
+    local.sun_family = AF_UNIX;
+    strcpy(local.sun_path, "lux:///");
+    strcpy(&local.sun_path[7], server);
+
+    int status = bind(sd, (const struct sockaddr *) &local, sizeof(struct sockaddr_un));
+    if(status) return -1;
+
+    status = connect(sd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_un));
     if(status) return -1;
 
     lumensd = sd;
