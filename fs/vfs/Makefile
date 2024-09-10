@@ -1,6 +1,6 @@
 PLATFORM=x86_64-lux
 CCFLAGS=-c -I./src/include -O3
-LDFLAGS=
+LDFLAGS=-llux
 CC=x86_64-lux-gcc
 LD=x86_64-lux-gcc
 SRC:=$(shell find ./src -type f -name "*.c")
