@@ -8,6 +8,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
 #include <sys/types.h>
 
@@ -72,4 +73,4 @@ int luxConnectKernel();
 int luxConnectLumen();
 ssize_t luxSendKernel(void *);
 ssize_t luxRecvKernel(void *, size_t, bool);
-int luxRequestFramebuffer();
+int luxRequestFramebuffer(FramebufferResponse *);
