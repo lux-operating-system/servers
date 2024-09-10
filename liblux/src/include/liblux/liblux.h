@@ -8,6 +8,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <sys/types.h>
 
 #define SERVER_KERNEL_PATH      "lux:///kernel"     // not a real file, special path
@@ -68,4 +69,6 @@ typedef struct {
 /* wrapper functions */
 int luxConnectKernel();
 int luxConnectLumen();
+ssize_t luxSendKernel(void *);
+ssize_t luxRecvKernel(void *, size_t, bool);
 int luxRequestFramebuffer();
