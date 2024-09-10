@@ -1,6 +1,8 @@
 all:
 	@echo "\x1B[0;1;35m [  MAKE ]\x1B[0m servers/liblux"
 	@make -C liblux
+	@echo "\x1B[0;1;35m [  MAKE ]\x1B[0m install servers/liblux"
+	@make install -C liblux
 	@echo "\x1B[0;1;35m [  MAKE ]\x1B[0m servers/fs"
 	@make -C fs
 
