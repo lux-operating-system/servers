@@ -10,6 +10,9 @@
 #include <liblux/liblux.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+
+static char formatter[1024];
 
 /* luxLog(): prints a log message
  * params: level - log severity level
@@ -28,7 +31,21 @@ void luxLog(int level, const char *msg) {
     strcpy(log->message, msg);
 
     luxSendKernel(log);
-    //free(log);
+    free(log);
+}
+
+/* luxLogf(): prints a formatted log message
+ * params: level - log severity level
+ * params: f - formatter string
+ * returns: nothing
+ */
+
+void luxLogf(int level, const char *f, ...) {
+    va_list args;
+    va_start(args, f);
+    vsprintf(formatter, f, args);
+    va_end(args);
+    luxLog(level, formatter);
 }
 
 /* luxRequestFramebuffer(): requests framebuffer access

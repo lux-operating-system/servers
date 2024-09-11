@@ -92,4 +92,5 @@ int luxGetKernelSocket();
 ssize_t luxSendKernel(void *);
 ssize_t luxRecvKernel(void *, size_t, bool);
 void luxLog(int, const char *);
+void luxLogf(int, const char *, ...);
 int luxRequestFramebuffer(FramebufferResponse *);
