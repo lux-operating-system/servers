@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+#define SERVER_MAX_SIZE         0x80000             // max msg size is 512 KiB
+
 #define SERVER_KERNEL_PATH      "lux:///kernel"     // not a real file, special path
 #define SERVER_LUMEN_PATH       "lux:///lumen"      // likewise not a real file
 
