@@ -52,6 +52,7 @@ int luxConnectKernel() {
     if(kernelsd > 0) return 0;
 
     struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, SERVER_KERNEL_PATH);
 
@@ -75,6 +76,7 @@ int luxConnectLumen() {
     if(lumensd > 0) return 0;
 
     struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, SERVER_LUMEN_PATH);
 
@@ -83,6 +85,7 @@ int luxConnectLumen() {
 
     // bind the local address so lumen knows which server this is
     struct sockaddr_un local;
+    memset(&local, 0, sizeof(struct sockaddr_un));
     local.sun_family = AF_UNIX;
     strcpy(local.sun_path, "lux:///");
     strcpy(&local.sun_path[7], server);
@@ -150,4 +153,13 @@ pid_t luxGetSelf() {
 
 const char *luxGetName() {
     return server;
+}
+
+/* luxGetKernelSocket(): returns the kernel socket descriptor
+ * params: none
+ * returns: socket descriptor
+ */
+
+int luxGetKernelSocket() {
+    return kernelsd;
 }

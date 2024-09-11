@@ -88,6 +88,7 @@ int luxInit(const char *);
 int luxInitLumen();
 int luxConnectKernel();
 int luxConnectLumen();
+int luxGetKernelSocket();
 ssize_t luxSendKernel(void *);
 ssize_t luxRecvKernel(void *, size_t, bool);
 void luxLog(int, const char *);
