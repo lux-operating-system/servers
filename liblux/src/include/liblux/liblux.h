@@ -35,7 +35,7 @@
 #define COMMAND_MOUNT           0x8002
 #define COMMAND_UMOUNT          0x8003
 
-#define MAX_SYSCALL_COMMAND     0x0003
+#define MAX_SYSCALL_COMMAND     0x8003
 
 #define KPRINT_LEVEL_DEBUG      0
 #define KPRINT_LEVEL_WARNING    1
