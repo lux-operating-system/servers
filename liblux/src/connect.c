@@ -137,6 +137,42 @@ ssize_t luxRecvKernel(void *buffer, size_t len, bool block) {
     return 0;
 }
 
+/* luxRecvLumen(): receives a message from lumen
+ * params: buffer - buffer to store message in
+ * params: len - maximum length of buffer
+ * params: block - whether to block the thread
+ * returns: number of bytes read, zero or negative on fail
+ */
+
+ssize_t luxRecvLumen(void *buffer, size_t len, bool block) {
+    if(!len || !buffer) return 0;
+
+    ssize_t size;
+    do {
+        size = recv(lumensd, buffer, len, 0);
+        if(size > 0) {
+            return size;
+        } else if(size == -1) {
+            if((!errno == EAGAIN) && (!errno == EWOULDBLOCK)) return -1;
+        }
+    } while(block && size <= 0);
+
+    return 0;
+}
+
+/* luxSendLumen(): sends a message to lumen
+ * params: msg - message header
+ * returns: number of bytes sent, zero or negative on fail
+ */
+
+ssize_t luxSendLumen(void *msg) {
+    MessageHeader *header = (MessageHeader *) msg;
+    if(!header->length || kernelsd <= 0) return 0;
+
+    header->requester = self;
+    return send(lumensd, msg, header->length, 0);
+}
+
 /* luxGetSelf(): returns the current pid without a syscall
  * params: none
  * returns: process ID
