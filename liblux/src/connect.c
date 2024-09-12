@@ -169,7 +169,6 @@ ssize_t luxSendLumen(void *msg) {
     MessageHeader *header = (MessageHeader *) msg;
     if(!header->length || kernelsd <= 0) return 0;
 
-    header->requester = self;
     return send(lumensd, msg, header->length, 0);
 }
 
