@@ -110,7 +110,7 @@ ssize_t luxSendKernel(void *msg) {
     MessageHeader *header = (MessageHeader *) msg;
     if(!header->length || kernelsd <= 0) return 0;
 
-    header->requester = self;
+    if(!header->response) header->requester = self;
     return send(kernelsd, msg, header->length, 0);
 }
 
