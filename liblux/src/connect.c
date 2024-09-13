@@ -96,6 +96,10 @@ int luxConnectLumen() {
     status = connect(sd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_un));
     if(status) return -1;
 
+    // and listen on the same socket
+    status = listen(sd, 0);     // default backlog
+    if(status) return -1;
+
     lumensd = sd;
     if(!self) self = getpid();
     return 0;
@@ -113,13 +117,15 @@ int luxConnectDependency(const char *name) {
     memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, "lux:///");
-    strcpy(addr.sun_path+strlen(addr.sun_path), name);
+    strcpy(&addr.sun_path[7], name);
 
     int sd = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
     if(sd <= 0) return -1;
 
     int status = connect(sd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_un));
     if(status) return -1;
+
+    //luxLogf(KPRINT_LEVEL_DEBUG, "connected to '%s' at socket %d\n", addr.sun_path, sd);
 
     depsd = sd;
     if(!self) self = getpid();
