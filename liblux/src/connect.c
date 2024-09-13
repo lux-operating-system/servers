@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-static int kernelsd = -1, lumensd = -1;
+static int kernelsd = -1, lumensd = -1, depsd = -1;
 static pid_t self = 0;
 static const char *server;
 
@@ -101,6 +101,31 @@ int luxConnectLumen() {
     return 0;
 }
 
+/* luxConnectDependency(): connects to a dependency server socket
+ * params: name - name of the dependency
+ * returns: 0 on success
+ */
+
+int luxConnectDependency(const char *name) {
+    if(depsd > 0) return 0;
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(struct sockaddr_un));
+    addr.sun_family = AF_UNIX;
+    strcpy(addr.sun_path, "lux:///");
+    strcpy(addr.sun_path+strlen(addr.sun_path), name);
+
+    int sd = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
+    if(sd <= 0) return -1;
+
+    int status = connect(sd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_un));
+    if(status) return -1;
+
+    depsd = sd;
+    if(!self) self = getpid();
+    return 0;
+}
+
 /* luxSendKernel(): sends a message to the kernel
  * params: msg - message header
  * returns: number of bytes sent, zero or negative on fail
@@ -170,6 +195,41 @@ ssize_t luxSendLumen(void *msg) {
     if(!header->length || kernelsd <= 0) return 0;
 
     return send(lumensd, msg, header->length, 0);
+}
+
+/* luxRecvDependency(): receives a message from a dependency
+ * params: buffer - buffer to store message in
+ * params: len - maximum length of buffer
+ * params: block - whether to block the thread
+ * returns: number of bytes read, zero or negative on fail
+ */
+
+ssize_t luxRecvDependency(void *buffer, size_t len, bool block) {
+    if(!len || !buffer) return 0;
+
+    ssize_t size;
+    do {
+        size = recv(depsd, buffer, len, 0);
+        if(size > 0) {
+            return size;
+        } else if(size == -1) {
+            if((!errno == EAGAIN) && (!errno == EWOULDBLOCK)) return -1;
+        }
+    } while(block && size <= 0);
+
+    return 0;
+}
+
+/* luxSendDependency(): sends a message to a dependency
+ * params: msg - message header
+ * returns: number of bytes sent, zero or negative on fail
+ */
+
+ssize_t luxSendDependency(void *msg) {
+    MessageHeader *header = (MessageHeader *) msg;
+    if(!header->length || kernelsd <= 0) return 0;
+
+    return send(depsd, msg, header->length, 0);
 }
 
 /* luxGetSelf(): returns the current pid without a syscall
