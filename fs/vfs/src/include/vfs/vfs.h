@@ -5,6 +5,8 @@
  * vfs: Microkernel server implementing a virtual file system
  */
 
+#pragma once
+
 #include <liblux/liblux.h>
 #include <vfs.h>
 
