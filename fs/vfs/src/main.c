@@ -13,6 +13,7 @@
 #include <vfs/vfs.h>
 
 FileSystemServers *servers;
+Mountpoint *mps;
 int serverCount = 0;
 
 int main(int argc, char **argv) {
@@ -23,8 +24,9 @@ int main(int argc, char **argv) {
 
     SyscallHeader *req = calloc(1, SERVER_MAX_SIZE);
     servers = calloc(MAX_FILE_SYSTEMS, sizeof(FileSystemServers));
+    mps = calloc(MAX_MOUNTPOINTS, sizeof(Mountpoint));
 
-    if(!req || !servers) {
+    if(!req || !servers || !mps) {
         luxLog(KPRINT_LEVEL_ERROR, "unable to allocate memory for vfs\n");
         return -1;
     }
@@ -52,18 +54,15 @@ int main(int argc, char **argv) {
         }
 
         // and handle messages from dependent servers
-        if(serverCount) {
-            for(int i = 0; i < serverCount; i++) {
-                s = luxRecv(servers[i].socket, req, SERVER_MAX_SIZE, false);
-                if(s > 0 && s <= SERVER_MAX_SIZE) {
-                    if(req->header.command == COMMAND_VFS_INIT) {   // special command
-                        VFSInitCommand *init = (VFSInitCommand *)req;
-                        strcpy(servers[i].type, init->fsType);
-                        luxLogf(KPRINT_LEVEL_DEBUG, "loaded file system driver for '%s'\n", servers[i].type);
-                    } else {
-                        luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X from file system driver for '%s'\n", req->header.command, servers[i].type);
-                    }
-                }
+        for(int i = 0; serverCount && i < serverCount; i++) {
+            s = luxRecv(servers[i].socket, req, SERVER_MAX_SIZE, false);
+            if(s > 0 && s <= SERVER_MAX_SIZE) {
+                if(req->header.command == COMMAND_VFS_INIT) {   // special command
+                    VFSInitCommand *init = (VFSInitCommand *)req;
+                    strcpy(servers[i].type, init->fsType);
+                    luxLogf(KPRINT_LEVEL_DEBUG, "loaded file system driver for '%s'\n", servers[i].type);
+                } else
+                    luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X from file system driver for '%s'\n", req->header.command, servers[i].type);
             }
         }
     }
