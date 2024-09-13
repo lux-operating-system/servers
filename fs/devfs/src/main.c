@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <liblux/liblux.h>
 #include <vfs.h>
+#include <devfs/devfs.h>
 
 int main(int argc, char **argv) {
     luxInit("devfs");                   // this will connect to lux and lumen
@@ -35,5 +36,16 @@ int main(int argc, char **argv) {
     strcpy(init.fsType, "devfs");
     luxSendDependency(&init);
 
-    while(1);   // todo
+    ssize_t s;
+    while(1) {
+        // idle loop where we just wait for requests from the vfs
+        s = luxRecvDependency(req, SERVER_MAX_SIZE, false);
+        if(s > 0 && s < SERVER_MAX_SIZE) {
+            if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND && dispatchTable[req->header.command&0x7FFF]) {
+                dispatchTable[req->header.command&0x7FFF](req, res);
+            } else {
+                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X for pid %d\n", req->header.command, req->header.requester);
+            }
+        }
+    }
 }
