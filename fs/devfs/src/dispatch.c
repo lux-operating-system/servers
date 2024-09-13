@@ -9,11 +9,11 @@
 #include <vfs.h>
 #include <devfs/devfs.h>
 
-void mount(SyscallHeader *, SyscallHeader *);
+void devfsMount(SyscallHeader *, SyscallHeader *);
 
 void (*dispatchTable[])(SyscallHeader *, SyscallHeader *) = {
     NULL,               // 0 - stat()
     NULL,               // 1 - flush()
-    mount,              // 2 - mount()
+    devfsMount,         // 2 - mount()
     NULL,               // 3 - umount()
 };
