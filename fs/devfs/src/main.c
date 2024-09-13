@@ -9,10 +9,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <liblux/liblux.h>
+#include <vfs.h>
 
 int main(int argc, char **argv) {
-    luxInit("devfs");     // this will connect to lux and lumen
-    while(!luxConnectDependency("vfs"));
+    luxInit("devfs");                   // this will connect to lux and lumen
+    while(luxConnectDependency("vfs")); // and to the virtual file system
 
     // show signs of life
     luxLogf(KPRINT_LEVEL_DEBUG, "devfs server started with pid %d\n", getpid());
@@ -24,6 +25,15 @@ int main(int argc, char **argv) {
         luxLog(KPRINT_LEVEL_ERROR, "unable to allocate memory for devfs messages\n");
         while(1) sched_yield();
     }
+
+    // notify the virtual file system that we are a file system driver
+    VFSInitCommand init;
+    memset(&init, 0, sizeof(VFSInitCommand));
+    init.header.command = COMMAND_VFS_INIT;
+    init.header.length = sizeof(VFSInitCommand);
+    init.header.requester = luxGetSelf();
+    strcpy(init.fsType, "devfs");
+    luxSendDependency(&init);
 
     while(1);   // todo
 }
