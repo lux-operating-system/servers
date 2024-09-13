@@ -50,8 +50,11 @@ int main(int argc, char **argv) {
                     VFSInitCommand *init = (VFSInitCommand *)req;
                     strcpy(servers[i].type, init->fsType);
                     luxLogf(KPRINT_LEVEL_DEBUG, "loaded file system driver for '%s'\n", servers[i].type);
-                } else
-                    luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X from file system driver for '%s'\n", req->header.command, servers[i].type);
+                } else if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND) {
+                    luxSendLumen(req);  // relay responses to lumen
+                } else {
+                    luxLogf(KPRINT_LEVEL_WARNING, "unimplemented response to command 0x%X from file system driver for '%s'\n", req->header.command, servers[i].type);
+                }
             }
         }
 
