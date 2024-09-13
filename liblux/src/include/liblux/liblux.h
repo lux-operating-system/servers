@@ -13,6 +13,7 @@
 #include <sys/types.h>
 
 #define SERVER_MAX_SIZE         0x80000             // max msg size is 512 KiB
+#define MAX_FILE_PATH           2048
 
 #define SERVER_KERNEL_PATH      "lux:///kernel"     // not a real file, special path
 #define SERVER_LUMEN_PATH       "lux:///lumen"      // likewise not a real file
@@ -82,6 +83,15 @@ typedef struct {
     uint64_t buffer;        // pointer
     uint16_t w, h, pitch, bpp;
 } FramebufferResponse;
+
+/* mount command */
+typedef struct {
+    SyscallHeader header;
+    char source[MAX_FILE_PATH];
+    char target[MAX_FILE_PATH];
+    char type[32];
+    int flags;
+} MountCommand;
 
 /* wrapper functions */
 pid_t luxGetSelf();
