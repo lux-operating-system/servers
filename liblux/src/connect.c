@@ -227,7 +227,7 @@ ssize_t luxRecvDependency(void *buffer, size_t len, bool block) {
 
 ssize_t luxSendDependency(void *msg) {
     MessageHeader *header = (MessageHeader *) msg;
-    if(!header->length || kernelsd <= 0) return 0;
+    if(!header->length || depsd <= 0) return 0;
 
     return send(depsd, msg, header->length, 0);
 }
