@@ -5,6 +5,7 @@
  * vfs: Microkernel server implementing a virtual file system
  */
 
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <liblux/liblux.h>
@@ -13,7 +14,7 @@ int main(int argc, char **argv) {
     luxInit("vfs");     // this will connect to lux and lumen
 
     // show signs of life
-    luxLog(KPRINT_LEVEL_DEBUG, "virtual file system server started\n");
+    luxLogf(KPRINT_LEVEL_DEBUG, "virtual file system server started with pid %d\n", getpid());
 
     SyscallHeader *req = calloc(1, SERVER_MAX_SIZE);
     SyscallHeader *res = calloc(1, SERVER_MAX_SIZE);
@@ -26,8 +27,8 @@ int main(int argc, char **argv) {
     ssize_t s;
     while(1) {
         // wait for incoming requests
-        s = luxRecvLumen(req, SERVER_MAX_SIZE, true);
-        if(s > 0) {
+        s = luxRecvLumen(req, SERVER_MAX_SIZE, false);
+        if(s > 0 && s <= SERVER_MAX_SIZE) {
             // stub for testing
             luxLogf(KPRINT_LEVEL_DEBUG, "received syscall request 0x%X for pid %d\n", req->header.command, req->header.requester);
             req->header.length = sizeof(SyscallHeader);
