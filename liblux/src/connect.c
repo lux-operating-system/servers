@@ -264,3 +264,51 @@ const char *luxGetName() {
 int luxGetKernelSocket() {
     return kernelsd;
 }
+
+/* luxAccept(): accepts a connection from a dependent server
+ * params: none
+ * returns: positive socket descriptor on success
+ */
+
+int luxAccept() {
+    int sd = accept(lumensd, NULL, NULL);
+    if(sd > 0) return sd;
+    return -1;
+}
+
+/* luxRecv(): receives a message from a dependent
+ * params: sd - socket descriptor
+ * params: buffer - buffer to store message in
+ * params: len - maximum length of buffer
+ * params: block - whether to block the thread
+ * returns: number of bytes read, zero or negative on fail
+ */
+
+ssize_t luxRecv(int sd, void *buffer, size_t len, bool block) {
+    if(!len || !buffer) return 0;
+
+    ssize_t size;
+    do {
+        size = recv(sd, buffer, len, 0);
+        if(size > 0) {
+            return size;
+        } else if(size == -1) {
+            if((!errno == EAGAIN) && (!errno == EWOULDBLOCK)) return -1;
+        }
+    } while(block && size <= 0);
+
+    return 0;
+}
+
+/* luxSend(): sends a message to a dependent
+ * params: sd - socket descriptor
+ * params: msg - message header
+ * returns: number of bytes sent, zero or negative on fail
+ */
+
+ssize_t luxSend(int sd, void *msg) {
+    MessageHeader *header = (MessageHeader *) msg;
+    if(!header->length) return 0;
+
+    return send(sd, msg, header->length, 0);
+}
