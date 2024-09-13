@@ -34,18 +34,7 @@ int main(int argc, char **argv) {
     ssize_t s;
     int sd;
     while(1) {
-        // wait for incoming requests
-        s = luxRecvLumen(req, SERVER_MAX_SIZE, false);
-        if(s > 0 && s <= SERVER_MAX_SIZE) {
-            // dispatch syscall request from the kernel
-            if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND && vfsDispatchTable[req->header.command&0x7FFF]) {
-                vfsDispatchTable[req->header.command&0x7FFF](req);
-            } else {
-                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented syscall request 0x%X for pid %d\n", req->header.command, req->header.requester);
-            }
-        }
-
-        // and also accept incoming connections
+        // accept incoming client connections
         sd = luxAccept();
         if(sd > 0) {
             // append to the list
@@ -63,6 +52,17 @@ int main(int argc, char **argv) {
                     luxLogf(KPRINT_LEVEL_DEBUG, "loaded file system driver for '%s'\n", servers[i].type);
                 } else
                     luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X from file system driver for '%s'\n", req->header.command, servers[i].type);
+            }
+        }
+
+        // and wait for incoming syscall requests
+        s = luxRecvLumen(req, SERVER_MAX_SIZE, false);
+        if(s > 0 && s <= SERVER_MAX_SIZE) {
+            // dispatch syscall request from the kernel
+            if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND && vfsDispatchTable[req->header.command&0x7FFF]) {
+                vfsDispatchTable[req->header.command&0x7FFF](req);
+            } else {
+                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented syscall request 0x%X for pid %d\n", req->header.command, req->header.requester);
             }
         }
     }
