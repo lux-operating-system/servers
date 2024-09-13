@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <liblux/liblux.h>
 #include <vfs.h>
+#include <vfs/vfs.h>
 
 FileSystemServers *servers;
 int serverCount = 0;
@@ -34,12 +35,12 @@ int main(int argc, char **argv) {
         // wait for incoming requests
         s = luxRecvLumen(req, SERVER_MAX_SIZE, false);
         if(s > 0 && s <= SERVER_MAX_SIZE) {
-            // stub for testing
-            luxLogf(KPRINT_LEVEL_DEBUG, "received syscall request 0x%X for pid %d\n", req->header.command, req->header.requester);
-            req->header.length = sizeof(SyscallHeader);
-            req->header.response = 1;
-            req->header.status = 0;     // "success"
-            luxSendLumen(req);
+            // dispatch syscall request from the kernel
+            if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND && vfsDispatchTable[req->header.command&0x7FFF]) {
+                vfsDispatchTable[req->header.command&0x7FFF](req);
+            } else {
+                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented syscall request 0x%X for pid %d\n", req->header.command, req->header.requester);
+            }
         }
 
         // and also accept incoming connections
