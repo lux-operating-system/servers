@@ -1,5 +1,5 @@
 PLATFORM=x86_64-lux
-CCFLAGS=-c -I./src/include -O3
+CCFLAGS=-c -I./src/include -I../common/include -O3
 LDFLAGS=-llux
 CC=x86_64-lux-gcc
 LD=x86_64-lux-gcc
