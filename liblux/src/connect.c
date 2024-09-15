@@ -158,7 +158,7 @@ ssize_t luxRecvKernel(void *buffer, size_t len, bool block) {
     ssize_t size;
     do {
         size = recv(kernelsd, buffer, len, 0);
-        if(size > 0) {
+        if(size > 0 && size <= len) {
             return size;
         } else if(size == -1) {
             if((!errno == EAGAIN) && (!errno == EWOULDBLOCK)) return -1;
@@ -181,7 +181,7 @@ ssize_t luxRecvLumen(void *buffer, size_t len, bool block) {
     ssize_t size;
     do {
         size = recv(lumensd, buffer, len, 0);
-        if(size > 0) {
+        if(size > 0 && size <= len) {
             return size;
         } else if(size == -1) {
             if((!errno == EAGAIN) && (!errno == EWOULDBLOCK)) return -1;
@@ -216,7 +216,7 @@ ssize_t luxRecvDependency(void *buffer, size_t len, bool block) {
     ssize_t size;
     do {
         size = recv(depsd, buffer, len, 0);
-        if(size > 0) {
+        if(size > 0 && size <= len) {
             return size;
         } else if(size == -1) {
             if((!errno == EAGAIN) && (!errno == EWOULDBLOCK)) return -1;
@@ -290,7 +290,7 @@ ssize_t luxRecv(int sd, void *buffer, size_t len, bool block) {
     ssize_t size;
     do {
         size = recv(sd, buffer, len, 0);
-        if(size > 0) {
+        if(size > 0 && size <= len) {
             return size;
         } else if(size == -1) {
             if((!errno == EAGAIN) && (!errno == EWOULDBLOCK)) return -1;
