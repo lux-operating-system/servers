@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     while(luxConnectDependency("vfs")); // and to the virtual file system
 
     // show signs of life
-    luxLogf(KPRINT_LEVEL_DEBUG, "devfs server started with pid %d\n", getpid());
+    luxLogf(KPRINT_LEVEL_DEBUG, "devfs server started with pid %d\n", luxGetSelf());
 
     SyscallHeader *req = calloc(1, SERVER_MAX_SIZE);
     SyscallHeader *res = calloc(1, SERVER_MAX_SIZE);
