@@ -13,7 +13,6 @@
 #include <vfs/vfs.h>
 
 FileSystemServers *servers;
-Mountpoint *mps;
 int serverCount = 0;
 
 int main(int argc, char **argv) {
@@ -51,6 +50,7 @@ int main(int argc, char **argv) {
                     strcpy(servers[i].type, init->fsType);
                     luxLogf(KPRINT_LEVEL_DEBUG, "loaded file system driver for '%s'\n", servers[i].type);
                 } else if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND) {
+                    if(req->header.command == COMMAND_MOUNT) registerMountpoint((MountCommand *)req);
                     luxSendLumen(req);  // relay responses to lumen
                 } else {
                     luxLogf(KPRINT_LEVEL_WARNING, "unimplemented response to command 0x%X from file system driver for '%s'\n", req->header.command, servers[i].type);

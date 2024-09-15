@@ -24,4 +24,8 @@ typedef struct {
     int valid;
 } Mountpoint;
 
+extern Mountpoint *mps;
+extern int mpCount;
+
 int findFSServer(const char *);
+void registerMountpoint(MountCommand *);
