@@ -20,9 +20,8 @@ void devfsMount(SyscallHeader *req, SyscallHeader *res) {
     MountCommand *cmd = (MountCommand *) req;
     luxLogf(KPRINT_LEVEL_DEBUG, "mounting devfs at %s\n", cmd->target);
 
-    memcpy(res, req, sizeof(SyscallHeader));
+    memcpy(res, req, req->header.length);
     res->header.response = 1;
     res->header.status = 0;     // success
-    res->header.length = sizeof(SyscallHeader);
     luxSendDependency(res);
 }
