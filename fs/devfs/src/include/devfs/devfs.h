@@ -11,6 +11,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#define MAX_DEVICES             256
+
+#define DEVFS_CHR_PERMS         (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH | S_IFCHR)
+
 /* generic structure that will be used to maintain a list of files on /dev */
 
 typedef struct {
@@ -23,4 +27,4 @@ extern void (*dispatchTable[])(SyscallHeader *, SyscallHeader *);
 extern DeviceFile *devices;
 extern int deviceCount;
 
-void createDevice(char *, void (*)(int, off_t, size_t), struct stat *);
+int createDevice(const char *, void (*)(int, off_t, size_t), struct stat *);

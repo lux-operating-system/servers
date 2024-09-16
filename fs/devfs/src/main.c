@@ -12,6 +12,9 @@
 #include <vfs.h>
 #include <devfs/devfs.h>
 
+DeviceFile *devices;
+int deviceCount = 0;
+
 int main(int argc, char **argv) {
     luxInit("devfs");                   // this will connect to lux and lumen
     while(luxConnectDependency("vfs")); // and to the virtual file system
@@ -24,8 +27,26 @@ int main(int argc, char **argv) {
 
     if(!req || !res) {
         luxLog(KPRINT_LEVEL_ERROR, "unable to allocate memory for devfs messages\n");
-        while(1) sched_yield();
+        exit(-1);
     }
+
+    // array of device files
+    devices = calloc(MAX_DEVICES, sizeof(DeviceFile));
+    if(!devices) {
+        luxLog(KPRINT_LEVEL_ERROR, "unable to allocate memory for device files\n");
+        exit(-1);
+    }
+
+    // create the basic devices
+    struct stat chrstat;            // for character special devices
+    memset(&chrstat, 0, sizeof(struct stat));
+    chrstat.st_mode = DEVFS_CHR_PERMS;
+    chrstat.st_size = 4096;
+
+    createDevice("/null", NULL, &chrstat);
+    createDevice("/zero", NULL, &chrstat);
+    createDevice("/random", NULL, &chrstat);
+    createDevice("/urandom", NULL, &chrstat);
 
     // notify the virtual file system that we are a file system driver
     VFSInitCommand init;
