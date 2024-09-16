@@ -27,7 +27,7 @@ char *resolve(char *buffer, char *type, char *source, const char *path) {
         if(!memcmp(path, mps[i].path, mplen)) {
             strcpy(type, mps[i].type);
             strcpy(source, mps[i].device);
-            return strcpy(buffer, path+mplen);
+            return (char *) memmove(buffer, path+mplen, strlen(path+mplen)+1);
         }
     }
 
