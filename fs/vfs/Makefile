@@ -1,5 +1,5 @@
 PLATFORM=x86_64-lux
-CCFLAGS=-c -I./src/include -I../common/include -O3
+CCFLAGS=-Wall -c -I./src/include -I../common/include -O3
 LDFLAGS=-llux
 CC=x86_64-lux-gcc
 LD=x86_64-lux-gcc
@@ -9,11 +9,11 @@ OBJ:=$(SRC:.c=.o)
 all: vfs
 
 %.o: %.c
-	@echo "\x1B[0;1;32m [  CC   ]\x1B[0m $<"
+	@echo "\x1B[0;1;32m cc  \x1B[0m $<"
 	@$(CC) $(CCFLAGS) -o $@ $<
 
 vfs: $(OBJ)
-	@echo "\x1B[0;1;34m [  LD   ]\x1B[0m vfs"
+	@echo "\x1B[0;1;34m ld  \x1B[0m vfs"
 	@$(LD) $(OBJ) -o vfs $(LDFLAGS)
 
 install: vfs
