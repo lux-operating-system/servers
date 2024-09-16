@@ -14,7 +14,7 @@ all: liblux.a
 	@$(CC) $(CCFLAGS) -o $@ $<
 
 liblux.a: $(OBJ)
-	@echo "\x1B[0;1;34m ar  \x1B[0m liblux.a"
+	@echo "\x1B[0;1;93m ar  \x1B[0m liblux.a"
 	@$(AR) rvs liblux.a $(OBJ)
 
 install: liblux.a

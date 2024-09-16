@@ -13,7 +13,7 @@ all: devfs
 	@$(CC) $(CCFLAGS) -o $@ $<
 
 devfs: $(OBJ)
-	@echo "\x1B[0;1;34m ld  \x1B[0m devfs"
+	@echo "\x1B[0;1;93m ld  \x1B[0m devfs"
 	@$(LD) $(OBJ) -o devfs $(LDFLAGS)
 
 install: devfs

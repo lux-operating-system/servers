@@ -13,7 +13,7 @@ all: vfs
 	@$(CC) $(CCFLAGS) -o $@ $<
 
 vfs: $(OBJ)
-	@echo "\x1B[0;1;34m ld  \x1B[0m vfs"
+	@echo "\x1B[0;1;93m ld  \x1B[0m vfs"
 	@$(LD) $(OBJ) -o vfs $(LDFLAGS)
 
 install: vfs
