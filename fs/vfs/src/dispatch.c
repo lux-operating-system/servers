@@ -20,7 +20,6 @@ void vfsDispatchMount(SyscallHeader *hdr) {
 
 void vfsDispatchStat(SyscallHeader *hdr) {
     StatCommand *cmd = (StatCommand *) hdr;
-    char path[MAX_FILE_PATH];
     char type[32];
     if(resolve(cmd->path, type, cmd->source, cmd->path)) {
         int sd = findFSServer(type);
