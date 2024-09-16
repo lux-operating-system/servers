@@ -28,3 +28,4 @@ extern DeviceFile *devices;
 extern int deviceCount;
 
 int createDevice(const char *, void (*)(int, off_t, size_t), struct stat *);
+DeviceFile *findDevice(const char *);

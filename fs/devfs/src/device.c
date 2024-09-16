@@ -56,3 +56,18 @@ int createDevice(const char *name, void (*handler)(int, off_t, size_t), struct s
     deviceCount++;
     return 0;
 }
+
+/* findDevice(): finds the device file associated with a name
+ * params: name - name of the device
+ * returns: pointer to device file structure, NULL on error
+ */
+
+DeviceFile *findDevice(const char *name) {
+    if(!deviceCount) return NULL;
+
+    for(int i = 0; i < deviceCount; i++) {
+        if(!strcmp(devices[i].name, name)) return &devices[i];
+    }
+
+    return NULL;
+}
