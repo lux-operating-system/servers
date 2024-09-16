@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #define SERVER_MAX_SIZE         0x80000             // max msg size is 512 KiB
 #define MAX_FILE_PATH           2048
@@ -92,6 +93,14 @@ typedef struct {
     char type[32];
     int flags;
 } MountCommand;
+
+/* stat() */
+typedef struct {
+    SyscallHeader header;
+    char source[MAX_FILE_PATH];
+    char path[MAX_FILE_PATH];
+    struct stat buffer;
+} StatCommand;
 
 /* wrapper functions */
 pid_t luxGetSelf();
