@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     chrstat.st_size = 4096;
 
     createDevice("/null", NULL, &chrstat);
-    createDevice("/zero", NULL, &chrstat);
+    createDevice("/zero", zeroIOHandler, &chrstat);
     createDevice("/random", NULL, &chrstat);
     createDevice("/urandom", NULL, &chrstat);
 
