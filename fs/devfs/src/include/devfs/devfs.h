@@ -20,12 +20,12 @@
 typedef struct {
     char name[MAX_FILE_PATH];
     struct stat status;
-    void (*ioHandler)(int, off_t, size_t);
+    ssize_t (*ioHandler)(int, const char *, off_t *, void *, size_t);
 } DeviceFile;
 
 extern void (*dispatchTable[])(SyscallHeader *, SyscallHeader *);
 extern DeviceFile *devices;
 extern int deviceCount;
 
-int createDevice(const char *, void (*)(int, off_t, size_t), struct stat *);
+int createDevice(const char *, ssize_t (*)(int, const char *, off_t *, void *, size_t), struct stat *);
 DeviceFile *findDevice(const char *);

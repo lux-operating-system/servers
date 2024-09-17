@@ -18,7 +18,7 @@
  * returns: zero on success
  */
 
-int createDevice(const char *name, void (*handler)(int, off_t, size_t), struct stat *status) {
+int createDevice(const char *name, ssize_t (*handler)(int, const char *, off_t *, void *, size_t), struct stat *status) {
     if(deviceCount >= MAX_DEVICES) return -1;
 
     char *mode = NULL;
