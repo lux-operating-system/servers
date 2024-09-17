@@ -30,12 +30,24 @@ void vfsDispatchStat(SyscallHeader *hdr) {
     }
 }
 
+void vfsDispatchOpen(SyscallHeader *hdr) {
+    OpenCommand *cmd = (OpenCommand *) hdr;
+    char type[32];
+    if(resolve(cmd->path, type, cmd->device, cmd->path)) {
+        int sd = findFSServer(type);
+        if(sd <= 0) luxLogf(KPRINT_LEVEL_WARNING, "no file system driver loaded for '%s'\n", type);
+        else luxSend(sd, cmd);
+    } else {
+        luxLogf(KPRINT_LEVEL_WARNING, "could not resolve path '%s'\n", cmd->path);
+    }
+}
+
 void (*vfsDispatchTable[])(SyscallHeader *) = {
     vfsDispatchStat,    // 0 - stat()
     NULL,               // 1 - flush()
     vfsDispatchMount,   // 2 - mount()
     NULL,               // 3 - umount()
-    NULL,               // 4 - open()
+    vfsDispatchOpen,    // 4 - open()
     NULL,               // 5 - read()
     NULL,               // 6 - write()
 };
