@@ -33,7 +33,7 @@ void vfsDispatchStat(SyscallHeader *hdr) {
 void vfsDispatchOpen(SyscallHeader *hdr) {
     OpenCommand *cmd = (OpenCommand *) hdr;
     char type[32];
-    if(resolve(cmd->path, type, cmd->device, cmd->path)) {
+    if(resolve(cmd->path, type, cmd->device, cmd->abspath)) {
         int sd = findFSServer(type);
         if(sd <= 0) luxLogf(KPRINT_LEVEL_WARNING, "no file system driver loaded for '%s'\n", type);
         else luxSend(sd, cmd);
