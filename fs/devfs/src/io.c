@@ -33,7 +33,7 @@ void devfsRead(SyscallHeader *req, SyscallHeader *res) {
         ssize_t status = dev->ioHandler(0, dev->name, &response->position, response->data, cmd->length);
         if(status > 0) {
             res->header.length += status;
-            req->length = status;
+            response->length = status;
         } else {
             req->header.length = 0;
         }
