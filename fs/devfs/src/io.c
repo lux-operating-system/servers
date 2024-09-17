@@ -31,7 +31,13 @@ void devfsRead(SyscallHeader *req, SyscallHeader *res) {
         RWCommand *response = (RWCommand *) res;
 
         ssize_t status = dev->ioHandler(0, dev->name, &response->position, response->data, cmd->length);
-        if(status > 0) res->header.length += status;
+        if(status > 0) {
+            res->header.length += status;
+            req->length = status;
+        } else {
+            req->header.length = 0;
+        }
+
         res->header.status = status;
     }
 
