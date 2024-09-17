@@ -36,8 +36,11 @@
 #define COMMAND_FLUSH           0x8001
 #define COMMAND_MOUNT           0x8002
 #define COMMAND_UMOUNT          0x8003
+#define COMMAND_OPEN            0x8004
+#define COMMAND_READ            0x8005
+#define COMMAND_WRITE           0x8006
 
-#define MAX_SYSCALL_COMMAND     0x8003
+#define MAX_SYSCALL_COMMAND     0x8006
 
 #define KPRINT_LEVEL_DEBUG      0
 #define KPRINT_LEVEL_WARNING    1
@@ -101,6 +104,29 @@ typedef struct {
     char path[MAX_FILE_PATH];
     struct stat buffer;
 } StatCommand;
+
+/* open() */
+typedef struct {
+    SyscallHeader header;
+    char path[MAX_FILE_PATH];
+    int flags;
+    mode_t mode;
+    uid_t uid;
+    gid_t gid;
+} OpenCommand;
+
+/* read() and write() */
+typedef struct {
+    SyscallHeader header;
+    char path[MAX_FILE_PATH];
+    int flags;
+    mode_t mode;
+    uid_t uid;
+    gid_t gid;
+    size_t position;
+    uint8_t data[];
+} RWCommand;
+
 
 /* wrapper functions */
 pid_t luxGetSelf();
