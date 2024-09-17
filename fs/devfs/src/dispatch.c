@@ -11,13 +11,14 @@
 
 void devfsStat(SyscallHeader *, SyscallHeader *);
 void devfsMount(SyscallHeader *, SyscallHeader *);
+void devfsOpen(SyscallHeader *, SyscallHeader *);
 
 void (*dispatchTable[])(SyscallHeader *, SyscallHeader *) = {
     devfsStat,          // 0 - stat()
     NULL,               // 1 - flush()
     devfsMount,         // 2 - mount()
     NULL,               // 3 - umount()
-    NULL,               // 4 - open()
+    devfsOpen,          // 4 - open()
     NULL,               // 5 - read()
     NULL,               // 6 - write()
 };
