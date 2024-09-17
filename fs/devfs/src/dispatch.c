@@ -17,4 +17,7 @@ void (*dispatchTable[])(SyscallHeader *, SyscallHeader *) = {
     NULL,               // 1 - flush()
     devfsMount,         // 2 - mount()
     NULL,               // 3 - umount()
+    NULL,               // 4 - open()
+    NULL,               // 5 - read()
+    NULL,               // 6 - write()
 };
