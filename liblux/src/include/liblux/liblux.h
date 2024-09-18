@@ -158,3 +158,4 @@ ssize_t luxRecv(int, void *, size_t, bool);
 void luxLog(int, const char *);
 void luxLogf(int, const char *, ...);
 int luxRequestFramebuffer(FramebufferResponse *);
+int luxRequestRNG(uint64_t *);
