@@ -45,8 +45,8 @@ int main(int argc, char **argv) {
 
     createDevice("/null", NULL, &chrstat);
     createDevice("/zero", zeroIOHandler, &chrstat);
-    createDevice("/random", NULL, &chrstat);
-    createDevice("/urandom", NULL, &chrstat);
+    createDevice("/random", randomIOHandler, &chrstat);
+    createDevice("/urandom", randomIOHandler, &chrstat);
 
     // notify the virtual file system that we are a file system driver
     VFSInitCommand init;
