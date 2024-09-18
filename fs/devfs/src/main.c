@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     chrstat.st_mode = DEVFS_CHR_PERMS;
     chrstat.st_size = 4096;
 
-    createDevice("/null", NULL, &chrstat);
+    createDevice("/null", nullIOHandler, &chrstat);
     createDevice("/zero", zeroIOHandler, &chrstat);
     createDevice("/random", randomIOHandler, &chrstat);
     createDevice("/urandom", randomIOHandler, &chrstat);

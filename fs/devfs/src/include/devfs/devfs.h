@@ -30,5 +30,6 @@ extern int deviceCount;
 int createDevice(const char *, ssize_t (*)(int, const char *, off_t *, void *, size_t), struct stat *);
 DeviceFile *findDevice(const char *);
 
+ssize_t nullIOHandler(int, const char *, off_t *, void *, size_t);
 ssize_t zeroIOHandler(int, const char *, off_t *, void *, size_t);
 ssize_t randomIOHandler(int, const char *, off_t *, void *, size_t);
