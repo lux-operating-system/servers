@@ -26,6 +26,7 @@ void luxLog(int level, const char *msg) {
     log->header.command = COMMAND_LOG;
     log->header.length = sizeof(LogCommand) + strlen(msg) + 1;
     log->header.response = 0;
+    log->header.requester = luxGetSelf();
     log->level = level;
     strcpy(log->server, luxGetName());
     strcpy(log->message, msg);
@@ -59,8 +60,29 @@ int luxRequestFramebuffer(FramebufferResponse *response) {
     request.command = COMMAND_FRAMEBUFFER;
     request.length = sizeof(MessageHeader);
     request.response = 0;
+    request.requester = luxGetSelf();
 
     if(luxSendKernel(&request) != request.length) return -1;
 
     return !(luxRecvKernel(response, sizeof(FramebufferResponse), true) == sizeof(FramebufferResponse));
+}
+
+/* luxRequestRNG(): requests a random number
+ * params: ptr - pointer to store the random number at
+ * returns: zero on success, random number stored at pointer
+ */
+
+int luxRequestRNG(uint64_t *ptr) {
+    RandCommand cmd;
+    cmd.header.command = COMMAND_RAND;
+    cmd.header.length = sizeof(RandCommand);
+    cmd.header.response = 0;
+    cmd.header.requester = luxGetSelf();
+
+    if(luxSendKernel(&cmd) != sizeof(RandCommand)) return -1;
+
+    int status = !(luxRecvKernel(&cmd, sizeof(RandCommand), true) == sizeof(RandCommand));
+    if(!status) *ptr = cmd.number;
+
+    return status;
 }
