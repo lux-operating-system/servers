@@ -51,15 +51,26 @@ int luxInitLumen() {
 int luxConnectKernel() {
     if(kernelsd > 0) return 0;
 
+    // kernel address
     struct sockaddr_un addr;
     memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, SERVER_KERNEL_PATH);
 
+    // server address
+    struct sockaddr_un local;
+    memset(&local, 0, sizeof(struct sockaddr_un));
+    local.sun_family = AF_UNIX;
+    strcpy(local.sun_path, "lux:///ks");
+    strcpy(local.sun_path+strlen(local.sun_path), server);
+
     int sd = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
     if(sd <= 0) return -1;
 
-    int status = connect(sd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_un));
+    int status = bind(sd, (const struct sockaddr *) &local, sizeof(struct sockaddr_un));
+    if(status) return -1;
+
+    status = connect(sd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_un));
     if(status) return -1;
 
     kernelsd = sd;
