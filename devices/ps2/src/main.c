@@ -21,5 +21,14 @@ int main() {
 
     keyboardInit();
 
-    while(1);
+    IRQCommand irqcmd;
+
+    for(;;) {
+        if(luxRecvKernel(&irqcmd, sizeof(IRQCommand), true) == sizeof(IRQCommand)) {
+            if(irqcmd.pin == 1) {
+                // keyboard interrupt
+                luxLogf(KPRINT_LEVEL_DEBUG, "keyboard IRQ: read scan code 0x%02X\n", inb(0x60));
+            }
+        }
+    }
 }
