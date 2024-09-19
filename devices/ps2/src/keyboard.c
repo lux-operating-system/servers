@@ -7,7 +7,10 @@
 
 #include <ps2/ps2.h>
 #include <liblux/liblux.h>
+#include <errno.h>
+#include <string.h>
 #include <sys/io.h>
+#include <sys/lux/lux.h>
 
 /* keyboardInit(): initializes a PS/2 keyboard
  * params: none
@@ -43,6 +46,17 @@ void keyboardInit() {
 
     // and enable the keyboard
     ps2send(PS2_KEYBOARD, PS2_KEYBOARD_ENABLE_SCAN);
-
     luxLogf(KPRINT_LEVEL_DEBUG, "using keyboard scancode set 2\n");
+
+    // install IRQ handler
+    IRQHandler handler;
+    strcpy(handler.name, "ps2kbd");
+    strcpy(handler.driver, "lux:///ksps2");
+    handler.kernel = 0;
+    handler.high = 1;       // default for ISA bus
+    handler.level = 0;
+
+    if(irq(1, &handler) < 0) {
+        luxLogf(KPRINT_LEVEL_DEBUG, "failed to install keyboard IRQ handler: error code %d\n", errno);
+    }
 }
