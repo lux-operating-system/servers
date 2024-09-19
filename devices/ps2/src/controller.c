@@ -23,7 +23,7 @@ int readReady() {
  */
 
 int writeReady() {
-    return (inb(0x64) >> 1) & 1;
+    return (~(inb(0x64) >> 1)) & 1;
 }
 
 /* ps2send(): sends a command to the PS/2 controller
