@@ -9,6 +9,10 @@
 
 #include <stdint.h>
 
+#define PS2_CONTROLLER                  0
+#define PS2_KEYBOARD                    1
+#define PS2_MOUSE                       2
+
 /* PS/2 Controller Commands */
 #define PS2_DISABLE_MOUSE               0xA7
 #define PS2_ENABLE_MOUSE                0xA8
@@ -20,8 +24,19 @@
 #define PS2_MOUSE_COMMAND               0xD4
 #define PS2_SYSTEM_RESET                0xFE
 
+/* PS/2 Keyboard Commands */
+#define PS2_KEYBOARD_ECHO               0xEE
+#define PS2_KEYBOARD_RESET              0xFF
+
+/* PS/2 Device Responses */
+#define PS2_DEVICE_ACK                  0xFA
+#define PS2_DEVICE_RESEND               0xFE
+#define PS2_DEVICE_PASS                 0xAA
+
 int readReady();
 int writeReady();
 
 uint8_t ps2send(int, uint8_t);
 void ps2sendNoACK(int, uint8_t);
+
+void keyboardInit();

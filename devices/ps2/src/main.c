@@ -5,6 +5,21 @@
  * ps2: Driver for PS/2 (and USB emulated) keyboards and mice
  */
 
+#include <liblux/liblux.h>
+#include <sys/io.h>
+#include <ps2/ps2.h>
+
 int main() {
-    return 0;
+    luxInit("ps2");
+    while(luxConnectDependency("devfs"));
+
+    // request access to I/O ports 0x60-0x64
+    if(ioperm(0x60, 5, 1)) {
+        luxLogf(KPRINT_LEVEL_ERROR, "PS/2 driver failed to acquire I/O ports\n");
+        return -1;
+    }
+
+    keyboardInit();
+
+    while(1);
 }
