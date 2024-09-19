@@ -42,6 +42,9 @@
 
 #define MAX_SYSCALL_COMMAND     0x8006
 
+/* these commands are for device drivers */
+#define COMMAND_IRQ             0xC000
+
 #define KPRINT_LEVEL_DEBUG      0
 #define KPRINT_LEVEL_WARNING    1
 #define KPRINT_LEVEL_ERROR      2
@@ -136,6 +139,11 @@ typedef struct {
     uint8_t data[];
 } RWCommand;
 
+/* IRQ Notification */
+typedef struct {
+    MessageHeader header;
+    uint64_t pin;
+} IRQCommand;
 
 /* wrapper functions */
 pid_t luxGetSelf();
