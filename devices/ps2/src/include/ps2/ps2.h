@@ -27,6 +27,10 @@
 /* PS/2 Keyboard Commands */
 #define PS2_KEYBOARD_ECHO               0xEE
 #define PS2_KEYBOARD_RESET              0xFF
+#define PS2_KEYBOARD_SET_AUTOREPEAT     0xF3
+#define PS2_KEYBOARD_ENABLE_SCAN        0xF4
+#define PS2_KEYBOARD_DISABLE_SCAN       0xF5
+#define PS2_KEYBOARD_SET_SCANCODE       0xF0
 
 /* PS/2 Device Responses */
 #define PS2_DEVICE_ACK                  0xFA
