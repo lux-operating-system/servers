@@ -20,9 +20,11 @@ int main() {
 
     keyboardInit();
 
-    IRQCommand irqcmd;
+    // notify lumen that startup is complete
+    luxReady();
 
     for(;;) {
+        IRQCommand irqcmd;
         if(luxRecvKernel(&irqcmd, sizeof(IRQCommand), true) == sizeof(IRQCommand)) {
             if(irqcmd.pin == 1) {
                 // keyboard interrupt
