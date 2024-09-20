@@ -8,7 +8,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/socket.h>
 #include <liblux/liblux.h>
+#include <liblux/devfs.h>
 #include <vfs.h>
 #include <devfs/devfs.h>
 
@@ -48,6 +50,9 @@ int main(int argc, char **argv) {
     createDevice("/random", randomIOHandler, &chrstat);
     createDevice("/urandom", randomIOHandler, &chrstat);
 
+    // and create the socket for handling external device drivers
+    driverInit();
+
     // notify the virtual file system that we are a file system driver
     VFSInitCommand init;
     memset(&init, 0, sizeof(VFSInitCommand));
@@ -57,10 +62,9 @@ int main(int argc, char **argv) {
     strcpy(init.fsType, "devfs");
     luxSendDependency(&init);
 
-    ssize_t s;
     while(1) {
-        // idle loop where we just wait for requests from the vfs
-        s = luxRecvDependency(req, SERVER_MAX_SIZE, false);
+        // wait for requests from the vfs
+        ssize_t s = luxRecvDependency(req, SERVER_MAX_SIZE, false);
         if(s > 0 && s < SERVER_MAX_SIZE) {
             if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND && dispatchTable[req->header.command&0x7FFF]) {
                 dispatchTable[req->header.command&0x7FFF](req, res);
@@ -68,5 +72,7 @@ int main(int argc, char **argv) {
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X for pid %d\n", req->header.command, req->header.requester);
             }
         }
+
+        driverHandle();
     }
 }
