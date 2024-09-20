@@ -13,7 +13,7 @@
 
 static int *connections;
 static struct sockaddr *servers;
-static struct socklen_t *addrlens;
+static socklen_t *addrlens;
 static int count;
 
 /* driverInit(): initializes the driver subsystem
@@ -40,5 +40,12 @@ void driverInit() {
  */
 
 void driverHandle() {
-    // TODO
+    // accept incoming connections
+    addrlens[count] = sizeof(struct sockaddr);
+    int sd = luxAcceptAddr(&servers[count], &addrlens[count]);
+    if(sd > 0) {
+        connections[count] = sd;
+        luxLogf(KPRINT_LEVEL_DEBUG, "connected to driver '%s' at socket %d\n", servers[count].sa_data, sd);
+        count++;
+    }
 }
