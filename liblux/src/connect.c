@@ -342,3 +342,18 @@ ssize_t luxSend(int sd, void *msg) {
 
     return send(sd, msg, header->length, 0);
 }
+
+/* luxReady(): notifies lumen that the server has completed startup
+ * params: none
+ * returns: zero
+ */
+
+int luxReady() {
+    MessageHeader msg;
+    memset(&msg, 0, sizeof(MessageHeader));
+
+    msg.command = COMMAND_LUMEN_READY;
+    send(lumensd, &msg, sizeof(MessageHeader), 0);
+
+    return 0;
+}

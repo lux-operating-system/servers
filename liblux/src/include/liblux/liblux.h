@@ -46,6 +46,9 @@
 /* these commands are for device drivers */
 #define COMMAND_IRQ             0xC000
 
+/* this command is for drivers to notify lumen of their ready status */
+#define COMMAND_LUMEN_READY     0x4444  /* magic number kinda? */
+
 #define KPRINT_LEVEL_DEBUG      0
 #define KPRINT_LEVEL_WARNING    1
 #define KPRINT_LEVEL_ERROR      2
@@ -151,6 +154,7 @@ pid_t luxGetSelf();
 const char *luxGetName();
 int luxInit(const char *);
 int luxInitLumen();
+int luxReady();
 int luxConnectKernel();
 int luxConnectLumen();
 int luxConnectDependency(const char *);
