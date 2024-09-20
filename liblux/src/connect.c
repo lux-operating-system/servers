@@ -124,16 +124,27 @@ int luxConnectLumen() {
 int luxConnectDependency(const char *name) {
     if(depsd > 0) return 0;
 
+    // dependency address
     struct sockaddr_un addr;
     memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, "lux:///");
     strcpy(&addr.sun_path[7], name);
 
+    // self address prefixed with lux:///ds
+    struct sockaddr_un local;
+    memset(&local, 0, sizeof(struct sockaddr_un));
+    local.sun_family = AF_UNIX;
+    strcpy(local.sun_path, "lux:///ds");
+    strcpy(&local.sun_path[9], server);
+
     int sd = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
     if(sd <= 0) return -1;
 
-    int status = connect(sd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_un));
+    int status = bind(sd, (const struct sockaddr *) &local, sizeof(struct sockaddr_un));
+    if(status) return -1;
+
+    status = connect(sd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_un));
     if(status) return -1;
 
     //luxLogf(KPRINT_LEVEL_DEBUG, "connected to '%s' at socket %d\n", addr.sun_path, sd);
