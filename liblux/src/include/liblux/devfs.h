@@ -8,6 +8,7 @@
 #pragma once
 
 #include <liblux/liblux.h>
+#include <sys/stat.h>
 
 /* These commands are requested by device drivers from devfs */
 #define COMMAND_DEVFS_REGISTER          0xD000  /* register a device on /dev */
@@ -18,4 +19,5 @@ typedef struct {
     MessageHeader header;
     char path[MAX_FILE_PATH];           // path on /dev
     char server[256];                   // driver to handle the request
+    struct stat status;
 } DevfsRegisterCommand;

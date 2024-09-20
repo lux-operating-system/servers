@@ -11,7 +11,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#define MAX_DEVICES             256
+#define MAX_DEVICES             1024
+#define MAX_DRIVERS             1024
 
 #define DEVFS_CHR_PERMS         (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH | S_IFCHR)
 
@@ -29,6 +30,7 @@ extern int deviceCount;
 
 int createDevice(const char *, ssize_t (*)(int, const char *, off_t *, void *, size_t), struct stat *);
 DeviceFile *findDevice(const char *);
+void driverInit();
 
 ssize_t nullIOHandler(int, const char *, off_t *, void *, size_t);
 ssize_t zeroIOHandler(int, const char *, off_t *, void *, size_t);
