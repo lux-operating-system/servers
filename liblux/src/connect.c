@@ -282,9 +282,17 @@ int luxGetKernelSocket() {
  */
 
 int luxAccept() {
-    int sd = accept(lumensd, NULL, NULL);
-    if(sd > 0) return sd;
-    return -1;
+    return accept(lumensd, NULL, NULL);
+}
+
+/* luxAcceptAddr(): accepts a connection from a dependent server preserving the address
+ * params: addr - buffer to store the address
+ * params: len - pointer to the length of the buffer at addr on input, actual size on output
+ * returns: positive socket descriptor on success
+ */
+
+int luxAcceptAddr(struct sockaddr *addr, socklen_t *len) {
+    return accept(lumensd, addr, len);
 }
 
 /* luxRecv(): receives a message from a dependent

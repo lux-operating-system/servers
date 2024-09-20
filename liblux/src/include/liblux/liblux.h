@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 
 #define SERVER_MAX_SIZE         0x80000             // max msg size is 512 KiB
 #define MAX_FILE_PATH           2048
@@ -161,6 +162,7 @@ ssize_t luxRecvLumen(void *, size_t, bool);
 ssize_t luxSendDependency(void *);
 ssize_t luxRecvDependency(void *, size_t, bool);
 int luxAccept();
+int luxAcceptAddr(struct sockaddr *, socklen_t *);
 ssize_t luxSend(int, void *);
 ssize_t luxRecv(int, void *, size_t, bool);
 void luxLog(int, const char *);
