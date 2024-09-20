@@ -11,7 +11,6 @@
 
 int main() {
     luxInit("ps2");
-    while(luxConnectDependency("devfs"));
 
     // request access to I/O ports 0x60-0x64
     if(ioperm(0x60, 5, 1)) {
