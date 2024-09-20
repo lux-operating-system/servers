@@ -22,6 +22,8 @@ typedef struct {
     char name[MAX_FILE_PATH];
     struct stat status;
     ssize_t (*ioHandler)(int, const char *, off_t *, void *, size_t);
+    int external;       // external device driver
+    char server[256];   // server name of the external driver
 } DeviceFile;
 
 extern void (*dispatchTable[])(SyscallHeader *, SyscallHeader *);
