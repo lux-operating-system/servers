@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     luxInit("vfs");     // this will connect to lux and lumen
 
     // show signs of life
-    luxLogf(KPRINT_LEVEL_DEBUG, "virtual file system server started with pid %d\n", getpid());
+    //luxLogf(KPRINT_LEVEL_DEBUG, "virtual file system server started with pid %d\n", getpid());
 
     SyscallHeader *req = calloc(1, SERVER_MAX_SIZE);
     servers = calloc(MAX_FILE_SYSTEMS, sizeof(FileSystemServers));
@@ -30,11 +30,13 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    // notify lumen that the startup is complete
+    luxReady();
+
     ssize_t s;
-    int sd;
     while(1) {
         // accept incoming client connections
-        sd = luxAccept();
+        int sd = luxAccept();
         if(sd > 0) {
             // append to the list
             servers[serverCount].socket = sd;
