@@ -12,5 +12,7 @@ int main() {
     while(luxConnectDependency("devfs"));
 
     luxLogf(KPRINT_LEVEL_DEBUG, "sign of life\n");
+
+    luxReady();
     while(1);
 }
