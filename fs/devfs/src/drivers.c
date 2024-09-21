@@ -106,6 +106,16 @@ void driverRead(RWCommand *cmd, DeviceFile *dev) {
     luxSend(dev->socket, cmd);
 }
 
+/* driverWrite(): writes to a device file handled by an external driver
+ * params: cmd - write command message
+ * params: dev - device file structure
+ * returns: nothing
+ */
+
+void driverWrite(RWCommand *cmd, DeviceFile *dev) {
+    luxSend(dev->socket, cmd);
+}
+
 /* dispatch table */
 
 static void (*driverDispatch[])(int, MessageHeader *, MessageHeader *) = {
