@@ -12,6 +12,7 @@
 #include <stdlib.h>
 
 static FramebufferResponse fb;
+static void *buffer;
 
 int main() {
     luxInit("lfb");
@@ -28,7 +29,8 @@ int main() {
     // create a character device on /dev for the frame buffer
     DevfsRegisterCommand *regcmd = calloc(1, sizeof(DevfsRegisterCommand));
     struct stat *status = calloc(1, sizeof(struct stat));
-    if(!regcmd || !status) {
+    buffer = malloc(fb.w * fb.h * fb.bpp / 8);  // back buffer
+    if(!regcmd || !status || !buffer) {
         luxLogf(KPRINT_LEVEL_ERROR, "failed to allocate memory for frame buffer device\n");
         return -1;
     }
@@ -44,6 +46,9 @@ int main() {
     strcpy(regcmd->server, "lux:///dslfb");  // server name prefixed with "lux:///ds"
     memcpy(&regcmd->status, status, sizeof(struct stat));
     luxSendDependency(regcmd);
+
+    free(status);
+    free(regcmd);
 
     // notify lumen that startup is complete
     luxReady();
