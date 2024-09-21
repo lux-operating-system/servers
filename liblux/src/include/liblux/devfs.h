@@ -15,6 +15,9 @@
 #define COMMAND_DEVFS_UNREGISTER        0xD001  /* unregister a device */
 #define COMMAND_DEVFS_STATUS            0xD002  /* device status */
 
+#define COMMAND_MIN_DEVFS               0xD000
+#define COMMAND_MAX_DEVFS               0xD002
+
 typedef struct {
     MessageHeader header;
     char path[MAX_FILE_PATH];           // path on /dev
