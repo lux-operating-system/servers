@@ -35,6 +35,8 @@ int createDevice(const char *, ssize_t (*)(int, const char *, off_t *, void *, s
 DeviceFile *findDevice(const char *);
 void driverInit();
 void driverHandle();
+void driverRead(RWCommand *, DeviceFile *);
+void driverWrite(RWCommand *, DeviceFile *);
 
 ssize_t nullIOHandler(int, const char *, off_t *, void *, size_t);
 ssize_t zeroIOHandler(int, const char *, off_t *, void *, size_t);

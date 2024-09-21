@@ -30,15 +30,21 @@ void devfsRead(SyscallHeader *req, SyscallHeader *res) {
     } else {
         RWCommand *response = (RWCommand *) res;
 
-        ssize_t status = dev->ioHandler(0, dev->name, &response->position, response->data, cmd->length);
-        if(status > 0) {
-            res->header.length += status;
-            response->length = status;
-        } else {
-            req->header.length = 0;
-        }
+        if(!dev->external) {
+            // for devices built-in to the /dev server
+            ssize_t status = dev->ioHandler(0, dev->name, &response->position, response->data, cmd->length);
+            if(status > 0) {
+                res->header.length += status;
+                response->length = status;
+            } else {
+                req->header.length = 0;
+            }
 
-        res->header.status = status;
+            res->header.status = status;
+        } else {
+            // for external devices, relay the request again
+            driverRead(cmd, dev);
+        }
     }
 
     luxSendDependency(res);
