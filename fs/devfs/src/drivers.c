@@ -50,7 +50,7 @@ void driverHandle() {
     int sd = luxAcceptAddr(&servers[count], &addrlens[count]);
     if(sd > 0) {
         connections[count] = sd;
-        luxLogf(KPRINT_LEVEL_DEBUG, "connected to driver '%s' at socket %d\n", servers[count].sa_data, sd);
+        luxLogf(KPRINT_LEVEL_DEBUG, "connected to driver '%s' at socket %d\n", &servers[count].sa_data[9], sd);
         count++;
     }
 
@@ -87,7 +87,7 @@ void driverRegister(int sd, MessageHeader *cmd, MessageHeader *buf) {
     dev->socket = sd;
     strcpy(dev->server, regcmd->server);
 
-    luxLogf(KPRINT_LEVEL_DEBUG, "device '/dev%s' handled by server '%s' on socket %d\n", dev->name, dev->server, dev->socket);
+    luxLogf(KPRINT_LEVEL_DEBUG, "device '/dev%s' handled by server '%s' on socket %d\n", dev->name, &dev->server[9], dev->socket);
 }
 
 /* dispatch table */
