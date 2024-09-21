@@ -80,7 +80,10 @@ void driverHandle() {
 
 void driverRegister(int sd, MessageHeader *cmd, MessageHeader *buf) {
     DevfsRegisterCommand *regcmd = (DevfsRegisterCommand *) cmd;
-    if(createDevice(regcmd->path, NULL, &regcmd->status)) return;
+    if(createDevice(regcmd->path, NULL, &regcmd->status)) {
+        luxLogf(KPRINT_LEVEL_ERROR, "failed to register device '/dev%s' for server '%s\n", regcmd->path, &dev->server[9]);
+        return;
+    }
 
     DeviceFile *dev = findDevice(regcmd->path);
     dev->external = 1;
