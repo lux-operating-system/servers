@@ -21,6 +21,8 @@ void devfsOpen(SyscallHeader *req, SyscallHeader *res) {
     if(!file) {
         res->header.status = -ENOENT;   // file doesn't exist
         luxSendDependency(res);
+
+        return;
     }
 
     // make sure the requester has the appropriate permissions
