@@ -12,7 +12,7 @@
  * the driver is responsible for translating hardware scancodes into these
  */
 
-#define KBD_KEY_UP              0x8000
+#define KBD_KEY_RELEASE         0x8000  /* this bit will be set on keyup */
 
 /* Base keys, taken from PS/2 scan code set 1 */
 #define KBD_KEY_ESC             0x0001
