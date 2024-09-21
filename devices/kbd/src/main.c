@@ -72,6 +72,11 @@ int main() {
         for(int i = 0; i < kbdCount; i++) {
             ssize_t s = luxRecv(connections[i], msgBuffer, SERVER_MAX_SIZE, false);
             if(s > 0 && s < SERVER_MAX_SIZE) {
+                // add the key press to the buffer
+                if(bufferSize < KEYBOARD_BUFFER) {
+                    buffer[bufferSize] = msgBuffer->status;
+                    bufferSize++;
+                }
             }
         }
 
@@ -110,7 +115,7 @@ int main() {
 
                     // clear the keyboard buffer
                     memmove(buffer, (void *)((uintptr_t)buffer + trueSize), KEYBOARD_BUFFER-trueSize);
-                    bufferSize -= trueSize;
+                    bufferSize -= (trueSize/2);
                 }
 
                 // and finally respond to the request
