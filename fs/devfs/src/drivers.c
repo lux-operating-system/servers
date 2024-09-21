@@ -58,9 +58,23 @@ void driverHandle() {
 
     // and receive requests from dependent servers
     for(int i = 0; i < count; i++) {
-        ssize_t s = luxRecv(connections[i], in, SERVER_MAX_SIZE, false);
+        ssize_t s = luxRecv(connections[i], in, SERVER_MAX_SIZE, false, true);
         if((s > 0) & (s <= SERVER_MAX_SIZE)) {
             MessageHeader *hdr = (MessageHeader *) in;
+
+            if(hdr->length > SERVER_MAX_SIZE) {
+                void *newptr = realloc(in, hdr->length);
+                if(!newptr) {
+                    luxLogf(KPRINT_LEVEL_ERROR, "failed to allocate memory for message handling\n");
+                    exit(-1);
+                }
+
+                hdr = newptr;
+                in = newptr;
+            }
+
+            luxRecv(connections[i], in, hdr->length, false, false);
+
             if(hdr->command == COMMAND_READ) {
                 // driver is responding to a read request; simply relay it to the vfs
                 luxSendDependency(hdr);

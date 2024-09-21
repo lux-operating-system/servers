@@ -67,8 +67,20 @@ int main(int argc, char **argv) {
 
     while(1) {
         // wait for requests from the vfs
-        ssize_t s = luxRecvDependency(req, SERVER_MAX_SIZE, false);
+        ssize_t s = luxRecvDependency(req, SERVER_MAX_SIZE, false, true);
         if(s > 0 && s < SERVER_MAX_SIZE) {
+            if(req->header.length > SERVER_MAX_SIZE) {
+                void *newptr = realloc(req, req->header.length);
+                if(!newptr) {
+                    luxLogf(KPRINT_LEVEL_ERROR, "failed to allocate memory for message handling\n");
+                    exit(-1);
+                }
+
+                req = newptr;
+            }
+
+            luxRecvDependency(req, req->header.length, false, false);
+
             if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND && dispatchTable[req->header.command&0x7FFF]) {
                 dispatchTable[req->header.command&0x7FFF](req, res);
             } else {
