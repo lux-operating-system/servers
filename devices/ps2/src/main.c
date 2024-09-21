@@ -35,7 +35,7 @@ int main() {
 
     for(;;) {
         IRQCommand irqcmd;
-        if(luxRecvKernel(&irqcmd, sizeof(IRQCommand), true) == sizeof(IRQCommand)) {
+        if(luxRecvKernel(&irqcmd, sizeof(IRQCommand), true, false) == sizeof(IRQCommand)) {
             if(irqcmd.pin == 1) {
                 // keyboard interrupt handler
                 uint16_t key = 0;
