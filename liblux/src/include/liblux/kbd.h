@@ -128,3 +128,6 @@
 #define KBD_ACPI_SLEEP          0x0117
 #define KBD_ACPI_WAKE           0x0118
 #define KBD_SCREENSHOT          0x0119
+#define KBD_KEY_END             0x011A
+#define KBD_KEY_LEFT_GUI        0x011B
+#define KBD_KEY_RIGHT_GUI       0x011C
