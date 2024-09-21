@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     while(1) {
         // wait for requests from the vfs
         ssize_t s = luxRecvDependency(req, SERVER_MAX_SIZE, false, true);
-        if(s > 0 && s < SERVER_MAX_SIZE) {
+        if(s > 0 && s <= SERVER_MAX_SIZE) {
             if(req->header.length > SERVER_MAX_SIZE) {
                 void *newptr = realloc(req, req->header.length);
                 if(!newptr) {
