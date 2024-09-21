@@ -64,7 +64,7 @@ int luxRequestFramebuffer(FramebufferResponse *response) {
 
     if(luxSendKernel(&request) != request.length) return -1;
 
-    return !(luxRecvKernel(response, sizeof(FramebufferResponse), true) == sizeof(FramebufferResponse));
+    return !(luxRecvKernel(response, sizeof(FramebufferResponse), true, false) == sizeof(FramebufferResponse));
 }
 
 /* luxRequestRNG(): requests a random number
@@ -81,7 +81,7 @@ int luxRequestRNG(uint64_t *ptr) {
 
     if(luxSendKernel(&cmd) != sizeof(RandCommand)) return -1;
 
-    int status = !(luxRecvKernel(&cmd, sizeof(RandCommand), true) == sizeof(RandCommand));
+    int status = !(luxRecvKernel(&cmd, sizeof(RandCommand), true, false) == sizeof(RandCommand));
     if(!status) *ptr = cmd.number;
 
     return status;

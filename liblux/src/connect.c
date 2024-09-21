@@ -171,15 +171,16 @@ ssize_t luxSendKernel(void *msg) {
  * params: buffer - buffer to store message in
  * params: len - maximum length of buffer
  * params: block - whether to block the thread
+ * params: peek - whether to peek
  * returns: number of bytes read, zero or negative on fail
  */
 
-ssize_t luxRecvKernel(void *buffer, size_t len, bool block) {
+ssize_t luxRecvKernel(void *buffer, size_t len, bool block, bool peek) {
     if(!len || !buffer) return 0;
 
     ssize_t size;
     do {
-        size = recv(kernelsd, buffer, len, 0);
+        size = recv(kernelsd, buffer, len, peek ? MSG_PEEK : 0);
         if(size > 0 && size <= len) {
             return size;
         } else if(size == -1) {
@@ -194,15 +195,16 @@ ssize_t luxRecvKernel(void *buffer, size_t len, bool block) {
  * params: buffer - buffer to store message in
  * params: len - maximum length of buffer
  * params: block - whether to block the thread
+ * params: peek - whether to peek
  * returns: number of bytes read, zero or negative on fail
  */
 
-ssize_t luxRecvLumen(void *buffer, size_t len, bool block) {
+ssize_t luxRecvLumen(void *buffer, size_t len, bool block, bool peek) {
     if(!len || !buffer) return 0;
 
     ssize_t size;
     do {
-        size = recv(lumensd, buffer, len, 0);
+        size = recv(lumensd, buffer, len, peek ? MSG_PEEK : 0);
         if(size > 0 && size <= len) {
             return size;
         } else if(size == -1) {
@@ -229,15 +231,16 @@ ssize_t luxSendLumen(void *msg) {
  * params: buffer - buffer to store message in
  * params: len - maximum length of buffer
  * params: block - whether to block the thread
+ * params: peek - whether to peek
  * returns: number of bytes read, zero or negative on fail
  */
 
-ssize_t luxRecvDependency(void *buffer, size_t len, bool block) {
+ssize_t luxRecvDependency(void *buffer, size_t len, bool block, bool peek) {
     if(!len || !buffer) return 0;
 
     ssize_t size;
     do {
-        size = recv(depsd, buffer, len, 0);
+        size = recv(depsd, buffer, len, peek ? MSG_PEEK : 0);
         if(size > 0 && size <= len) {
             return size;
         } else if(size == -1) {
@@ -311,15 +314,16 @@ int luxAcceptAddr(struct sockaddr *addr, socklen_t *len) {
  * params: buffer - buffer to store message in
  * params: len - maximum length of buffer
  * params: block - whether to block the thread
+ * params: peek - whether to peek
  * returns: number of bytes read, zero or negative on fail
  */
 
-ssize_t luxRecv(int sd, void *buffer, size_t len, bool block) {
+ssize_t luxRecv(int sd, void *buffer, size_t len, bool block, bool peek) {
     if(!len || !buffer) return 0;
 
     ssize_t size;
     do {
-        size = recv(sd, buffer, len, 0);
+        size = recv(sd, buffer, len, peek ? MSG_PEEK : 0);
         if(size > 0 && size <= len) {
             return size;
         } else if(size == -1) {
