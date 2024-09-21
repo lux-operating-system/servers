@@ -70,7 +70,7 @@ int main() {
 
         // receive key presses
         for(int i = 0; i < kbdCount; i++) {
-            ssize_t s = luxRecv(connections[i], msgBuffer, SERVER_MAX_SIZE, false);
+            ssize_t s = luxRecv(connections[i], msgBuffer, SERVER_MAX_SIZE, false, false);
             if(s > 0 && s < SERVER_MAX_SIZE) {
                 // add the key press to the buffer
                 if(bufferSize < KEYBOARD_BUFFER) {
@@ -81,7 +81,7 @@ int main() {
         }
 
         // and receive read requests
-        ssize_t s = luxRecvDependency(msgBuffer, SERVER_MAX_SIZE, false);
+        ssize_t s = luxRecvDependency(msgBuffer, SERVER_MAX_SIZE, false, false);
         if(s > 0 && s < SERVER_MAX_SIZE) {
             RWCommand *rwcmd = (RWCommand *) msgBuffer;
             size_t rwSize, trueSize;
