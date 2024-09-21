@@ -61,7 +61,10 @@ void driverHandle() {
         ssize_t s = luxRecv(connections[i], in, SERVER_MAX_SIZE, false);
         if((s > 0) & (s <= SERVER_MAX_SIZE)) {
             MessageHeader *hdr = (MessageHeader *) in;
-            if((hdr->command >= COMMAND_MIN_DEVFS) && (hdr->command <= COMMAND_MAX_DEVFS) && driverDispatch[hdr->command & (~COMMAND_MIN_DEVFS)]) {
+            if(hdr->command == COMMAND_READ) {
+                // driver is responding to a read request; simply relay it to the vfs
+                luxSendDependency(hdr);
+            } else if((hdr->command >= COMMAND_MIN_DEVFS) && (hdr->command <= COMMAND_MAX_DEVFS) && driverDispatch[hdr->command & (~COMMAND_MIN_DEVFS)]) {
                 driverDispatch[hdr->command & (~COMMAND_MIN_DEVFS)](connections[i], (MessageHeader *) in, (MessageHeader *)out);
             } else {
                 luxLogf(KPRINT_LEVEL_WARNING, "undefined request from driver '%s': 0x%04X, dropping message...\n",
