@@ -62,7 +62,7 @@ void driverHandle() {
         if((s > 0) & (s <= SERVER_MAX_SIZE)) {
             MessageHeader *hdr = (MessageHeader *) in;
             if((hdr->command >= COMMAND_MIN_DEVFS) && (hdr->command <= COMMAND_MAX_DEVFS) && driverDispatch[hdr->command & (~COMMAND_MIN_DEVFS)]) {
-                driverDispatch[hdr->command & (~COMMAND_MIN_DEVFS)](sd, (MessageHeader *) in, (MessageHeader *)out);
+                driverDispatch[hdr->command & (~COMMAND_MIN_DEVFS)](connections[i], (MessageHeader *) in, (MessageHeader *)out);
             } else {
                 luxLogf(KPRINT_LEVEL_WARNING, "undefined request from driver '%s': 0x%04X, dropping message...\n",
                 &servers[i].sa_data[9], hdr->command);
