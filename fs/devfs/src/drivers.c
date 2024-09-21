@@ -59,7 +59,7 @@ void driverHandle() {
     // and receive requests from dependent servers
     for(int i = 0; i < count; i++) {
         ssize_t s = luxRecv(connections[i], in, SERVER_MAX_SIZE, false, true);
-        if((s > 0) & (s <= SERVER_MAX_SIZE)) {
+        if((s > 0) && (s <= SERVER_MAX_SIZE)) {
             MessageHeader *hdr = (MessageHeader *) in;
 
             if(hdr->length > SERVER_MAX_SIZE) {
