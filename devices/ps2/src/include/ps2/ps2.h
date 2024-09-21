@@ -32,6 +32,8 @@
 #define PS2_KEYBOARD_DISABLE_SCAN       0xF5
 #define PS2_KEYBOARD_SET_SCANCODE       0xF0
 
+#define PS2_KEYBOARD_SCANCODE           2       /* use scan code set 2 */
+
 /* PS/2 Device Responses */
 #define PS2_DEVICE_ACK                  0xFA
 #define PS2_DEVICE_RESEND               0xFE

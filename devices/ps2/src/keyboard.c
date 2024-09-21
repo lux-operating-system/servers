@@ -42,11 +42,11 @@ void keyboardInit() {
 
     // set scancode set
     ps2send(PS2_KEYBOARD, PS2_KEYBOARD_SET_SCANCODE);
-    ps2send(PS2_KEYBOARD, 2);       // scancode set 2
+    ps2send(PS2_KEYBOARD, PS2_KEYBOARD_SCANCODE);
 
     // and enable the keyboard
     ps2send(PS2_KEYBOARD, PS2_KEYBOARD_ENABLE_SCAN);
-    luxLogf(KPRINT_LEVEL_DEBUG, "using keyboard scancode set 2\n");
+    luxLogf(KPRINT_LEVEL_DEBUG, "using keyboard scan code set %d\n", PS2_KEYBOARD_SCANCODE);
 
     // install IRQ handler
     IRQHandler handler;
