@@ -10,9 +10,32 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 static FramebufferResponse fb;
 static void *buffer;
+static size_t pitch, size;
+
+/* scanline(): returns the scan line containing a given offset
+ * params: offset - offset into the frame buffer file
+ * returns: scan line, -1 if out of bounds */
+
+off_t scanline(off_t offset) {
+    if(offset < 0 || offset > size) return -1;
+
+    return offset / pitch;
+}
+
+/* copyLine(): copies a line from the back buffer to the frame buffer
+ * params: line - line number
+ * returns: nothing
+ */
+
+void copyLine(off_t line) {
+    const void *src = (void *)((uintptr_t)buffer + (line * pitch));
+    void *dst = (void *)((uintptr_t)fb.buffer + (line * fb.pitch));
+    memcpy(dst, src, pitch);
+}
 
 int main() {
     luxInit("lfb");
@@ -26,18 +49,23 @@ int main() {
 
     luxLogf(KPRINT_LEVEL_DEBUG, "screen resolution is %dx%d (%d bpp)\n", fb.w, fb.h, fb.bpp);
 
+    pitch = fb.w * fb.bpp / 8;  // abstract whatever pitch the hardware is using
+    size = pitch * fb.h;
+
     // create a character device on /dev for the frame buffer
     DevfsRegisterCommand *regcmd = calloc(1, sizeof(DevfsRegisterCommand));
     struct stat *status = calloc(1, sizeof(struct stat));
-    buffer = malloc(fb.w * fb.h * fb.bpp / 8);  // back buffer
-    if(!regcmd || !status || !buffer) {
+    buffer = malloc(size);      // back buffer
+    RWCommand *cmd = calloc(1, size + sizeof(RWCommand));
+
+    if(!regcmd || !status || !buffer || !cmd) {
         luxLogf(KPRINT_LEVEL_ERROR, "failed to allocate memory for frame buffer device\n");
         return -1;
     }
 
     // character device with permissions rw-rw-r--
     status->st_mode = (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IFCHR);
-    status->st_size = fb.w * fb.h * fb.bpp / 8;
+    status->st_size = size;
 
     // register the device
     regcmd->header.command = COMMAND_DEVFS_REGISTER;
@@ -52,5 +80,34 @@ int main() {
 
     // notify lumen that startup is complete
     luxReady();
-    for(;;);
+
+    for(;;) {
+        // receive r/w requests from the devfs server
+        ssize_t s = luxRecvDependency(cmd, size+sizeof(RWCommand), false, false);
+        if(s > 0) {
+            if(cmd->header.header.command == COMMAND_WRITE) {
+                // writing to the frame buffer
+                cmd->header.header.length = sizeof(RWCommand);
+                cmd->header.header.response = 1;
+
+                off_t line = scanline(cmd->position);
+                off_t lineCount = (cmd->length + pitch - 1) / pitch;
+                if(cmd->position % pitch) lineCount++;
+
+                if(line < 0) {
+                    cmd->header.header.status = -EIO;
+                } else {
+                    void *ptr = (void *)((uintptr_t)buffer + cmd->position);
+                    memcpy(ptr, cmd->data, cmd->length);
+                    
+                    for(off_t i = 0; i < lineCount; i++) copyLine(line+i);
+
+                    cmd->header.header.status = cmd->length;
+                    cmd->position += cmd->length;
+                }
+
+                luxSendDependency(cmd);
+            }
+        }
+    }
 }
