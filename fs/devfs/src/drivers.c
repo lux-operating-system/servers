@@ -93,6 +93,16 @@ void driverRegister(int sd, MessageHeader *cmd, MessageHeader *buf) {
     luxLogf(KPRINT_LEVEL_DEBUG, "device '/dev%s' handled by server '%s' on socket %d\n", dev->name, &dev->server[9], dev->socket);
 }
 
+/* driverRead(): reads from a device file handled by an external driver
+ * params: cmd - read command message
+ * params: dev - device file structure
+ * returns: nothing
+ */
+
+void driverRead(RWCommand *cmd, DeviceFile *dev) {
+    luxSend(dev->socket, cmd);
+}
+
 /* dispatch table */
 
 static void (*driverDispatch[])(int, MessageHeader *, MessageHeader *) = {
