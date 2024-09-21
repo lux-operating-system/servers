@@ -45,8 +45,20 @@ int main(int argc, char **argv) {
 
         // and handle messages from dependent servers
         for(int i = 0; serverCount && i < serverCount; i++) {
-            s = luxRecv(servers[i].socket, req, SERVER_MAX_SIZE, false);
+            s = luxRecv(servers[i].socket, req, SERVER_MAX_SIZE, false, true);
             if(s > 0 && s <= SERVER_MAX_SIZE) {
+                if(req->header.length > SERVER_MAX_SIZE) {
+                    void *newptr = realloc(req, req->header.length);
+                    if(!newptr) {
+                        luxLogf(KPRINT_LEVEL_ERROR, "failed to allocate memory for message handling\n");
+                        exit(-1);
+                    }
+
+                    req = newptr;
+                }
+
+                luxRecv(servers[i].socket, req, req->header.length, false, false);
+
                 if(req->header.command == COMMAND_VFS_INIT) {   // special command
                     VFSInitCommand *init = (VFSInitCommand *)req;
                     strcpy(servers[i].type, init->fsType);
@@ -61,8 +73,20 @@ int main(int argc, char **argv) {
         }
 
         // and wait for incoming syscall requests
-        s = luxRecvLumen(req, SERVER_MAX_SIZE, false);
+        s = luxRecvLumen(req, SERVER_MAX_SIZE, false, true);
         if(s > 0 && s <= SERVER_MAX_SIZE) {
+            if(req->header.length > SERVER_MAX_SIZE) {
+                void *newptr = realloc(req, req->header.length);
+                if(!newptr) {
+                    luxLogf(KPRINT_LEVEL_ERROR, "failed to allocate memory for message handling\n");
+                    exit(-1);
+                }
+
+                req = newptr;
+            }
+
+            luxRecvLumen(req, req->header.length, false, false);
+
             // dispatch syscall request from the kernel
             if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND && vfsDispatchTable[req->header.command&0x7FFF]) {
                 vfsDispatchTable[req->header.command&0x7FFF](req);
