@@ -23,6 +23,7 @@ typedef struct {
     struct stat status;
     ssize_t (*ioHandler)(int, const char *, off_t *, void *, size_t);
     int external;       // external device driver
+    int socket;         // socket descriptor for external driver
     char server[256];   // server name of the external driver
 } DeviceFile;
 
