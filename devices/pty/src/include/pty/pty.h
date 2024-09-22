@@ -9,9 +9,13 @@
 
 #include <liblux/liblux.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 
 #define MAX_PTYS                4096
 #define PTY_BUFFER_INCREMENTS   4096
+
+/* ioctl commands, more to come for controlling terminal size/scroll/etc */
+#define PTY_GET_SLAVE           (0x10 | IOCTL_OUT_PARAM)
 
 typedef struct {
     // master read() will read from slave, write() will write to master
@@ -27,3 +31,6 @@ extern int ptyCount;
 void ptyOpen(OpenCommand *);
 void ptyOpenMaster(OpenCommand *);
 void ptyOpenSlave(OpenCommand *);
+void ptyIoctl(IOCTLCommand *);
+void ptyIoctlMaster(IOCTLCommand *);
+void ptyIoctlSlave(IOCTLCommand *);

@@ -98,6 +98,7 @@ int main() {
 
             switch(msg->header.command) {
             case COMMAND_OPEN: ptyOpen((OpenCommand *) msg); break;
+            case COMMAND_IOCTL: ptyIoctl((IOCTLCommand *) msg); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", msg->header.command);
             }
