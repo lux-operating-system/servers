@@ -106,6 +106,7 @@ void driverRegister(int sd, MessageHeader *cmd, MessageHeader *buf) {
     dev->external = 1;
     dev->socket = sd;
     strcpy(dev->server, regcmd->server);
+    dev->handleOpen = regcmd->handleOpen;
 
     luxLogf(KPRINT_LEVEL_DEBUG, "device '/dev%s' handled by server '%s' on socket %d\n", dev->name, &dev->server[9], dev->socket);
 }
