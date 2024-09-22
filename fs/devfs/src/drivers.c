@@ -112,6 +112,21 @@ void driverRegister(int sd, MessageHeader *cmd, MessageHeader *buf) {
     luxLogf(KPRINT_LEVEL_DEBUG, "device '/dev%s' handled by server '%s' on socket %d\n", dev->name, &dev->server[9], dev->socket);
 }
 
+/* driverChstat(): change the status of a device managaed by an external driver
+ * params: sd - inbound socket descriptor
+ * params: cmd - inbound command
+ * params: buf - outbound response buffer
+ */
+
+void driverChstat(int sd, MessageHeader *cmd, MessageHeader *buf) {
+    DevfsChstatCommand *chstatcmd = (DevfsChstatCommand *) cmd;
+
+    DeviceFile *dev = findDevice(chstatcmd->path);
+    if(!dev || !dev->external) return;
+
+    memcpy(&dev->status, &chstatcmd->status, sizeof(struct stat));
+}
+
 /* driverRead(): reads from a device file handled by an external driver
  * params: cmd - read command message
  * params: dev - device file structure
@@ -138,4 +153,5 @@ static void (*driverDispatch[])(int, MessageHeader *, MessageHeader *) = {
     driverRegister,         // 0 - register a /dev device
     NULL,                   // 1 - unregister a /dev device
     NULL,                   // 2 - status
+    driverChstat,           // 3 - change status of /dev device
 };
