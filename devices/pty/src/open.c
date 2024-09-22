@@ -64,6 +64,8 @@ void ptyOpenMaster(OpenCommand *opencmd) {
     ptys[slaveID].slave = NULL;
     ptys[slaveID].masterSize = 0;
     ptys[slaveID].slaveSize = 0;
+    ptys[slaveID].masterDataSize = 0;
+    ptys[slaveID].slaveDataData = 0;
     ptys[slaveID].locked = 1;
 
     ptyCount++;
