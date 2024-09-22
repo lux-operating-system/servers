@@ -32,6 +32,45 @@
  * https://man7.org/linux/man-pages/man3/unlockpt.3.html
  */
 
+#include <liblux/liblux.h>
+#include <liblux/devfs.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <string.h>
+
 int main() {
-    return 0;
+    luxInit("pty");
+    while(luxConnectDependency("devfs"));   // depend on /dev
+
+    // create the master multiplexer device, /dev/ptmx
+    struct stat *status = calloc(1, sizeof(struct stat));
+    DevfsRegisterCommand *regcmd = calloc(1, sizeof(DevfsRegisterCommand));
+
+    if(!status || !regcmd) {
+        luxLogf(KPRINT_LEVEL_ERROR, "failed to allocate memory for pty server\n");
+        return -1;
+    }
+
+    // character special file owned by root:root and rw-rw-rw
+    // this is following the linux implementation
+    status->st_mode = (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH | S_IFCHR);
+    status->st_uid = 0;
+    status->st_gid = 0;
+    status->st_size = 4096;
+
+    // construct the devfs register command
+    regcmd->header.command = COMMAND_DEVFS_REGISTER;
+    regcmd->header.length = sizeof(DevfsRegisterCommand);
+    regcmd->handleOpen = 1;         // we need to handle open() here and override the vfs
+    strcpy(regcmd->path, "/ptmx");
+    strcpy(regcmd->server, "lux:///dspty");  // server name prefixed with "lux:///ds"
+    memcpy(&regcmd->status, status, sizeof(struct stat));
+    luxSendDependency(regcmd);
+
+    free(status);
+    free(regcmd);
+
+    // notify lumen that this server is ready
+    luxReady();
+    for(;;);
 }
