@@ -75,7 +75,8 @@ void driverHandle() {
 
             luxRecv(connections[i], in, hdr->length, false, false);
 
-            if(hdr->command == COMMAND_READ || hdr->command == COMMAND_WRITE || hdr->command == COMMAND_OPEN) {
+            if(hdr->command == COMMAND_READ || hdr->command == COMMAND_WRITE ||
+                hdr->command == COMMAND_OPEN || hdr->command == COMMAND_IOCTL) {
                 // driver is responding to an open/read/write request; simply relay it to the vfs
                 luxSendDependency(hdr);
             } else if((hdr->command >= COMMAND_MIN_DEVFS) && (hdr->command <= COMMAND_MAX_DEVFS) && driverDispatch[hdr->command & (~COMMAND_MIN_DEVFS)]) {

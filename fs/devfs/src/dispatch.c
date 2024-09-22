@@ -14,6 +14,7 @@ void devfsMount(SyscallHeader *, SyscallHeader *);
 void devfsOpen(SyscallHeader *, SyscallHeader *);
 void devfsRead(SyscallHeader *, SyscallHeader *);
 void devfsWrite(SyscallHeader *, SyscallHeader *);
+void devfsIoctl(SyscallHeader *, SyscallHeader *);
 
 void (*dispatchTable[])(SyscallHeader *, SyscallHeader *) = {
     devfsStat,          // 0 - stat()
@@ -23,4 +24,5 @@ void (*dispatchTable[])(SyscallHeader *, SyscallHeader *) = {
     devfsOpen,          // 4 - open()
     devfsRead,          // 5 - read()
     devfsWrite,         // 6 - write()
+    devfsIoctl,         // 7 - ioctl()
 };
