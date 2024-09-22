@@ -63,6 +63,14 @@ void ptyIoctlMaster(IOCTLCommand *cmd) {
 
         cmd->header.header.status = 0;
         break;
+    
+    case PTY_UNLOCK_PT:
+        // unlocks the slave pty such that it can be opened
+        // i'm actually not sure what this does, but for now we will enforce
+        // not allowing slave ptys to be opened without being unlocked
+        ptys[cmd->id].locked = 0;
+        cmd->header.header.status = 0;
+        break;
 
     default:
         if((cmd->opcode & IOCTL_IN_PARAM) || (cmd->opcode & IOCTL_OUT_PARAM))
