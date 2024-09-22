@@ -128,6 +128,7 @@ typedef struct {
     mode_t mode;
     uid_t uid;
     gid_t gid;
+    uint64_t id;    // unique ID
 } OpenCommand;
 
 /* read() and write() */
@@ -135,6 +136,7 @@ typedef struct {
     SyscallHeader header;
     char path[MAX_FILE_PATH];
     char device[MAX_FILE_PATH];
+    uint64_t id;
     int flags;
     uid_t uid;
     gid_t gid;
@@ -148,6 +150,19 @@ typedef struct {
     MessageHeader header;
     uint64_t pin;
 } IRQCommand;
+
+/* ioctl() */
+typedef struct {
+    SyscallHeader header;
+    char path[MAX_FILE_PATH];
+    char device[MAX_FILE_PATH];
+    uint64_t id;
+    int flags;
+    uid_t uid;
+    gid_t gid;
+    unsigned long opcode;
+    unsigned long parameter;
+} IOCTLCommand;
 
 /* wrapper functions */
 pid_t luxGetSelf();
