@@ -128,6 +128,8 @@ int main() {
                 }
 
                 luxSendDependency(cmd);
+            } else {
+                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", cmd->header.header.command);
             }
         }
     }
