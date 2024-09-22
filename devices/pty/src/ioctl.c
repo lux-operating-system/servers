@@ -43,6 +43,26 @@ void ptyIoctlMaster(IOCTLCommand *cmd) {
         cmd->parameter = cmd->id;
         cmd->header.header.status = 0;
         break;
+    
+    case PTY_GRANT_PT:
+        // grantpt() changes the owner of the slave to match the UID of the
+        // calling process, and changes its permissions to rw--w----
+        // request this change from the devfs driver
+        DevfsChstatCommand chstat;
+        memset(&chstat, 0, sizeof(DevfsChstatCommand));
+
+        chstat.header.command = COMMAND_DEVFS_CHSTAT;
+        chstat.header.length = sizeof(DevfsChstatCommand);
+        strcpy(chstat.path, cmd->path);
+        chstat.status.st_mode = (S_IRUSR | S_IWUSR | S_IWGRP | S_IFCHR);
+        chstat.status.st_size = 4096;
+        chstat.status.st_uid = cmd->header.header.requester;
+        chstat.status.st_gid = 0;   // TODO: the group of the slave pty should not be root
+
+        luxSendDependency(&chstat);
+
+        cmd->header.header.status = 0;
+        break;
 
     default:
         if((cmd->opcode & IOCTL_IN_PARAM) || (cmd->opcode & IOCTL_OUT_PARAM))

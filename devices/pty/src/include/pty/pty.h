@@ -16,13 +16,16 @@
 
 /* ioctl commands, more to come for controlling terminal size/scroll/etc */
 #define PTY_GET_SLAVE           (0x10 | IOCTL_OUT_PARAM)
+#define PTY_GRANT_PT            0x20
+#define PTY_UNLOCK_PT           0x30
 
 typedef struct {
     // master read() will read from slave, write() will write to master
     // slave read() will read from master, write() will write to slave
-    int valid, index, openCount;
+    int valid, index, openCount, locked;
     void *master, *slave;
-    size_t masterSize, slaveSize;
+    size_t masterSize, slaveSize;           // buffer size
+    size_t masterDataSize, slaveDataData;   // available data size
 } Pty;
 
 extern Pty *ptys;
