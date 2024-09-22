@@ -23,4 +23,5 @@ typedef struct {
     char path[MAX_FILE_PATH];           // path on /dev
     char server[256];                   // driver to handle the request
     struct stat status;
+    int handleOpen;     // set to 1 if the driver will handle open()/close()
 } DevfsRegisterCommand;
