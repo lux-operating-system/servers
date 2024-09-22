@@ -95,7 +95,7 @@ int main() {
                 if(cmd->position % pitch) lineCount++;
 
                 if(line < 0) {
-                    cmd->header.header.status = -EIO;
+                    cmd->header.header.status = -EOVERFLOW;
                 } else {
                     void *ptr = (void *)((uintptr_t)buffer + cmd->position);
                     memcpy(ptr, cmd->data, cmd->length);
@@ -104,6 +104,27 @@ int main() {
 
                     cmd->header.header.status = cmd->length;
                     cmd->position += cmd->length;
+                }
+
+                luxSendDependency(cmd);
+            } else if(cmd->header.header.command == COMMAND_READ) {
+                // reading from the frame buffer
+                // we use a back buffer to avoid slow reading from video RAM
+                cmd->header.header.response = 1;
+                cmd->header.header.length = sizeof(RWCommand);
+                cmd->length = 0;
+
+                if(cmd->position >= size) cmd->header.header.status = -EOVERFLOW;
+                else {
+                    off_t truelen;
+                    if((cmd->position+cmd->length) > size) truelen = size - cmd->position;
+                    else truelen = cmd->length;
+
+                    cmd->header.header.length += truelen;
+                    cmd->length += truelen;
+
+                    memcpy(cmd->data, (void *)((uintptr_t)buffer+cmd->position), truelen);
+                    cmd->position += truelen;
                 }
 
                 luxSendDependency(cmd);
