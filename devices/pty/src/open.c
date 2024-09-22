@@ -65,6 +65,8 @@ void ptyOpenMaster(OpenCommand *opencmd) {
     ptys[slaveID].masterSize = 0;
     ptys[slaveID].slaveSize = 0;
 
+    ptyCount++;
+
     // create the slave under /dev
     // the default mode of the slave is that of the master; it is owned by
     // root:root with permissions rw-rw-rw-
