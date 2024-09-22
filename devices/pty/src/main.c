@@ -8,11 +8,11 @@
 /* Note to self:
  *
  * The master pseudo-terminal multiplexer is located at /dev/ptmx, and slave
- * pseudo-terminals are at /dev/ptyX. Master pseudo-terminals do not have a
+ * pseudo-terminals are at /dev/ptsX. Master pseudo-terminals do not have a
  * file system representation, and they are only accessed through their file
  * descriptors. Every time an open() syscall opens /dev/ptmx, a new master-
  * slave pseudo-terminal pair is created, the file descriptor of the master is
- * returned, and the slave is created in /dev/ptyX. The master can find the
+ * returned, and the slave is created in /dev/ptsX. The master can find the
  * name of the slave using ptsname(), and the slave is deleted from the file
  * system after no more processes have an open file descriptor pointing to it.
  * 
@@ -37,6 +37,10 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pty/pty.h>
+
+Pty *ptys;
+int ptyCount;
 
 int main() {
     luxInit("pty");
@@ -46,8 +50,10 @@ int main() {
     struct stat *status = calloc(1, sizeof(struct stat));
     DevfsRegisterCommand *regcmd = calloc(1, sizeof(DevfsRegisterCommand));
     SyscallHeader *msg = calloc(1, SERVER_MAX_SIZE);
+    ptys = calloc(MAX_PTYS, sizeof(Pty));
+    ptyCount = 0;
 
-    if(!status || !regcmd || !msg) {
+    if(!status || !regcmd || !msg || !ptys) {
         luxLogf(KPRINT_LEVEL_ERROR, "failed to allocate memory for pty server\n");
         return -1;
     }
@@ -73,5 +79,28 @@ int main() {
 
     // notify lumen that this server is ready
     luxReady();
-    for(;;);
+
+    for(;;) {
+        ssize_t s = luxRecvDependency(msg, SERVER_MAX_SIZE, false, true);   // peek first
+        if(s > 0 && s <= SERVER_MAX_SIZE) {
+            if(msg->header.length > SERVER_MAX_SIZE) {
+                void *newptr = realloc(msg, msg->header.length);
+                if(!newptr) {
+                    luxLogf(KPRINT_LEVEL_ERROR, "unable to allocate memory for message handling\n");
+                    return -1;
+                }
+
+                msg = newptr;
+            }
+
+            // receive the actual message
+            luxRecvDependency(msg, msg->header.length, false, false);
+
+            switch(msg->header.command) {
+            case COMMAND_OPEN: ptyOpen((OpenCommand *) msg); break;
+            default:
+                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", msg->header.command);
+            }
+        }
+    }
 }
