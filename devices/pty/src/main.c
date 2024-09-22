@@ -45,8 +45,9 @@ int main() {
     // create the master multiplexer device, /dev/ptmx
     struct stat *status = calloc(1, sizeof(struct stat));
     DevfsRegisterCommand *regcmd = calloc(1, sizeof(DevfsRegisterCommand));
+    SyscallHeader *msg = calloc(1, SERVER_MAX_SIZE);
 
-    if(!status || !regcmd) {
+    if(!status || !regcmd || !msg) {
         luxLogf(KPRINT_LEVEL_ERROR, "failed to allocate memory for pty server\n");
         return -1;
     }
