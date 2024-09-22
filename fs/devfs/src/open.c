@@ -42,5 +42,12 @@ void devfsOpen(SyscallHeader *req, SyscallHeader *res) {
         if(((cmd->flags & O_WRONLY) && !(file->status.st_mode & S_IWOTH))) res->header.status = -EACCES;
     }
 
-    luxSendDependency(res);
+    // some drivers will require special operations when a file is opened
+    if(file->external && file->handleOpen) {
+        // relay to the driver to allow device-specific operations
+        luxSend(file->socket, cmd);
+    } else {
+        // respond if the open() call is not overridden
+        luxSendDependency(res);
+    }
 }
