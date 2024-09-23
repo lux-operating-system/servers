@@ -49,7 +49,7 @@ int luxInitLumen() {
  */
 
 int luxConnectKernel() {
-    if(kernelsd > 0) return 0;
+    if(kernelsd >= 0) return 0;
 
     // kernel address
     struct sockaddr_un addr;
@@ -65,7 +65,7 @@ int luxConnectKernel() {
     strcpy(local.sun_path+strlen(local.sun_path), server);
 
     int sd = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
-    if(sd <= 0) return -1;
+    if(sd < 0) return -1;
 
     int status = bind(sd, (const struct sockaddr *) &local, sizeof(struct sockaddr_un));
     if(status) return -1;
@@ -84,7 +84,7 @@ int luxConnectKernel() {
  */
 
 int luxConnectLumen() {
-    if(lumensd > 0) return 0;
+    if(lumensd >= 0) return 0;
 
     struct sockaddr_un addr;
     memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -92,7 +92,7 @@ int luxConnectLumen() {
     strcpy(addr.sun_path, SERVER_LUMEN_PATH);
 
     int sd = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
-    if(sd <= 0) return -1;
+    if(sd < 0) return -1;
 
     // bind the local address so lumen knows which server this is
     struct sockaddr_un local;
@@ -122,7 +122,7 @@ int luxConnectLumen() {
  */
 
 int luxConnectDependency(const char *name) {
-    if(depsd > 0) return 0;
+    if(depsd >= 0) return 0;
 
     // dependency address
     struct sockaddr_un addr;
@@ -139,7 +139,7 @@ int luxConnectDependency(const char *name) {
     strcpy(&local.sun_path[9], server);
 
     int sd = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
-    if(sd <= 0) return -1;
+    if(sd < 0) return -1;
 
     int status = bind(sd, (const struct sockaddr *) &local, sizeof(struct sockaddr_un));
     if(status) return -1;
@@ -161,7 +161,7 @@ int luxConnectDependency(const char *name) {
 
 ssize_t luxSendKernel(void *msg) {
     MessageHeader *header = (MessageHeader *) msg;
-    if(!header->length || kernelsd <= 0) return 0;
+    if(!header->length || kernelsd < 0) return 0;
 
     if(!header->response) header->requester = self;
     return send(kernelsd, msg, header->length, 0);
@@ -222,7 +222,7 @@ ssize_t luxRecvLumen(void *buffer, size_t len, bool block, bool peek) {
 
 ssize_t luxSendLumen(void *msg) {
     MessageHeader *header = (MessageHeader *) msg;
-    if(!header->length || kernelsd <= 0) return 0;
+    if(!header->length || lumensd < 0) return 0;
 
     return send(lumensd, msg, header->length, 0);
 }
@@ -258,7 +258,7 @@ ssize_t luxRecvDependency(void *buffer, size_t len, bool block, bool peek) {
 
 ssize_t luxSendDependency(void *msg) {
     MessageHeader *header = (MessageHeader *) msg;
-    if(!header->length || depsd <= 0) return 0;
+    if(!header->length || depsd < 0) return 0;
 
     return send(depsd, msg, header->length, 0);
 }
