@@ -17,16 +17,12 @@ uint32_t pciReadDword(uint8_t bus, uint8_t slot, uint8_t function, uint16_t offs
 
 uint16_t pciReadWord(uint8_t bus, uint8_t slot, uint8_t function, uint16_t offset) {
     uint32_t dword = pciReadDword(bus, slot, function, offset);
-    offset %= 4;
-
-    luxLogf(KPRINT_LEVEL_DEBUG, "mod is %d, shifting right %d\n", offset, offset<<8);
-    
+    offset &= 3;
     return (uint32_t) dword >> (offset << 3);
 }
 
 uint8_t pciReadByte(uint8_t bus, uint8_t slot, uint8_t function, uint16_t offset) {
     uint32_t dword = pciReadDword(bus, slot, function, offset);
-    offset %= 8;
-
+    offset &= 7;
     return (uint32_t) dword >> (offset << 3);
 }
