@@ -17,6 +17,7 @@
 
 int resolve(const char *path, pid_t *pid) {
     if(!path) return -1;
+    if(!strcmp(path, "/sys")) return RESOLVE_SYS;
     if(!strcmp(path, "/kernel")) return RESOLVE_KERNEL;
     if(!strcmp(path, "/memsize")) return RESOLVE_MEMSIZE;
     if(!strcmp(path, "/memusage")) return RESOLVE_MEMUSAGE;
