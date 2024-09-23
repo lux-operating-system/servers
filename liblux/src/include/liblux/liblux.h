@@ -189,3 +189,4 @@ void luxLog(int, const char *);
 void luxLogf(int, const char *, ...);
 int luxRequestFramebuffer(FramebufferResponse *);
 int luxRequestRNG(uint64_t *);
+int luxSysinfo(SysInfoResponse *);

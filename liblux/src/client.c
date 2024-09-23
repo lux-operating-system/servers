@@ -86,3 +86,19 @@ int luxRequestRNG(uint64_t *ptr) {
 
     return status;
 }
+
+/* luxSysinfo(): requests sysinfo from the kernel
+ * params: sysinfo - destination buffer
+ * returns: zero on success
+ */
+
+int luxSysinfo(SysInfoResponse *sysinfo) {
+    MessageHeader req;
+    memset(&req, 0, sizeof(MessageHeader));
+    req.command = COMMAND_SYSINFO;
+    req.length = sizeof(MessageHeader);
+
+    if(luxSendKernel(&req) != sizeof(MessageHeader)) return -1;
+
+    return !(luxRecvKernel(&sysinfo, sizeof(SysInfoResponse), true, false) == sizeof(SysInfoResponse));
+}
