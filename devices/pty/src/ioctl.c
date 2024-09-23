@@ -53,7 +53,8 @@ void ptyIoctlMaster(IOCTLCommand *cmd) {
 
         chstat.header.command = COMMAND_DEVFS_CHSTAT;
         chstat.header.length = sizeof(DevfsChstatCommand);
-        strcpy(chstat.path, cmd->path);
+        strcpy(chstat.path, "/dev/pts");
+        ltoa(cmd->id, &chstat.path[8], DECIMAL);
         chstat.status.st_mode = (S_IRUSR | S_IWUSR | S_IWGRP | S_IFCHR);
         chstat.status.st_size = 4096;
         chstat.status.st_uid = cmd->header.header.requester;
