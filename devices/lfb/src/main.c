@@ -93,6 +93,7 @@ int main() {
 
                 off_t line = scanline(cmd->position);
                 off_t lineCount = (cmd->length + pitch - 1) / pitch;
+                if(!lineCount) lineCount++;
                 if(cmd->position % pitch) lineCount++;
 
                 if(line < 0) {
