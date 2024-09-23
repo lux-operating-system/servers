@@ -7,6 +7,8 @@ all:
 	@make -C lfb
 	@echo "\x1B[0;1;35m make\x1B[0m servers/devices/pty"
 	@make -C pty
+	@echo "\x1B[0;1;35m make\x1B[0m servers/devices/pci"
+	@make -C pci
 
 install:
 	@echo "\x1B[0;1;35m make\x1B[0m install servers/devices/ps2"
@@ -17,6 +19,8 @@ install:
 	@make install -C lfb
 	@echo "\x1B[0;1;35m make\x1B[0m install servers/devices/pty"
 	@make install -C pty
+	@echo "\x1B[0;1;35m make\x1B[0m install servers/devices/pci"
+	@make install -C pci
 
 clean:
 	@echo "\x1B[0;1;35m make\x1B[0m clean servers/devices/ps2"
@@ -27,3 +31,5 @@ clean:
 	@make clean -C lfb
 	@echo "\x1B[0;1;35m make\x1B[0m clean servers/devices/pty"
 	@make clean -C pty
+	@echo "\x1B[0;1;35m make\x1B[0m clean servers/devices/pci"
+	@make clean -C pci
