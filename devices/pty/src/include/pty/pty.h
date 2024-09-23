@@ -25,7 +25,7 @@ typedef struct {
     int valid, index, openCount, locked;
     void *master, *slave;
     size_t masterSize, slaveSize;           // buffer size
-    size_t masterDataSize, slaveDataData;   // available data size
+    size_t masterDataSize, slaveDataSize;   // available data size
 } Pty;
 
 extern Pty *ptys;
@@ -37,3 +37,5 @@ void ptyOpenSlave(OpenCommand *);
 void ptyIoctl(IOCTLCommand *);
 void ptyIoctlMaster(IOCTLCommand *);
 void ptyIoctlSlave(IOCTLCommand *);
+void ptyWrite(RWCommand *);
+void ptyRead(RWCommand *);
