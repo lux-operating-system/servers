@@ -5,6 +5,7 @@
  * procfs: Microkernel server implementing the /proc file system
  */
 
+#include <procfs/procfs.h>
 #include <liblux/liblux.h>
 #include <vfs.h>
 #include <string.h>
@@ -51,6 +52,7 @@ int main() {
             luxRecvDependency(req, req->header.length, false, false);
 
             switch(req->header.command) {
+            case COMMAND_MOUNT: procfsMount((MountCommand *) req, (MountCommand *) res); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", req->header.command);
             }
