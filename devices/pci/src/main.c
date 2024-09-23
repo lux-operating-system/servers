@@ -19,5 +19,7 @@ int main() {
         return -1;
     }
 
+    pciEnumerate();
+
     while(1);
 }

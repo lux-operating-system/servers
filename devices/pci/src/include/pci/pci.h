@@ -29,6 +29,7 @@
 #define PCI_BIST                    0x0F    // byte
 
 /* PCI Header Type */
+#define PCI_HAS_FUNCTIONS           0x80
 #define PCI_GENERAL_DEVICE          0x00
 #define PCI_TO_PCI_BRIDGE           0x01
 #define PCI_TO_CARDBUS_BRIDGE       0x02
