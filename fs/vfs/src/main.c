@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     while(1) {
         // accept incoming client connections
         int sd = luxAccept();
-        if(sd > 0) {
+        if(sd >= 0) {
             // append to the list
             servers[serverCount].socket = sd;
             serverCount++;
