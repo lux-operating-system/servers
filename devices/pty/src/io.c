@@ -91,3 +91,64 @@ void ptyWrite(RWCommand *wcmd) {
         luxSendDependency(wcmd);
     }
 }
+
+/* ptyRead(): reads from a pty device
+ * params: rcmd - read command message
+ * returns: nothing
+ */
+
+void ptyRead(RWCommand *rcmd) {
+    rcmd->header.header.response = 1;
+    rcmd->header.header.length = sizeof(RWCommand);
+
+    // determine if we're reading from the master or the slave
+    if(!strcmp(rcmd->path, "/ptmx")) {
+        // master, so we read from the slave
+        int id = rcmd->id;
+        if(!ptys[id].slave || !ptys[id].slaveDataSize || !ptys[id].slaveSize) {
+            rcmd->header.header.status = -EWOULDBLOCK;  // no data available
+            rcmd->length = 0;
+            luxSendDependency(rcmd);
+            return;
+        }
+
+        size_t truelen;
+        if(rcmd->length > ptys[id].slaveDataSize) truelen = ptys[id].slaveDataSize;
+        else truelen = rcmd->length;
+
+        // and read the data
+        memcpy(rcmd->data, ptys[id].slave, truelen);
+        memmove(ptys[id].slave, (const void *)(uintptr_t)ptys[id].slave + truelen, ptys[id].slaveDataSize - truelen);
+        ptys[id].slaveDataSize -= truelen;
+
+        // respond
+        rcmd->header.header.status = truelen;
+        rcmd->header.header.length += truelen;
+        rcmd->length = truelen;
+        luxSendDependency(rcmd);
+    } else {
+        // slave, read from the master
+        int id = atoi(&rcmd->path[4]);
+        if(!ptys[id].master || !ptys[id].masterDataSize || !ptys[id].masterSize) {
+            rcmd->header.header.status = -EWOULDBLOCK;  // no data available
+            rcmd->length = 0;
+            luxSendDependency(rcmd);
+            return;
+        }
+
+        size_t truelen;
+        if(rcmd->length > ptys[id].masterDataSize) truelen = ptys[id].masterDataSize;
+        else truelen = rcmd->length;
+
+        // and read the data
+        memcpy(rcmd->data, ptys[id].master, truelen);
+        memmove(ptys[id].master, (const void *)(uintptr_t)ptys[id].master + truelen, ptys[id].masterDataSize - truelen);
+        ptys[id].masterDataSize -= truelen;
+
+        // respond
+        rcmd->header.header.status = truelen;
+        rcmd->header.header.length += truelen;
+        rcmd->length = truelen;
+        luxSendDependency(rcmd);
+    }
+}
