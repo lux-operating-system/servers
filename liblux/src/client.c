@@ -100,5 +100,5 @@ int luxSysinfo(SysInfoResponse *sysinfo) {
 
     if(luxSendKernel(&req) != sizeof(MessageHeader)) return -1;
 
-    return !(luxRecvKernel(&sysinfo, sizeof(SysInfoResponse), true, false) == sizeof(SysInfoResponse));
+    return !(luxRecvKernel(sysinfo, sizeof(SysInfoResponse), true, false) == sizeof(SysInfoResponse));
 }
