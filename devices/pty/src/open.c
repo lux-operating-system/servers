@@ -83,6 +83,7 @@ void ptyOpenMaster(OpenCommand *opencmd) {
 
     regcmd.status.st_mode = (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH | S_IFCHR);
     regcmd.status.st_size = 4096;
+    regcmd.handleOpen = 1;
 
     luxSendDependency(&regcmd);
 
@@ -102,5 +103,17 @@ void ptyOpenMaster(OpenCommand *opencmd) {
  */
 
 void ptyOpenSlave(OpenCommand *opencmd) {
+    opencmd->header.header.response = 1;
+    opencmd->header.header.length = sizeof(OpenCommand);
+    opencmd->header.header.status = 0;
+
+    int slaveID = atoi(&opencmd->path[8]);
+    if(slaveID < 0 || slaveID > MAX_PTYS || !ptys[slaveID].valid)
+        opencmd->header.header.status = -ENOENT;
+    else if(ptys[slaveID].locked)
+        opencmd->header.header.status = -EIO;
+    else
+        opencmd->id = slaveID;
     
+    luxSendDependency(opencmd);
 }
