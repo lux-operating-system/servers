@@ -7,6 +7,7 @@
 
 #include <liblux/liblux.h>
 #include <liblux/devfs.h>
+#include <liblux/lfb.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
@@ -128,6 +129,24 @@ int main() {
                 }
 
                 luxSendDependency(cmd);
+            } else if(cmd->header.header.command == COMMAND_IOCTL) {
+                // ioctl()
+                IOCTLCommand *ioctlcmd = (IOCTLCommand *) cmd;
+                ioctlcmd->header.header.response = 1;
+                ioctlcmd->header.header.length = sizeof(IOCTLCommand);
+                ioctlcmd->header.header.status = 0;
+                switch(ioctlcmd->opcode) {
+                case LFB_GET_WIDTH:
+                    ioctlcmd->parameter = fb.w;
+                    break;
+                case LFB_GET_HEIGHT:
+                    ioctlcmd->parameter = fb.h;
+                    break;
+                default:
+                    ioctlcmd->header.header.status = -ENOTTY;
+                }
+
+                luxSendDependency(ioctlcmd);
             } else {
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", cmd->header.header.command);
             }
