@@ -43,10 +43,7 @@ int main() {
     while(luxConnectDependency("devfs"));   // depend on /dev
 
     // request the frame buffer from the kernel
-    if(luxRequestFramebuffer(&fb)) {
-        luxLogf(KPRINT_LEVEL_ERROR, "failed to acquire from kernel\n");
-        return -1;
-    }
+    while(luxRequestFramebuffer(&fb));
 
     luxLogf(KPRINT_LEVEL_DEBUG, "screen resolution is %dx%d (%d bpp)\n", fb.w, fb.h, fb.bpp);
 
