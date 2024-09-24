@@ -17,8 +17,8 @@ extern FileSystemServers *servers;
 extern int serverCount;
 
 typedef struct {
-    char device[MAX_FILE_PATH];
-    char path[MAX_FILE_PATH];
+    char *device;
+    char *path;
     char type[16];
     int flags;
     int valid;

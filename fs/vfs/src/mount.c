@@ -9,6 +9,8 @@
 #include <liblux/liblux.h>
 #include <vfs.h>
 #include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 
 Mountpoint *mps;
 int mpCount = 0;
@@ -23,8 +25,17 @@ void registerMountpoint(MountCommand *cmd) {
     if(cmd->header.header.command != COMMAND_MOUNT || !cmd->header.header.response) return;
     if(cmd->header.header.status) return;
 
+    mps[mpCount].device = malloc(MAX_FILE_PATH);
+    mps[mpCount].path = malloc(MAX_FILE_PATH);
+
+    if(!mps[mpCount].device || !mps[mpCount].path) {
+        cmd->header.header.status = -ENOMEM;
+        return;
+    }
+
     mps[mpCount].valid = 1;
     mps[mpCount].flags = cmd->flags;
+
     strcpy(mps[mpCount].device, cmd->source);
     strcpy(mps[mpCount].path, cmd->target);
     strcpy(mps[mpCount].type, cmd->type);
