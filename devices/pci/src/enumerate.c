@@ -7,6 +7,7 @@
 
 #include <pci/pci.h>
 #include <liblux/liblux.h>
+#include <stdbool.h>
 
 static char *msd[] = {
     "SCSI bus controller",
@@ -60,6 +61,88 @@ static char *usb[] = {
 
 static int usbSize = 4;
 
+uint64_t pciGetBarSize(uint8_t bus, uint8_t slot, uint8_t function, int bar, bool second) {
+    uint8_t reg = PCI_BAR0 + (bar << 2);
+
+    uint32_t og = pciReadDword(bus, slot, function, reg);
+    uint64_t size = 0;
+    if(og & 1) {
+        // I/O bus
+        pciWriteDword(bus, slot, function, reg, 0xFFFFFFFF);
+
+        uint32_t temp = ~(pciReadDword(bus, slot, function, reg) & 0xFFFFFFFC);
+        temp++;
+        pciWriteDword(bus, slot, function, reg, og);
+
+        size = temp;
+    } else {
+        // memory-mapped I/O
+        int type = (og >> 1) & 3;
+        if(type == 2) {
+            // 64-bit mmio
+            if(!second) {
+                size = pciGetBarSize(bus, slot, function, bar+1, true);
+                size <<= 32;
+            }
+
+            pciWriteDword(bus, slot, function, reg, 0xFFFFFFFF);
+            uint32_t temp = ~(pciReadDword(bus, slot, function, reg) & 0xFFFFFFF0);
+
+            temp &= 0xFFFFFFF0;
+            temp++;
+            size |= temp;
+
+            pciWriteDword(bus, slot, function, reg, og);
+        } else {
+            // 32-bit or 16-bit mmio
+            pciWriteDword(bus, slot, function, reg, 0xFFFFFFFF);
+            uint32_t temp = ~(pciReadDword(bus, slot, function, reg) & 0xFFFFFFF0);
+            temp++;
+            size = temp;
+
+            pciWriteDword(bus, slot, function, reg, og);
+        }
+    }
+
+    return size;
+}
+
+void pciDumpGeneral(uint8_t bus, uint8_t slot, uint8_t function) {
+    uint16_t subvendor = pciReadWord(bus, slot, function, PCI_SUBSYSTEM_VENDOR);
+    uint16_t subdevice = pciReadWord(bus, slot, function, PCI_SUBSYSTEM_DEVICE);
+    uint8_t interrupt = pciReadByte(bus, slot, function, PCI_INT_LINE);
+    uint8_t pin = pciReadByte(bus, slot, function, PCI_INT_PIN);
+
+    luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x:  subsystem %04X:%04X: irq line %d pin %c%c\n",
+        bus, slot, function,
+        subvendor, subdevice, interrupt,
+        pin >= 1 && pin <= 4 ? '#' : '-',
+        pin >= 1 && pin <= 4 ? pin+'a'-1 : '-');
+
+    uint64_t bars[5];
+    uint64_t barSizes[5];
+    uint64_t base[5];
+
+    for(int i = 0; i < 5; i++) {
+        bars[i] = pciReadDword(bus, slot, function, PCI_BAR0 + (i << 2));
+        barSizes[i] = pciGetBarSize(bus, slot, function, i, false);
+
+        if(barSizes[i] && bars[i] & 1) {
+            // I/O
+            base[i] = bars[i] & 0xFFFFFFFC;
+            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x:  bar%d: %s at [0x%04X - 0x%04X]\n", bus, slot, function, i,
+                bars[i] & 1 ? "i/o ports" : "memory", base[i], base[i]+barSizes[i]-1);
+        } else if(barSizes[i]) {
+            // mmio
+            base[i] = bars[i] & 0xFFFFFFFFFFFFFFFC;
+            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x:  bar%d: %s at [0x%08X - 0x%08X] %s %s\n",
+                bus, slot, function, i,
+                bars[i] & 1 ? "i/o ports" : "memory", base[i], base[i]+barSizes[i]-1,
+                bars[i] & 2 ? "64-bit" : "32-bit", bars[i] & 8 ? "prefetchable" : "");
+        }
+    }
+}
+
 void pciEnumerate() {
     uint8_t bus = 0, slot = 0, function = 0;
 
@@ -93,17 +176,36 @@ void pciEnumerate() {
         char *classString = NULL;
 
         switch(class) {
-        case 0x01: if(subclass < msdSize) classString = msd[subclass]; break;
-        case 0x02: if(subclass < networkSize) classString = network[subclass]; break;
-        case 0x03: if(subclass < displaySize) classString = display[subclass]; break;
-        case 0x06: if(subclass < bridgeSize) classString = bridge[subclass]; break;
-        case 0x0C: if(subclass == 3 && (progif>>4) < usbSize) classString = usb[progif >> 4]; break;
+        case 0x01:
+            if(subclass < msdSize) classString = msd[subclass];
+            else classString = "unimplemented storage controller";
+            break;
+        case 0x02:
+            if(subclass < networkSize) classString = network[subclass];
+            else classString = "unimplemented network controller";
+            break;
+        case 0x03:
+            if(subclass < displaySize) classString = display[subclass];
+            else classString = "unimplemented display controller";
+            break;
+        case 0x06:
+            if(subclass < bridgeSize) classString = bridge[subclass];
+            else classString = "unimplemented bridge";
+            break;
+        case 0x0C:
+            if(subclass == 3 && (progif>>4) < usbSize) classString = usb[progif >> 4];
+            else classString = "unimplemented USB host controller";
+            break;
         }
 
         if(classString)
-            luxLogf(KPRINT_LEVEL_DEBUG, "%02x:%02x:%02x - %04X:%04X - class %d:%d (%s)\n", bus, slot, function, vendor, device, class, subclass, classString);
+            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x: %s: %02x%02x%02x (%04X:%04X):\n", bus, slot, function, classString, class, subclass, progif, vendor, device);
         else
-            luxLogf(KPRINT_LEVEL_DEBUG, "%02x:%02x:%02x - %04X:%04X - class %d:%d (unsupported device)\n", bus, slot, function, vendor, device, class, subclass, classString);
+            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x: unimplemented device: %02x%02x%02x (%04X:%04X):\n", bus, slot, function, class, subclass, progif, vendor, device);
+
+        switch(header & PCI_HAS_FUNCTIONS) {
+        case PCI_GENERAL_DEVICE: pciDumpGeneral(bus, slot, function); break;
+        }
 
         function++;
         if(function > 7) {

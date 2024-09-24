@@ -54,5 +54,8 @@
 uint32_t pciReadDword(uint8_t, uint8_t, uint8_t, uint16_t);
 uint16_t pciReadWord(uint8_t, uint8_t, uint8_t, uint16_t);
 uint8_t pciReadByte(uint8_t, uint8_t, uint8_t, uint16_t);
+void pciWriteDword(uint8_t, uint8_t, uint8_t, uint16_t, uint32_t);
+void pciWriteWord(uint8_t, uint8_t, uint8_t, uint16_t, uint16_t);
+void pciWriteByte(uint8_t, uint8_t, uint8_t, uint16_t, uint8_t);
 
 void pciEnumerate();
