@@ -105,6 +105,9 @@ int createDevice(const char *name, ssize_t (*handler)(int, const char *, off_t *
         return -1;
     }
 
+    devices[deviceCount].name = malloc(MAX_FILE_PATH);
+    if(!devices[deviceCount].name) return -1;
+
     devices[deviceCount].ioHandler = handler;
     memcpy(&devices[deviceCount].status, status, sizeof(struct stat));
     strcpy(devices[deviceCount].name, name);

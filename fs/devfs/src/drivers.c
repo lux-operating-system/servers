@@ -104,6 +104,9 @@ void driverRegister(int sd, MessageHeader *cmd, MessageHeader *buf) {
     }
 
     DeviceFile *dev = findDevice(regcmd->path);
+    dev->server = malloc(256);
+    if(!dev->server) return;
+
     dev->external = 1;
     dev->socket = sd;
     strcpy(dev->server, regcmd->server);

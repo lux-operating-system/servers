@@ -19,13 +19,13 @@
 /* generic structure that will be used to maintain a list of files on /dev */
 
 typedef struct {
-    char name[MAX_FILE_PATH];
+    char *name;         // file name
     struct stat status;
     ssize_t (*ioHandler)(int, const char *, off_t *, void *, size_t);
     int external;       // external device driver
     int socket;         // socket descriptor for external driver
     int handleOpen;     // external driver overrides default open() and close()
-    char server[256];   // server name of the external driver
+    char *server;       // server name of the external driver
 } DeviceFile;
 
 extern void (*dispatchTable[])(SyscallHeader *, SyscallHeader *);
