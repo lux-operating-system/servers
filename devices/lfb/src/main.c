@@ -50,6 +50,11 @@ int main() {
     pitch = fb.w * fb.bpp / 8;  // abstract whatever pitch the hardware is using
     size = pitch * fb.h;
 
+    if(size > 0x400000)
+        luxLogf(KPRINT_LEVEL_DEBUG, "frame buffer size is %d MiB\n", size/1024/1024);
+    else
+        luxLogf(KPRINT_LEVEL_DEBUG, "frame buffer size is %d KiB\n", size/1024);
+
     // create a character device on /dev for the frame buffer
     DevfsRegisterCommand *regcmd = calloc(1, sizeof(DevfsRegisterCommand));
     struct stat *status = calloc(1, sizeof(struct stat));
