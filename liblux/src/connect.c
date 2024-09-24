@@ -30,6 +30,8 @@ int luxInit(const char *name) {
     if(luxConnectKernel()) return -1;
     if(luxConnectLumen()) return -1;
 
+    for(int i = 0; i < 16; i++) sched_yield();
+
     return 0;
 }
 
@@ -40,7 +42,9 @@ int luxInit(const char *name) {
 
 int luxInitLumen() {
     server = "lumen";
-    return luxConnectKernel();
+    int status = luxConnectKernel();
+    for(int i = 0; i < 32; i++) sched_yield();
+    return status;
 }
 
 /* luxConnectKernel(): connects to the kernel socket
@@ -151,6 +155,8 @@ int luxConnectDependency(const char *name) {
 
     depsd = sd;
     if(!self) self = getpid();
+
+    for(int i = 0; i < 16; i++) sched_yield();
     return 0;
 }
 
