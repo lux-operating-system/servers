@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 
-#define SERVER_MAX_SIZE         0x80000             // max msg size is 512 KiB
+#define SERVER_MAX_SIZE         0x2000             // default max msg size is 8 KiB
 #define MAX_FILE_PATH           2048
 
 #define SERVER_KERNEL_PATH      "lux:///kernel"     // not a real file, special path
