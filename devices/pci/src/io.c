@@ -15,17 +15,15 @@
 /* File name format: /pci/bb.ss.ff/[register]
  *
  * Registers with file system representation:
- *  vendor      4
- *  device      4
- *  class       6
+ *  vendor      2
+ *  device      2
+ *  class       3
  *  classname   variable-length
- *  hdrtype     2
- *  command     4
- *  barX        16
- *  barXsize    16
- *  barXraw     16
- * 
- * All registers are expressed in their ASCII representation
+ *  hdrtype     1
+ *  command     2
+ *  barX        8
+ *  barXsize    8
+ *  barXraw     8
  */
 
 /* parseHex(): parses a hex string
