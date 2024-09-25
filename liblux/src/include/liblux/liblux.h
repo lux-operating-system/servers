@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -41,8 +42,10 @@
 #define COMMAND_READ            0x8005
 #define COMMAND_WRITE           0x8006
 #define COMMAND_IOCTL           0x8007
+#define COMMAND_OPENDIR         0x8008
+#define COMMAND_READDIR         0x8009
 
-#define MAX_SYSCALL_COMMAND     0x8007
+#define MAX_SYSCALL_COMMAND     0x8009
 
 /* these commands are for device drivers */
 #define COMMAND_IRQ             0xC000
@@ -164,6 +167,22 @@ typedef struct {
     unsigned long opcode;
     unsigned long parameter;
 } IOCTLCommand;
+
+/* opendir() */
+typedef struct {
+    SyscallHeader header;
+    char path[MAX_FILE_PATH];
+    uid_t uid;
+    gid_t gid;
+} OpendirCommand;
+
+/* readdir() */
+typedef struct {
+    SyscallHeader header;
+    char path[MAX_FILE_PATH];
+    size_t position;
+    struct dirent entry;
+} ReaddirCommand;
 
 /* wrapper functions */
 pid_t luxGetSelf();
