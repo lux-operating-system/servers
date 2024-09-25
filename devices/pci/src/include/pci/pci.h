@@ -53,6 +53,14 @@
 #define PCI_MIN_GRANT               0x3E    // byte
 #define PCI_MAX_LATENCY             0x3F    // byte
 
+typedef struct PCIFile {
+    char name[32];
+    size_t size;
+    uint16_t reg;
+    uint8_t data[256];
+    struct PCIFile *next;
+} PCIFile;
+
 uint32_t pciReadDword(uint8_t, uint8_t, uint8_t, uint16_t);
 uint16_t pciReadWord(uint8_t, uint8_t, uint8_t, uint16_t);
 uint8_t pciReadByte(uint8_t, uint8_t, uint8_t, uint16_t);
@@ -61,6 +69,6 @@ void pciWriteWord(uint8_t, uint8_t, uint8_t, uint16_t, uint16_t);
 void pciWriteByte(uint8_t, uint8_t, uint8_t, uint16_t, uint8_t);
 
 void pciEnumerate();
-void pciCreateFile(uint8_t, uint8_t, uint8_t, const char *, size_t);
+void pciCreateFile(uint8_t, uint8_t, uint8_t, uint16_t, int, const char *, size_t, void *);
 void pciReadFile(RWCommand *);
 void pciWriteFile(RWCommand *);

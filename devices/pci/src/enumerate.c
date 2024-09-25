@@ -7,7 +7,6 @@
 
 #include <pci/pci.h>
 #include <liblux/liblux.h>
-#include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -63,7 +62,7 @@ static char *usb[] = {
 
 static int usbSize = 4;
 
-uint64_t pciGetBarSize(uint8_t bus, uint8_t slot, uint8_t function, int bar, bool second) {
+uint64_t pciGetBarSize(uint8_t bus, uint8_t slot, uint8_t function, int bar) {
     uint8_t reg = PCI_BAR0 + (bar << 2);
 
     uint32_t og = pciReadDword(bus, slot, function, reg);
@@ -82,19 +81,22 @@ uint64_t pciGetBarSize(uint8_t bus, uint8_t slot, uint8_t function, int bar, boo
         int type = (og >> 1) & 3;
         if(type == 2) {
             // 64-bit mmio
-            if(!second) {
-                size = pciGetBarSize(bus, slot, function, bar+1, true);
-                size <<= 32;
-            }
+            uint32_t hisave = pciReadDword(bus, slot, function, reg+4);
+
+            pciWriteDword(bus, slot, function, reg+4, 0xFFFFFFFF);
+            uint64_t temp = pciReadDword(bus, slot, function, reg+4);
+            temp <<= 32;
 
             pciWriteDword(bus, slot, function, reg, 0xFFFFFFFF);
-            uint32_t temp = ~(pciReadDword(bus, slot, function, reg) & 0xFFFFFFF0);
+            temp |= pciReadDword(bus, slot, function, reg);
 
-            temp &= 0xFFFFFFF0;
+            temp &= 0xFFFFFFFFFFFFFFF0;
+            temp = ~temp;
             temp++;
-            size |= temp;
+            size = temp;
 
             pciWriteDword(bus, slot, function, reg, og);
+            pciWriteDword(bus, slot, function, reg+4, hisave);
         } else {
             // 32-bit or 16-bit mmio
             pciWriteDword(bus, slot, function, reg, 0xFFFFFFFF);
@@ -115,10 +117,10 @@ void pciDumpGeneral(uint8_t bus, uint8_t slot, uint8_t function) {
     uint8_t interrupt = pciReadByte(bus, slot, function, PCI_INT_LINE);
     uint8_t pin = pciReadByte(bus, slot, function, PCI_INT_PIN);
 
-    pciCreateFile(bus, slot, function, "subvendor", 4);
-    pciCreateFile(bus, slot, function, "subdevice", 4);
-    pciCreateFile(bus, slot, function, "intline", 2);
-    pciCreateFile(bus, slot, function, "intpin", 2);
+    pciCreateFile(bus, slot, function, PCI_SUBSYSTEM_VENDOR, 0, "subvendor", 2, &subvendor);
+    pciCreateFile(bus, slot, function, PCI_SUBSYSTEM_DEVICE, 0, "subdevice", 2, &subdevice);
+    pciCreateFile(bus, slot, function, PCI_INT_LINE, 1, "intline", 1, &interrupt);
+    pciCreateFile(bus, slot, function, PCI_INT_PIN, 1, "intpin", 1, &pin);
 
     luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x:  subsystem %04X:%04X: irq line %d pin %c%c\n",
         bus, slot, function,
@@ -134,29 +136,29 @@ void pciDumpGeneral(uint8_t bus, uint8_t slot, uint8_t function) {
 
     for(int i = 0; i < 5; i++) {
         bars[i] = pciReadDword(bus, slot, function, PCI_BAR0 + (i << 2));
-        barSizes[i] = pciGetBarSize(bus, slot, function, i, false);
+        barSizes[i] = pciGetBarSize(bus, slot, function, i);
 
-        if(barSizes[i] && bars[i] & 1) {
+        if(bars[i] & 1) base[i] = bars[i] & 0xFFFFFFFC;
+        else base[i] = bars[i] & 0xFFFFFFFFFFFFFFF0;
+
+        if(base[i] && bars[i] & 1) {
             // I/O
-            base[i] = bars[i] & 0xFFFFFFFC;
-            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x:  bar%d: %s at [0x%04X - 0x%04X]\n", bus, slot, function, i,
-                bars[i] & 1 ? "i/o ports" : "memory", base[i], base[i]+barSizes[i]-1);
-        } else if(barSizes[i]) {
+            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x:  bar%d: i/o ports at [0x%04X - 0x%04X]\n", bus, slot, function, i,
+                base[i], base[i]+barSizes[i]-1);
+        } else if(base[i]) {
             // mmio
-            base[i] = bars[i] & 0xFFFFFFFFFFFFFFFC;
-            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x:  bar%d: %s at [0x%08X - 0x%08X] %s %s\n",
-                bus, slot, function, i,
-                bars[i] & 1 ? "i/o ports" : "memory", base[i], base[i]+barSizes[i]-1,
-                bars[i] & 2 ? "64-bit" : "32-bit", bars[i] & 8 ? "prefetchable" : "");
+            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x:  bar%d: %s memory at [0x%08X - 0x%08X] %s\n",
+                bus, slot, function, i, bars[i] & 4 ? "64-bit" : "32-bit",
+                base[i], base[i]+barSizes[i]-1, bars[i] & 8 ? "prefetchable" : "");
         }
 
-        if(barSizes[i]) {
+        if(barSizes[i] && base[i]) {
             sprintf(buffer, "bar%draw", i);
-            pciCreateFile(bus, slot, function, buffer, 16);  // 16 hex digits, raw value
+            pciCreateFile(bus, slot, function, 0, 0, buffer, 8, &bars[i]);
             sprintf(buffer, "bar%d", i);
-            pciCreateFile(bus, slot, function, buffer, 16);  // 16 hex digits, base address
+            pciCreateFile(bus, slot, function, 0, 0, buffer, 8, &base[i]);
             sprintf(buffer, "bar%dsize", i);
-            pciCreateFile(bus, slot, function, buffer, 16);  // 16 hex digits, length
+            pciCreateFile(bus, slot, function, 0, 0, buffer, 8, &barSizes[i]);
         }
     }
 }
@@ -190,12 +192,18 @@ void pciEnumerate() {
         uint8_t class = pciReadByte(bus, slot, function, PCI_CLASS);
         uint8_t subclass = pciReadByte(bus, slot, function, PCI_SUBCLASS);
         uint8_t progif = pciReadByte(bus, slot, function, PCI_PROG_IF);
+        uint16_t command = pciReadWord(bus, slot, function, PCI_COMMAND);
 
-        pciCreateFile(bus, slot, function, "class", 6);     // 6 hex digits
-        pciCreateFile(bus, slot, function, "progif", 2);    // 2 hex digits
-        pciCreateFile(bus, slot, function, "vendor", 4);
-        pciCreateFile(bus, slot, function, "device", 4);
-        pciCreateFile(bus, slot, function, "hdrtype", 2);   // 2 hex digits
+        uint8_t classData[3];
+        classData[0] = class;
+        classData[1] = subclass;
+        classData[2] = progif;
+
+        pciCreateFile(bus, slot, function, PCI_CLASS, 0, "class", 3, &classData);
+        pciCreateFile(bus, slot, function, PCI_VENDOR, 0, "vendor", 2, &vendor);
+        pciCreateFile(bus, slot, function, PCI_DEVICE, 0, "device", 2, &device);
+        pciCreateFile(bus, slot, function, PCI_HEADER_TYPE, 0, "hdrtype", 2, &header);
+        pciCreateFile(bus, slot, function, PCI_COMMAND, 0, "command", 2, &command);
 
         char *classString = NULL;
 
@@ -223,10 +231,10 @@ void pciEnumerate() {
         }
 
         if(classString) {
-            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x: %s: %02x%02x%02x (%04X:%04X):\n", bus, slot, function, classString, class, subclass, progif, vendor, device);
-            pciCreateFile(bus, slot, function, "classname", strlen(classString));
+            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x: %s - %02x%02x%02x (%04X:%04X):\n", bus, slot, function, classString, class, subclass, progif, vendor, device);
+            pciCreateFile(bus, slot, function, 0, 0, "classname", strlen(classString), classString);
         } else {
-            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x: unimplemented device: %02x%02x%02x (%04X:%04X):\n", bus, slot, function, class, subclass, progif, vendor, device);
+            luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x: unimplemented device - %02x%02x%02x (%04X:%04X):\n", bus, slot, function, class, subclass, progif, vendor, device);
         }
 
         switch(header & PCI_HAS_FUNCTIONS) {
