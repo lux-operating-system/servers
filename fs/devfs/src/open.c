@@ -42,8 +42,12 @@ void devfsOpen(SyscallHeader *req, SyscallHeader *res) {
         if(((cmd->flags & O_WRONLY) && !(file->status.st_mode & S_IWOTH))) res->header.status = -EACCES;
     }
 
+    // we can only open files this way
+    if((file->status.st_mode & S_IFMT) == S_IFDIR)
+        res->header.status = -EISDIR;
+
     // some drivers will require special operations when a file is opened
-    if(file->external && file->handleOpen) {
+    if(!res->header.status && file->external && file->handleOpen) {
         // relay to the driver to allow device-specific operations
         luxSend(file->socket, cmd);
     } else {
