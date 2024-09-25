@@ -6,6 +6,7 @@
  */
 
 #include <stdint.h>
+#include <stddef.h>
 
 #pragma once
 
@@ -59,3 +60,4 @@ void pciWriteWord(uint8_t, uint8_t, uint8_t, uint16_t, uint16_t);
 void pciWriteByte(uint8_t, uint8_t, uint8_t, uint16_t, uint8_t);
 
 void pciEnumerate();
+void pciCreateFile(uint8_t, uint8_t, uint8_t, const char *, size_t);

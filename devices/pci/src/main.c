@@ -21,12 +21,8 @@ int main() {
 
     pciEnumerate();
 
-    SysInfoResponse res;
-    luxSysinfo(&res);
-
-    luxLogf(KPRINT_LEVEL_DEBUG, "MEM USAGE: %d MiB / %d MiB\n", res.memoryUsage*res.pageSize/0x100000, res.memorySize*res.pageSize/0x100000);
-    luxLogf(KPRINT_LEVEL_DEBUG, "MEM USAGE: %d pages / %d\n", res.memoryUsage, res.memorySize);
-    luxLogf(KPRINT_LEVEL_DEBUG, "PROCESSES: %d, THREADS: %d\n", res.processes, res.threads);
+    /* notify lumen that the server is ready */
+    luxReady();
 
     while(1);
 }

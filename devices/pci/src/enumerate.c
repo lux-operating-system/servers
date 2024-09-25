@@ -8,6 +8,8 @@
 #include <pci/pci.h>
 #include <liblux/liblux.h>
 #include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
 
 static char *msd[] = {
     "SCSI bus controller",
@@ -113,15 +115,22 @@ void pciDumpGeneral(uint8_t bus, uint8_t slot, uint8_t function) {
     uint8_t interrupt = pciReadByte(bus, slot, function, PCI_INT_LINE);
     uint8_t pin = pciReadByte(bus, slot, function, PCI_INT_PIN);
 
+    pciCreateFile(bus, slot, function, "subvendor", 4);
+    pciCreateFile(bus, slot, function, "subdevice", 4);
+    pciCreateFile(bus, slot, function, "intline", 2);
+    pciCreateFile(bus, slot, function, "intpin", 2);
+
     luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x:  subsystem %04X:%04X: irq line %d pin %c%c\n",
         bus, slot, function,
         subvendor, subdevice, interrupt,
         pin >= 1 && pin <= 4 ? '#' : '-',
-        pin >= 1 && pin <= 4 ? pin+'a'-1 : '-');
+        pin >= 1 && pin <= 4 ? pin+'A'-1 : '-');
 
     uint64_t bars[5];
     uint64_t barSizes[5];
     uint64_t base[5];
+
+    char buffer[16];
 
     for(int i = 0; i < 5; i++) {
         bars[i] = pciReadDword(bus, slot, function, PCI_BAR0 + (i << 2));
@@ -139,6 +148,15 @@ void pciDumpGeneral(uint8_t bus, uint8_t slot, uint8_t function) {
                 bus, slot, function, i,
                 bars[i] & 1 ? "i/o ports" : "memory", base[i], base[i]+barSizes[i]-1,
                 bars[i] & 2 ? "64-bit" : "32-bit", bars[i] & 8 ? "prefetchable" : "");
+        }
+
+        if(barSizes[i]) {
+            sprintf(buffer, "bar%draw", i);
+            pciCreateFile(bus, slot, function, buffer, 8);  // 8 hex digits, raw value
+            sprintf(buffer, "bar%d", i);
+            pciCreateFile(bus, slot, function, buffer, 8);  // 8 hex digits, base address
+            sprintf(buffer, "bar%dsize", i);
+            pciCreateFile(bus, slot, function, buffer, 8);  // 8 hex digits, length
         }
     }
 }
@@ -173,6 +191,12 @@ void pciEnumerate() {
         uint8_t subclass = pciReadByte(bus, slot, function, PCI_SUBCLASS);
         uint8_t progif = pciReadByte(bus, slot, function, PCI_PROG_IF);
 
+        pciCreateFile(bus, slot, function, "class", 6);     // 6 hex digits
+        pciCreateFile(bus, slot, function, "progif", 2);    // 2 hex digits
+        pciCreateFile(bus, slot, function, "vendor", 4);
+        pciCreateFile(bus, slot, function, "device", 4);
+        pciCreateFile(bus, slot, function, "hdrtype", 2);   // 2 hex digits
+
         char *classString = NULL;
 
         switch(class) {
@@ -198,10 +222,12 @@ void pciEnumerate() {
             break;
         }
 
-        if(classString)
+        if(classString) {
             luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x: %s: %02x%02x%02x (%04X:%04X):\n", bus, slot, function, classString, class, subclass, progif, vendor, device);
-        else
+            pciCreateFile(bus, slot, function, "classname", strlen(classString));
+        } else {
             luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x: unimplemented device: %02x%02x%02x (%04X:%04X):\n", bus, slot, function, class, subclass, progif, vendor, device);
+        }
 
         switch(header & PCI_HAS_FUNCTIONS) {
         case PCI_GENERAL_DEVICE: pciDumpGeneral(bus, slot, function); break;
