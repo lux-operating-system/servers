@@ -108,5 +108,6 @@ void pciReadFile(RWCommand *rcmd) {
     rcmd->length = truelen;
     rcmd->header.header.status = truelen;
     rcmd->header.header.length += truelen;
+    rcmd->position += truelen;
     luxSendDependency(rcmd);
 }
