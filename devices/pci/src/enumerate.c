@@ -202,7 +202,7 @@ void pciEnumerate() {
         pciCreateFile(bus, slot, function, PCI_CLASS, 0, "class", 3, &classData);
         pciCreateFile(bus, slot, function, PCI_VENDOR, 0, "vendor", 2, &vendor);
         pciCreateFile(bus, slot, function, PCI_DEVICE, 0, "device", 2, &device);
-        pciCreateFile(bus, slot, function, PCI_HEADER_TYPE, 0, "hdrtype", 2, &header);
+        pciCreateFile(bus, slot, function, PCI_HEADER_TYPE, 0, "hdrtype", 1, &header);
         pciCreateFile(bus, slot, function, PCI_COMMAND, 0, "command", 2, &command);
 
         char *classString = NULL;

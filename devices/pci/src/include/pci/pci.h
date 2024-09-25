@@ -55,6 +55,7 @@
 
 typedef struct PCIFile {
     char name[32];
+    uint8_t bus, function, slot;
     size_t size;
     uint16_t reg;
     uint8_t data[256];
@@ -70,5 +71,6 @@ void pciWriteByte(uint8_t, uint8_t, uint8_t, uint16_t, uint8_t);
 
 void pciEnumerate();
 void pciCreateFile(uint8_t, uint8_t, uint8_t, uint16_t, int, const char *, size_t, void *);
+PCIFile *pciFindFile(const char *);
 void pciReadFile(RWCommand *);
 void pciWriteFile(RWCommand *);

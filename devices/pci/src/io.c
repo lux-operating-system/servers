@@ -76,7 +76,7 @@ static void pciParseAddress(const char *str, uint8_t *bus, uint8_t *slot, uint8_
     *function = parseHex(str+6);
 }
 
-/* pciReadFile(): reads from a PCI configuration space file under /dev
+/* pciReadFile(): reads from a PCI configuration space file under /dev/pci/
  * params: rcmd - read command message
  * returns: nothing, response relayed to devfs
  */
@@ -85,15 +85,28 @@ void pciReadFile(RWCommand *rcmd) {
     rcmd->header.header.response = 1;
     rcmd->header.header.length = sizeof(RWCommand);
 
-    uint8_t bus, slot, function;
-    pciParseAddress(&rcmd->path[5], &bus, &slot, &function);
-
-    const char *reg = &rcmd->path[14];
-    char *data = malloc(256);
-    if(!data) {
-        rcmd->header.header.status = -ENOMEM;
+    PCIFile *file = pciFindFile(rcmd->path);
+    if(!file) {
+        rcmd->header.header.status = -ENOENT;
         rcmd->length = 0;
         luxSendDependency(rcmd);
         return;
     }
+
+    if(rcmd->position >= file->size) {
+        rcmd->header.header.status = -EIO;
+        rcmd->length = 0;
+        luxSendDependency(rcmd);
+        return;
+    }
+
+    size_t truelen;
+    if((rcmd->position+rcmd->length) > file->size) truelen = file->size - rcmd->position;
+    else truelen = rcmd->length;
+
+    memcpy(rcmd->data, file->data, truelen);
+    rcmd->length = truelen;
+    rcmd->header.header.status = truelen;
+    rcmd->header.header.length += truelen;
+    luxSendDependency(rcmd);
 }
