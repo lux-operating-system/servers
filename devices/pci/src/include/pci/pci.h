@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <liblux/liblux.h>
 
 #pragma once
 
@@ -61,3 +62,5 @@ void pciWriteByte(uint8_t, uint8_t, uint8_t, uint16_t, uint8_t);
 
 void pciEnumerate();
 void pciCreateFile(uint8_t, uint8_t, uint8_t, const char *, size_t);
+void pciReadFile(RWCommand *);
+void pciWriteFile(RWCommand *);
