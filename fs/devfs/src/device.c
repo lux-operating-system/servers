@@ -115,7 +115,7 @@ int createDevice(const char *name, ssize_t (*handler)(int, const char *, off_t *
     devices[deviceCount].status.st_ino = deviceCount + 1;   // fake inode number
     devices[deviceCount].external = 0;
 
-    luxLogf(KPRINT_LEVEL_DEBUG, "created %s '/dev%s'\n", mode, name);
+    //luxLogf(KPRINT_LEVEL_DEBUG, "created %s '/dev%s'\n", mode, name);
 
     deviceCount++;
     return 0;
