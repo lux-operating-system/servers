@@ -152,11 +152,11 @@ void pciDumpGeneral(uint8_t bus, uint8_t slot, uint8_t function) {
 
         if(barSizes[i]) {
             sprintf(buffer, "bar%draw", i);
-            pciCreateFile(bus, slot, function, buffer, 8);  // 8 hex digits, raw value
+            pciCreateFile(bus, slot, function, buffer, 16);  // 16 hex digits, raw value
             sprintf(buffer, "bar%d", i);
-            pciCreateFile(bus, slot, function, buffer, 8);  // 8 hex digits, base address
+            pciCreateFile(bus, slot, function, buffer, 16);  // 16 hex digits, base address
             sprintf(buffer, "bar%dsize", i);
-            pciCreateFile(bus, slot, function, buffer, 8);  // 8 hex digits, length
+            pciCreateFile(bus, slot, function, buffer, 16);  // 16 hex digits, length
         }
     }
 }

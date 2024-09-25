@@ -9,6 +9,7 @@
 #include <liblux/devfs.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 /* pciCreateFile(): creates a file under /dev for a PCI device
  * params: bus - PCI bus
@@ -33,4 +34,5 @@ void pciCreateFile(uint8_t bus, uint8_t slot, uint8_t function, const char *path
     regcmd.status.st_size = size;
 
     luxSendDependency(&regcmd);
+    for(int i = 0; i < 4; i++) sched_yield();
 }
