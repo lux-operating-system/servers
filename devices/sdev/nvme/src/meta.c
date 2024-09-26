@@ -69,7 +69,7 @@ int nvmeInit(const char *addr) {
     if(s != 8) return -1;
 
     // create MMIO
-    uintptr_t ptr = mmio(bar0, bar0size, MMIO_R | MMIO_W | MMIO_ENABLE);
+    uintptr_t ptr = mmio(bar0, bar0size, MMIO_R | MMIO_W | MMIO_CD | MMIO_ENABLE);
     if(!ptr) return -1;
 
     NVMEController *drive = nvmeAllocateDrive();
