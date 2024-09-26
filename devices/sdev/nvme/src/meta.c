@@ -72,7 +72,7 @@ int nvmeInit(const char *addr) {
     void *ptr = (void *) mmio(bar0, bar0size, MMIO_R | MMIO_W | MMIO_CD | MMIO_ENABLE);
     if(!ptr) return -1;
 
-    luxLogf(KPRINT_LEVEL_DEBUG, " - base memory @ 0x%X - 0x%X\n", bar0, bar0+bar0size-1);
+    luxLogf(KPRINT_LEVEL_DEBUG, "- base memory @ [0x%X - 0x%X]\n", bar0, bar0+bar0size-1);
 
     NVMEController tempdrv;
     tempdrv.regs = ptr;
@@ -85,16 +85,16 @@ int nvmeInit(const char *addr) {
         cap & NVME_CAP_NVM_CMDS ? "NVM commands, " : "",
         cap & NVME_CAP_IO_CMDS ? "I/O commands" : "");
     
-    luxLogf(KPRINT_LEVEL_DEBUG, " - capabilities: 0x%X (%s)\n", cap, capstr);
+    luxLogf(KPRINT_LEVEL_DEBUG, "- capability: 0x%X (%s)\n", cap, capstr);
 
     if(!(cap & NVME_CAP_NVM_CMDS)) {
-        luxLogf(KPRINT_LEVEL_WARNING, " - drive does not support NVM command set, aborting\n");
+        luxLogf(KPRINT_LEVEL_WARNING, "- drive does not support NVM command set, aborting\n");
         return -1;
     }
 
     NVMEController *drive = nvmeAllocateDrive();
     if(!drive) {
-        luxLogf(KPRINT_LEVEL_WARNING, " - unable to allocate memory for drive\n");
+        luxLogf(KPRINT_LEVEL_WARNING, "- unable to allocate memory for drive\n");
         return -1;
     }
 
@@ -102,6 +102,14 @@ int nvmeInit(const char *addr) {
     drive->base = bar0;
     drive->size = bar0size;
     drive->regs = ptr;
+
+    drive->maxQueues = (cap & NVME_CAP_MAXQ_MASK) + 1;
+    drive->doorbellStride = 4 << ((cap & NVME_CAP_DSTRD_MASK) >> NVME_CAP_DSTRD_SHIFT);
+    drive->maxPage = 1 << (((cap & NVME_CAP_MPSMAX_MASK) >> NVME_CAP_MPSMAX_SHIFT) + 12);
+    drive->minPage = 1 << (((cap & NVME_CAP_MPSMIN_MASK) >> NVME_CAP_MPSMIN_SHIFT) + 12);
+    
+    luxLogf(KPRINT_LEVEL_DEBUG, "- max %d queues, doorbell stride %d\n", drive->maxQueues, drive->doorbellStride);
+    luxLogf(KPRINT_LEVEL_DEBUG, "- valid page sizes range from %d to %d\n", drive->minPage, drive->maxPage);
 
     return 0;
 }

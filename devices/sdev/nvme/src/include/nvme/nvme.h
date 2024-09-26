@@ -14,6 +14,10 @@ typedef struct NVMEController {
     char addr[16];
     uint64_t base, size;
     void *regs;     // MMIO
+
+    int doorbellStride;
+    int maxQueues;
+    int minPage, maxPage;
 } NVMEController;
 
 int nvmeInit(const char *);
