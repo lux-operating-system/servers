@@ -12,6 +12,7 @@
  */
 
 #include <liblux/liblux.h>
+#include <nvme/nvme.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -52,8 +53,11 @@ int main() {
 
         if(class[0] == 0x01 && class[1] == 0x08 && class[2] == 0x02) {
             luxLogf(KPRINT_LEVEL_DEBUG, "NVMe controller at /dev/pci/%s:\n", entry->d_name);
+            nvmeInit(entry->d_name);
         }
     }
+
+    closedir(dir);
 
     for(;;);
 }
