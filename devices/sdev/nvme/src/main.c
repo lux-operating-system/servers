@@ -43,7 +43,6 @@ int main() {
         FILE *file = fopen(path, "rb");
         if(!file) continue;
 
-        // try to read
         if(fread(&class, 1, 3, file) != 3) {
             fclose(file);
             continue;
