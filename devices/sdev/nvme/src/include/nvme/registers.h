@@ -15,6 +15,9 @@
 
 #pragma once
 
+#include <sys/types.h>
+#include <nvme/nvme.h>
+
 #define NVME_CAP            0x00        // 64-bit, controller capabilities
 #define NVME_VERSION        0x08        // 32-bit
 #define NVME_INT_MASK       0x0C        // 32-bit
@@ -86,3 +89,8 @@
  * 0x1000 + (2y * (4 << CAP.DSTRD))     Submission queue y tail doorbell
  * 0x1000 + ((2y+1) * (4 << CAP>DSTRD)) Completion queue y head doorbell
  */
+
+uint32_t nvmeRead32(NVMEController *, off_t);
+uint64_t nvmeRead64(NVMEController *, off_t);
+void nvmeWrite32(NVMEController *, off_t, uint32_t);
+void nvmeWrite64(NVMEController *, off_t, uint64_t);
