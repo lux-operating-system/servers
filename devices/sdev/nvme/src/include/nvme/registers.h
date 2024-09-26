@@ -46,19 +46,19 @@
 #define NVME_CAP_CONT_QUEUE     0x10000         // if the controller requires physically contiguous queues
 #define NVME_CAP_TIMEOUT_MASK   0xF0000000
 #define NVME_CAP_TIMEOUT_SHIFT  24
-#define NVME_CAP_DSTRD_MASK     0xF00000000     // doorbell stride
+#define NVME_CAP_DSTRD_MASK     0xF00000000L    // doorbell stride
 #define NVME_CAP_DSTRD_SHIFT    32
-#define NVME_CAP_RESET          0x1000000000
-#define NVME_CAP_NVM_CMDS       0x2000000000    // controller supports the NVM command set
-#define NVME_CAP_IO_CMDS        0x80000000000   // controller supports one or more I/O command sets
-#define NVME_CAP_NO_IO_CMDS     0x100000000000  // controller doesn't support I/O command sets
-#define NVME_CAP_BOOT           0x200000000000
-#define NVME_CAP_MPSMIN_MASK    0xF000000000000
+#define NVME_CAP_RESET          0x1000000000L
+#define NVME_CAP_NVM_CMDS       0x2000000000L   // controller supports the NVM command set
+#define NVME_CAP_IO_CMDS        0x80000000000L  // controller supports one or more I/O command sets
+#define NVME_CAP_NO_IO_CMDS     0x100000000000L // controller doesn't support I/O command sets
+#define NVME_CAP_BOOT           0x200000000000L
+#define NVME_CAP_MPSMIN_MASK    0xF000000000000L
 #define NVME_CAP_MPSMIN_SHIFT   48
-#define NVME_CAP_MPSMAX_MASK    0xF0000000000000
+#define NVME_CAP_MPSMAX_MASK    0xF0000000000000L
 #define NVME_CAP_MPSMAX_SHIFT   52
-#define NVME_CAP_SHUTDOWN       0x400000000000000
-#define NVME_CAP_SHUTDOWN_ENC   0x2000000000000000
+#define NVME_CAP_SHUTDOWN       0x400000000000000L
+#define NVME_CAP_SHUTDOWN_ENC   0x2000000000000000L
 
 /* NVMe Controller Configuration Register: NVME_CONFIG */
 #define NVME_CONFIG_EN          0x01            // enable/disable the controller
