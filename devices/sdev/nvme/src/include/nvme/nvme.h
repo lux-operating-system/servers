@@ -224,6 +224,10 @@ typedef struct NVMEController {
     char serial[21];
     char model[41];
     char qualifiedName[257];
+
+    // namespaces
+    int nsCount;
+    uint32_t *ns;
 } NVMEController;
 
 int nvmeInit(const char *);
