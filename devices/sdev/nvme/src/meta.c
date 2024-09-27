@@ -115,6 +115,9 @@ int nvmeInit(const char *addr) {
     nvmeWrite32(drive, NVME_CONFIG, nvmeRead32(drive, NVME_CONFIG) & ~NVME_CONFIG_EN);
     while(nvmeRead32(drive, NVME_STATUS) & NVME_STATUS_RDY);
 
+    // mask all interrupts (until I implemented MSI/MSI-X)
+    nvmeWrite32(drive, NVME_INT_MASK, 0xFFFFFFFF);
+
     // configure the device to use 4 KiB pages by default
     uint32_t cc = nvmeRead32(drive, NVME_CONFIG);
     cc &= ~(NVME_CONFIG_MPS_MASK << NVME_CONFIG_MPS_SHIFT);
@@ -126,29 +129,22 @@ int nvmeInit(const char *addr) {
     cc &= ~(NVME_CONFIG_CMDS_MASK << NVME_CONFIG_CMDS_SHIFT);
 
     if(cap & NVME_CAP_NO_IO_CMDS)
-        cc |= (NVME_CONFIG_CMDS_ADMIN << NVME_CONFIG_CMDS_SHIFT);
+        cc |= NVME_CONFIG_CMDS_ADMIN;
     else if(cap & NVME_CAP_IO_CMDS)
-        cc |= (NVME_CONFIG_CMDS_ALL << NVME_CONFIG_CMDS_SHIFT);
+        cc |= NVME_CONFIG_CMDS_ALL;
     else
-        cc |= (NVME_CONFIG_CMDS_NVM << NVME_CONFIG_CMDS_SHIFT);
+        cc |= NVME_CONFIG_CMDS_NVM;
 
-    // I/O submission queue entries will be set to 64 bytes, and completion
-    // queue entries will be 16 bytes
-    cc &= ~(NVME_CONFIG_SQES_MASK << NVME_CONFIG_SQES_SHIFT);
-    cc |= (7 << NVME_CONFIG_SQES_SHIFT);
-
-    cc &= ~(NVME_CONFIG_CQES_MASK << NVME_CONFIG_CQES_SHIFT);
-    cc |= (4 << NVME_CONFIG_CQES_SHIFT);
     nvmeWrite32(drive, NVME_CONFIG, cc);
 
-    // set up the admin queue sizes with 64 entries in each of the submission
+    // set up the admin queue sizes with 16 entries in each of the submission
     // and completion queues
-    uint32_t aqa = (64 << 16) | 64;
+    uint32_t aqa = ((ADMIN_QUEUE_SIZE-1) << 16) | (ADMIN_QUEUE_SIZE-1);
     nvmeWrite32(drive, NVME_AQA, aqa);
 
     // allocate memory for the admin queues
-    drive->asqPhys = pcontig(0, sizeof(NVMECommonCommand) * 64, 0);
-    drive->acqPhys = pcontig(0, sizeof(NVMeCompletionQueue) * 64, 0);
+    drive->asqPhys = pcontig(0, sizeof(NVMECommonCommand) * ADMIN_QUEUE_SIZE, 0);
+    drive->acqPhys = pcontig(0, sizeof(NVMECompletionQueue) * ADMIN_QUEUE_SIZE, 0);
 
     if(!drive->asqPhys || !drive->acqPhys) {
         luxLogf(KPRINT_LEVEL_WARNING, "- unable to allocate memory for admin queues\n");
@@ -158,19 +154,23 @@ int nvmeInit(const char *addr) {
     luxLogf(KPRINT_LEVEL_DEBUG, "- admin queues at 0x%X, 0x%X\n", drive->asqPhys, drive->acqPhys);
 
     // map the queues
-    drive->asq = (NVMECommonCommand *) mmio(drive->asqPhys, sizeof(NVMECommonCommand) * 64, MMIO_R | MMIO_W | MMIO_CD | MMIO_ENABLE);
-    drive->acq = (NVMeCompletionQueue *) mmio(drive->asqPhys, sizeof(NVMeCompletionQueue) * 64, MMIO_R | MMIO_W | MMIO_CD | MMIO_ENABLE);
+    drive->asq = (NVMECommonCommand *) mmio(drive->asqPhys, sizeof(NVMECommonCommand) * ADMIN_QUEUE_SIZE, MMIO_R | MMIO_W | MMIO_CD | MMIO_ENABLE);
+    drive->acq = (NVMECompletionQueue *) mmio(drive->acqPhys, sizeof(NVMECompletionQueue) * ADMIN_QUEUE_SIZE, MMIO_R | MMIO_W | MMIO_CD | MMIO_ENABLE);
 
     if(!drive->asq || !drive->acq) {
         luxLogf(KPRINT_LEVEL_WARNING, "- unable to memory map admin queues\n");
-        pcontig(drive->asqPhys, sizeof(NVMECommonCommand) * 64, 0);
-        pcontig(drive->acqPhys, sizeof(NVMeCompletionQueue) * 64, 0);
+        pcontig(drive->asqPhys, sizeof(NVMECommonCommand) * ADMIN_QUEUE_SIZE, 0);
+        pcontig(drive->acqPhys, sizeof(NVMECompletionQueue) * ADMIN_QUEUE_SIZE, 0);
         return -1;
     }
 
     // reset to zero
-    memset(drive->asq, 0, sizeof(NVMECommonCommand)*64);
-    memset(drive->acq, 0, sizeof(NVMeCompletionQueue)*64);
+    memset(drive->asq, 0, sizeof(NVMECommonCommand)*ADMIN_QUEUE_SIZE);
+    memset(drive->acq, 0, sizeof(NVMECompletionQueue)*ADMIN_QUEUE_SIZE);
+
+    drive->adminHead = 0;
+    drive->adminTail = 0;
+    drive->adminQueueSize = ADMIN_QUEUE_SIZE;
 
     // and give them to the device
     nvmeWrite64(drive, NVME_ASQ, drive->asqPhys);

@@ -9,6 +9,12 @@
 
 #include <sys/types.h>
 
+/* TODO: maybe don't hard-code these and optimize according to the hardware's
+ * capabilities, and also maybe use more queues for more parallelism*/
+
+#define ADMIN_QUEUE_SIZE        16
+#define IO_QUEUE_SIZE           64
+
 /* NVMe Common Command Format: these are the entries that are submitted to the
  * admin and I/O submission queues, where the number of entries is dictated by
  * the controller's capability register */
@@ -44,29 +50,7 @@ typedef struct {
     uint16_t sqIdentifier;
     uint16_t commandID;
     uint16_t status;
-}__attribute__((packed)) NVMeCompletionQueue;
-
-typedef struct NVMEController {
-    struct NVMEController *next;
-    char addr[16];
-    uint64_t base, size;
-    void *regs;     // MMIO
-
-    int doorbellStride;
-    int maxQueueEntries;
-    int minPage, maxPage;
-    int pageSize;
-
-    // admin queues
-    uintptr_t asqPhys, acqPhys;
-    NVMECommonCommand *asq;
-    NVMeCompletionQueue *acq;
-
-    // I/O queues
-    uintptr_t *sqPhys, *cqPhys;
-    NVMECommonCommand **sq;
-    NVMeCompletionQueue **cq;
-} NVMEController;
+}__attribute__((packed)) NVMECompletionQueue;
 
 /* Data Structure Returned by the Admin Identify Command */
 
@@ -198,7 +182,46 @@ typedef struct {
 #define NVME_CONTROLLER_DISCOVERY   2
 #define NVME_CONTROLLER_ADMIN       3
 
-int s = sizeof(NVMEIdentification);
+typedef struct NVMEController {
+    struct NVMEController *next;
+    char addr[16];
+    uint64_t base, size;
+    void *regs;     // MMIO
+
+    int doorbellStride;
+    int maxQueueEntries;
+    int minPage, maxPage;
+    int pageSize;
+
+    // admin queues
+    uintptr_t asqPhys, acqPhys;
+    NVMECommonCommand *asq;
+    NVMECompletionQueue *acq;
+
+    // identification
+    uintptr_t idPhys;
+    NVMEIdentification *id;
+
+    // I/O queues
+    uintptr_t *sqPhys, *cqPhys;
+    NVMECommonCommand **sq;
+    NVMECompletionQueue **cq;
+
+    // circular queue
+    int adminQueueSize;
+    int adminTail, adminHead;
+    int *ioQueueSizes, *ioTails, *ioHeads;
+
+    // metadata from the admin command
+    uint16_t vendor;
+    char serial[21];
+    char model[41];
+    char qualifiedName[257];
+} NVMEController;
 
 int nvmeInit(const char *);
+void nvmeSubmitDoorbell(NVMEController *, int, int);
+void nvmeCompleteDoorbell(NVMEController *, int, int);
+NVMECompletionQueue *nvmePoll(NVMEController *, int, uint16_t, int);
+void nvmeSubmit(NVMEController *, int, NVMECommonCommand *);
 int nvmeIdentify(NVMEController *);
