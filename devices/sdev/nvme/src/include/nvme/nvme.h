@@ -52,7 +52,7 @@ typedef struct {
     uint16_t status;
 }__attribute__((packed)) NVMECompletionQueue;
 
-/* Data Structure Returned by the Admin Identify Command */
+/* Data Structure Returned by the Admin Identify Controller Command (CNS 0x01) */
 
 typedef struct {
     // Controller Capabilities and Features
@@ -188,6 +188,62 @@ typedef struct {
 #define NVME_ZONED_NS_COMMAND_SET   0x0004
 #define NVME_LOCAL_COMMAND_SET      0x0008
 #define NVME_CPNC_COMMAND_SET       0x0010
+
+/* NVM I/O Command Set-Specific Namespace Identification Data Structure */
+
+typedef struct {
+    uint16_t metadataSize;
+    uint8_t sectorSize;             // 2^n, minimum value 9 (512 bytes)
+    uint8_t performance;
+}__attribute__((packed)) NVMLBAFormat;
+
+typedef struct {
+    uint64_t size;                  // sectors
+    uint64_t capacity;              // sectors
+    uint64_t utilization;           // sectors
+    uint8_t features;
+    uint8_t lbaFormatCount;
+    uint8_t formattedLBASize;
+    uint8_t metadataCapabilities;
+    uint8_t endToEndPCapabilities;
+    uint8_t endToEndPSettings;
+    uint8_t nsSharingCapabilities;
+    uint8_t reservationCapabilities;
+    uint8_t formatProgressIndicator;
+    uint8_t deallocFeatures;
+    uint16_t atomicWUNormal;
+    uint16_t atomicWUPowerFailure;
+    uint16_t atomicCMPW;
+    uint16_t atomicBoundarySizeNormal;
+    uint16_t atomicBoundaryOffset;
+    uint16_t atomicBoundarySizePowerFailure;
+    uint16_t optimalIOBoundary;
+    uint64_t nvmCapacity[2];                // bytes
+    uint16_t writePreferredGranularity;     // preferred min write size
+    uint16_t writePreferredAlignment;
+    uint16_t deallocPreferredGranularity;   // preferred min deallocation size
+    uint16_t deallocPreferredAlignment;
+    uint16_t optimalWriteSize;              // preferred write size
+    uint16_t maxCopySource;
+    uint32_t maxCopyLength;
+    uint8_t maxSourceRange;
+    uint8_t keyPerIOStatus;
+    uint8_t uniqueAttributeLBAFormatCount;
+    uint8_t reserved1;
+    uint32_t kpioGranularity;
+    uint32_t reserved2;
+    uint32_t anaGroupID;
+    uint8_t reserved3[3];
+    uint8_t attributes;
+    uint16_t nvmSetID;
+    uint16_t enduranceID;
+    uint8_t guid[16];
+    uint64_t extendedUID;
+    NVMLBAFormat lbaFormat[64];
+    uint8_t vendorSpecific[3712];
+}__attribute__((packed)) NVMIONSIdentification;
+
+int s = sizeof(NVMIONSIdentification);
 
 typedef struct NVMEController {
     struct NVMEController *next;
