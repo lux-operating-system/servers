@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <unistd.h>
 
 static PCIFile *files = NULL;
 
@@ -66,7 +65,6 @@ void pciCreateFile(uint8_t bus, uint8_t slot, uint8_t function, uint16_t reg,
     regcmd.status.st_size = size;
 
     luxSendDependency(&regcmd);
-    for(int i = 0; i < 4; i++) sched_yield();
 }
 
 /* pciFindFile(): finds a PCI file structure by name

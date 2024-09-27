@@ -9,6 +9,7 @@
 #include <liblux/liblux.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 static char *msd[] = {
     "SCSI bus controller",
@@ -251,4 +252,7 @@ void pciEnumerate() {
             }
         }
     } while(1);
+
+    // allow some time for the changes to reflect on the /dev file system
+    for(int i = 0; i < 16; i++) sched_yield();
 }
