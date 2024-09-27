@@ -284,6 +284,8 @@ typedef struct NVMEController {
     // namespaces
     int nsCount;
     uint32_t *ns;
+    uint16_t *nsSectorSizes;    // bytes
+    uint64_t *nsSizes;          // sectors
 } NVMEController;
 
 int nvmeInit(const char *);
