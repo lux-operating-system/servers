@@ -9,17 +9,6 @@
 
 #include <sys/types.h>
 
-typedef struct NVMEController {
-    struct NVMEController *next;
-    char addr[16];
-    uint64_t base, size;
-    void *regs;     // MMIO
-
-    int doorbellStride;
-    int maxQueues;
-    int minPage, maxPage;
-} NVMEController;
-
 /* NVMe Common Command Format: these are the entries that are submitted to the
  * admin and I/O submission queues, where the number of entries is dictated by
  * the controller's capability register */
@@ -56,5 +45,27 @@ typedef struct {
     uint16_t commandID;
     uint16_t status;
 }__attribute__((packed)) NVMeCompletionQueue;
+
+typedef struct NVMEController {
+    struct NVMEController *next;
+    char addr[16];
+    uint64_t base, size;
+    void *regs;     // MMIO
+
+    int doorbellStride;
+    int maxQueues;
+    int minPage, maxPage;
+    int pageSize;
+
+    // admin queues
+    uintptr_t asqPhys, acqPhys;
+    NVMECommonCommand *asq;
+    NVMeCompletionQueue *acq;
+
+    // I/O queues
+    uintptr_t *sqPhys, *cqPhys;
+    NVMECommonCommand **sq;
+    NVMeCompletionQueue **cq;
+} NVMEController;
 
 int nvmeInit(const char *);
