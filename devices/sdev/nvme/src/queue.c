@@ -62,7 +62,7 @@ NVMECompletionQueue *nvmePoll(NVMEController *drive, int q, uint16_t id, int tim
     int time = 0;
     while(cq[entry].commandID != id) {
         time++;
-        if(timeout && (time >= timeout))
+        if(timeout && (time > timeout))
             return NULL;
         sched_yield();
     }
