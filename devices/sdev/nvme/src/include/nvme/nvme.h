@@ -243,8 +243,6 @@ typedef struct {
     uint8_t vendorSpecific[3712];
 }__attribute__((packed)) NVMIONSIdentification;
 
-int s = sizeof(NVMIONSIdentification);
-
 typedef struct NVMEController {
     struct NVMEController *next;
     char addr[16];
