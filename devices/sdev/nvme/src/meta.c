@@ -85,7 +85,7 @@ int nvmeInit(const char *addr) {
         cap & NVME_CAP_NVM_CMDS ? "NVM commands, " : "",
         cap & NVME_CAP_IO_CMDS ? "I/O commands" : "");
     
-    luxLogf(KPRINT_LEVEL_DEBUG, "- capability: 0x%X (%s)\n", cap, capstr);
+    luxLogf(KPRINT_LEVEL_DEBUG, "- capabilities: %s\n", capstr);
 
     if(!(cap & NVME_CAP_NVM_CMDS)) {
         luxLogf(KPRINT_LEVEL_WARNING, "- drive does not support NVM command set, aborting\n");
