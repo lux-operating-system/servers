@@ -48,15 +48,21 @@ void nvmeCompleteDoorbell(NVMEController *drive, int q, int head) {
 
 NVMECompletionQueue *nvmePoll(NVMEController *drive, int q, uint16_t id, int timeout) {
     NVMECompletionQueue *cq;
-    int entry;
+    int entry, head;
     if(!q) {
         cq = drive->acq;
         entry = drive->adminTail-1;
         if(entry < 0) entry = drive->adminQueueSize-1;
+
+        head = entry + 1;
+        if(head >= drive->adminQueueSize) head = 0;
     } else {
         cq = drive->cq[q-1];
         entry = drive->ioTails[q-1] - 1;
         if(entry < 0) entry = drive->ioQueueSizes[q-1] - 1;
+
+        head = entry + 1;
+        if(head >= drive->ioQueueSizes[q-1]) head = 0;
     }
 
     int time = 0;
@@ -67,6 +73,8 @@ NVMECompletionQueue *nvmePoll(NVMEController *drive, int q, uint16_t id, int tim
         sched_yield();
     }
 
+    // acknowledge the completion doorbell
+    nvmeCompleteDoorbell(drive, q, head);
     return &cq[entry];
 }
 
