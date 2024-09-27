@@ -53,7 +53,7 @@ typedef struct NVMEController {
     void *regs;     // MMIO
 
     int doorbellStride;
-    int maxQueues;
+    int maxQueueEntries;
     int minPage, maxPage;
     int pageSize;
 
@@ -69,3 +69,4 @@ typedef struct NVMEController {
 } NVMEController;
 
 int nvmeInit(const char *);
+int nvmeIdentify(NVMEController *);

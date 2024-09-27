@@ -103,38 +103,34 @@ int nvmeInit(const char *addr) {
     drive->size = bar0size;
     drive->regs = ptr;
 
-    drive->maxQueues = (cap & NVME_CAP_MAXQ_MASK) + 1;
+    drive->maxQueueEntries = (cap & NVME_CAP_MAXQ_MASK) + 1;
     drive->doorbellStride = 4 << ((cap & NVME_CAP_DSTRD_MASK) >> NVME_CAP_DSTRD_SHIFT);
     drive->maxPage = 1 << (((cap & NVME_CAP_MPSMAX_MASK) >> NVME_CAP_MPSMAX_SHIFT) + 12);
     drive->minPage = 1 << (((cap & NVME_CAP_MPSMIN_MASK) >> NVME_CAP_MPSMIN_SHIFT) + 12);
     
-    luxLogf(KPRINT_LEVEL_DEBUG, "- max %d queues, doorbell stride %d\n", drive->maxQueues, drive->doorbellStride);
+    luxLogf(KPRINT_LEVEL_DEBUG, "- max %d queue entries, doorbell stride %d\n", drive->maxQueueEntries, drive->doorbellStride);
     luxLogf(KPRINT_LEVEL_DEBUG, "- valid page sizes range from %d KiB - %d KiB\n", drive->minPage/1024, drive->maxPage/1024);
 
     // disable the device
     nvmeWrite32(drive, NVME_CONFIG, nvmeRead32(drive, NVME_CONFIG) & ~NVME_CONFIG_EN);
+    while(nvmeRead32(drive, NVME_STATUS) & NVME_STATUS_RDY);
 
-    // configure the device to use larger pages if supported
+    // configure the device to use 4 KiB pages by default
     uint32_t cc = nvmeRead32(drive, NVME_CONFIG);
     cc &= ~(NVME_CONFIG_MPS_MASK << NVME_CONFIG_MPS_SHIFT);
-    if(drive->maxPage >= 65536) {
-        cc |= (4 << NVME_CONFIG_MPS_SHIFT);
-        drive->pageSize = 65536;
-    } else if(drive->maxPage >= 32768) {
-        cc |= (3 << NVME_CONFIG_MPS_SHIFT);
-        drive->pageSize = 32768;
-    } else if(drive->maxPage >= 16384) {
-        cc |= (2 << NVME_CONFIG_MPS_SHIFT);
-        drive->pageSize = 16384;
-    } else {
-        drive->pageSize = 4096;
-    }
+    drive->pageSize = 4096;
 
     luxLogf(KPRINT_LEVEL_DEBUG, "- set page size to %d KiB\n", drive->pageSize/1024);
     
-    // enable the NVM command set
+    // enable appropriate command sets according to the recommended procedure
     cc &= ~(NVME_CONFIG_CMDS_MASK << NVME_CONFIG_CMDS_SHIFT);
-    cc |= (NVME_CONFIG_CMDS_NVM << NVME_CONFIG_CMDS_SHIFT);
+
+    if(cap & NVME_CAP_NO_IO_CMDS)
+        cc |= (NVME_CONFIG_CMDS_ADMIN << NVME_CONFIG_CMDS_SHIFT);
+    else if(cap & NVME_CAP_IO_CMDS)
+        cc |= (NVME_CONFIG_CMDS_ALL << NVME_CONFIG_CMDS_SHIFT);
+    else
+        cc |= (NVME_CONFIG_CMDS_NVM << NVME_CONFIG_CMDS_SHIFT);
 
     // I/O submission queue entries will be set to 64 bytes, and completion
     // queue entries will be 16 bytes
@@ -183,6 +179,9 @@ int nvmeInit(const char *addr) {
     // now enable the device
     nvmeWrite32(drive, NVME_CONFIG, nvmeRead32(drive, NVME_CONFIG) | NVME_CONFIG_EN);
     while(!(nvmeRead32(drive, NVME_STATUS) & NVME_STATUS_RDY));
+
+    // submit an identify command
+    nvmeIdentify(drive);
 
     return 0;
 }
