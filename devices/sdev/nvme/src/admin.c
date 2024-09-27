@@ -86,8 +86,39 @@ int nvmeIdentify(NVMEController *drive) {
         }
 
         uint64_t *ioID = (uint64_t *) drive->id;
-        // TODO
-        while(1);
+        int cmdProfile = -1;
+        for(int i = 0; i < 512; i++) {
+            if(ioID[i] & NVME_NVM_COMMAND_SET) {
+                cmdProfile = i;
+                break;
+            }
+        }
+
+        if(cmdProfile < 0) {
+            luxLogf(KPRINT_LEVEL_WARNING, "- device does not implement NVM command set, aborting...\n");
+            return -1;
+        }
+
+        luxLogf(KPRINT_LEVEL_DEBUG, "- using command set profile %d (0x%X)\n", cmdProfile, ioID[cmdProfile]);
+
+        // send an admin set features command to enable the NVM I/O command set
+        cmd.dword0 = NVME_ADMIN_SET_FEATURES;
+        cmd.dword0 |= (0x9876 << 16);
+
+        // arbitrary data pointer - the FID we will set does not actually use
+        // any data transfers
+        cmd.dataLow = drive->idPhys;
+        cmd.dword10 = 0x19;         // FID 0x19 - set I/O command set profile
+        cmd.dword11 = cmdProfile;
+        cmd.dword14 = 0x00;
+
+        nvmeSubmit(drive, 0, &cmd);
+        if(!nvmePoll(drive, 0, 0x9876, 20)) {
+            luxLogf(KPRINT_LEVEL_WARNING, "- timeout while setting command set profile, aborting...\n");
+            return -1;
+        }
+
+        luxLogf(KPRINT_LEVEL_DEBUG, "- enabled NVM I/O command set\n");
     }
 
     while(1);

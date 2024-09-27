@@ -182,6 +182,13 @@ typedef struct {
 #define NVME_CONTROLLER_DISCOVERY   2
 #define NVME_CONTROLLER_ADMIN       3
 
+/* NVMe Identify - Controller Namespace 0x1C (Identify I/O Command Sets) */
+#define NVME_NVM_COMMAND_SET        0x0001
+#define NVME_KV_COMMAND_SET         0x0002
+#define NVME_ZONED_NS_COMMAND_SET   0x0004
+#define NVME_LOCAL_COMMAND_SET      0x0008
+#define NVME_CPNC_COMMAND_SET       0x0010
+
 typedef struct NVMEController {
     struct NVMEController *next;
     char addr[16];
