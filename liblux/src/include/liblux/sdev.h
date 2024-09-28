@@ -8,6 +8,7 @@
 #pragma once
 
 #include <liblux/liblux.h>
+#include <sys/types.h>
 
 /* These commands are requested by storage device drivers from sdev */
 #define COMMAND_SDEV_REGISTER           0xE001
@@ -34,6 +35,8 @@ typedef struct {
     uint64_t device;            // driver-specific device ID
     uint64_t start;             // bytes
     uint64_t count;             // bytes
+
+    pid_t pid;                  // requesting process
 
     uint64_t buffer[];
 } SDevRWCommand;
