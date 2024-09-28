@@ -59,10 +59,10 @@ NVMECompletionQueue *nvmePoll(NVMEController *drive, int q, uint16_t id, int tim
     } else {
         cq = drive->cq[q-1];
         entry = drive->ioTails[q-1] - 1;
-        if(entry < 0) entry = drive->ioQueueSizes[q-1] - 1;
+        if(entry < 0) entry = drive->ioQSize - 1;
 
         head = entry + 1;
-        if(head >= drive->ioQueueSizes[q-1]) head = 0;
+        if(head >= drive->ioQSize) head = 0;
     }
 
     int time = 0;
@@ -105,7 +105,7 @@ void nvmeSubmit(NVMEController *drive, int q, NVMECommonCommand *cmd) {
 
         tail = drive->ioTails[q-1];
         drive->ioTails[q-1]++;
-        if(drive->ioTails[q-1] >= drive->ioQueueSizes[q-1])
+        if(drive->ioTails[q-1] >= drive->ioQSize)
             drive->ioTails[q-1] = 0;
         nextTail = drive->ioTails[q-1];
     }

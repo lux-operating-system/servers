@@ -9,11 +9,9 @@
 
 #include <sys/types.h>
 
-/* TODO: maybe don't hard-code these and optimize according to the hardware's
- * capabilities, and also maybe use more queues for more parallelism*/
-
-#define ADMIN_QUEUE_SIZE        16
-#define IO_QUEUE_SIZE           64
+#define ADMIN_QUEUE_SIZE        16      /* commands per admin queue */
+#define IO_DEFAULT_QUEUE_SIZE   16      /* commands per I/O queue */
+#define IO_DEFAULT_QUEUE_COUNT  256     /* default number of I/O queues */
 
 /* NVMe Common Command Format: these are the entries that are submitted to the
  * admin and I/O submission queues, where the number of entries is dictated by
@@ -267,11 +265,13 @@ typedef struct NVMEController {
     uintptr_t *sqPhys, *cqPhys;
     NVMECommonCommand **sq;
     NVMECompletionQueue **cq;
+    int sqCount, cqCount;
+    int ioQSize;
 
     // circular queue
     int adminQueueSize;
     int adminTail, adminHead;
-    int *ioQueueSizes, *ioTails, *ioHeads;
+    int *ioTails, *ioHeads;
 
     // metadata from the admin command
     uint16_t vendor;
