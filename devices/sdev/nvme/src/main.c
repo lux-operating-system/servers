@@ -15,13 +15,12 @@
 #include <nvme/nvme.h>
 #include <dirent.h>
 #include <stdio.h>
-#include <unistd.h>
 
 int main() {
     luxInit("nvme");
 
-    // TODO: depend on sdev, the generic storage device abstraction layer
-    //while(luxConnectDependency("sdev"));
+    // depend on sdev, the generic storage device abstraction layer
+    while(luxConnectDependency("sdev"));
 
     // enumerate PCI devices under /dev/pci/ and search for NVMe devices
     // NVM Express has class 0x01, subclass 0x08, and interface 0x02
