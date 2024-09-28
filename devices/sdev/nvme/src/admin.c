@@ -42,7 +42,7 @@ int nvmeIdentify(NVMEController *drive) {
     cmd.dword0 = NVME_ADMIN_IDENTIFY;
     cmd.dword0 |= (0x1234 << 16);
     cmd.dataLow = drive->idPhys;    // direct PRP because we're not crossing a page boundary
-    cmd.dword10 = 0x01;             // CNS 1 = identify controller
+    cmd.dword10 = 0x01;             // CNS 0x01 = identify controller
 
     // submit the command
     nvmeSubmit(drive, 0, &cmd);
@@ -153,7 +153,9 @@ int nvmeIdentify(NVMEController *drive) {
     }
 
     drive->ns = calloc(drive->nsCount, sizeof(uint32_t));
-    if(!drive->ns) {
+    drive->nsSectorSizes = calloc(drive->nsCount, sizeof(uint16_t));
+    drive->nsSizes = calloc(drive->nsCount, sizeof(uint64_t));
+    if(!drive->ns || !drive->nsSectorSizes || !drive->nsSizes) {
         luxLogf(KPRINT_LEVEL_WARNING, "- unable to allocate memory for namespaces, aborting...\n");
         return -1;
     }
@@ -168,6 +170,39 @@ int nvmeIdentify(NVMEController *drive) {
 
     luxLogf(KPRINT_LEVEL_DEBUG, "- found %d namespace%s implementing NVM I/O commands\n", drive->nsCount,
         drive->nsCount != 1 ? "s" : "");
+
+    // now set up the namespaces one by one
+    for(int i = 0; i < drive->nsCount; i++) {
+        memset(drive->id, 0, sizeof(NVMIONSIdentification));
+        memset(&cmd, 0, sizeof(NVMECommonCommand));
+
+        // identify namespace
+        cmd.dword0 = NVME_ADMIN_IDENTIFY;
+        cmd.dword0 |= ((i + 0xBEEF) << 16);     // arbirary command ID
+        cmd.namespaceID = drive->ns[i];
+        cmd.dataLow = drive->idPhys;
+        cmd.dword10 = 0x00;         // CNS 0x00 = identify namespace
+        cmd.dword11 = 0x00;         // CSI 0x00 = NVM I/O command set
+        nvmeSubmit(drive, 0, &cmd);
+        if(!nvmePoll(drive, 0, i + 0xBEEF, 20)) {
+            luxLogf(KPRINT_LEVEL_WARNING, "- timeout while identifying NVM namespace %d (0x%08X), aborting...\n", i, drive->ns[i]);
+            return -1;
+        }
+
+        NVMIONSIdentification *nvmNSID = (NVMIONSIdentification *) drive->id;
+        if(!nvmNSID->lbaFormatCount) {
+            luxLogf(KPRINT_LEVEL_WARNING, "- drive does not report any LBA formats, aborting...\n");
+            return -1;
+        }
+
+        drive->nsSectorSizes[i] = 1 << nvmNSID->lbaFormat[0].sectorSize;
+        drive->nsSizes[i] = nvmNSID->capacity;
+        uint64_t byteSize = drive->nsSizes[i] * drive->nsSectorSizes[i];
+        if(byteSize >= 0x40000000)
+            luxLogf(KPRINT_LEVEL_DEBUG, "- NS %d: capacity %d GiB, %d bytes per sector\n", i+1, byteSize/0x40000000, drive->nsSectorSizes[i]);
+        else
+            luxLogf(KPRINT_LEVEL_DEBUG, "- NS %d: capacity %d MiB, %d bytes per sector\n", i+1, byteSize/0x100000, drive->nsSectorSizes[i]);
+    }
 
     while(1);
 }
