@@ -91,5 +91,8 @@ int main() {
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", msg->command);
             }
         }
+
+        // and check the status of existing requests
+        nvmeCycle();
     }
 }

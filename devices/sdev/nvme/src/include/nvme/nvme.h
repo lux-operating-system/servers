@@ -315,3 +315,4 @@ int nvmeReadSector(NVMEController *, int, uint16_t, uint64_t, uint16_t, void *);
 int nvmeWriteSector(NVMEController *, int, uint16_t, uint64_t, uint16_t, const void *);
 void nvmeRead(SDevRWCommand *);
 void nvmeWrite(SDevRWCommand *);
+void nvmeCycle();

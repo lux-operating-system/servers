@@ -60,6 +60,32 @@ static void nvmeDequeueLast() {
     free(list);
 }
 
+/* nvmeDequeue(): deletes a request with a specific ID number
+ * params: id - unique ID number
+ * returns: nothing
+ */
+
+void nvmeDequeue(uint16_t id) {
+    if(!requestQueue) return;
+
+    IORequest *list = requestQueue;
+    IORequest *prev = NULL;
+
+    while(list) {
+        if(list->id == id) {
+            free(list->rwcmd);
+            free(list);
+            if(prev) prev->next = NULL;
+            else requestQueue = NULL;
+
+            return;
+        }
+
+        prev = list;
+        list = list->next;
+    }
+}
+
 /* nvmeRead(): handler for read requests from an NVMe drive
  * params: cmd - read command message
  * returns: nothing
@@ -127,5 +153,44 @@ void nvmeRead(SDevRWCommand *cmd) {
         cmd->header.response = 1;
         cmd->header.status = -EIO;
         luxSendDependency(cmd);
+    }
+}
+
+/* nvmeCycle(): cycles through NVMe I/O commands and checks their status
+ * params: none
+ * returns: nothing
+ */
+
+void nvmeCycle() {
+    IORequest *list = requestQueue;
+
+    while(list) {
+        // check completion status
+        NVMECompletionQueue *cq = nvmeStatus(nvmeGetDrive(list->drive), list->queue, list->id);
+        if(cq) {
+            // command has completed, check its status
+            uint8_t statusType = (cq->status >> 9) & 7;
+            uint8_t statusCode = (cq->status >> 1) & 0xFF;
+
+            if(statusCode || statusType) {
+                luxLogf(KPRINT_LEVEL_WARNING, "I/O error on drive %d ns %d: status type %d, error code 0x%02X\n",
+                    list->drive, list->ns, statusType, statusCode);
+                
+                // overwrite the previous optimistic header we created
+                list->rwcmd->header.length = sizeof(SDevRWCommand);
+                list->rwcmd->header.status = -EIO;
+                list->rwcmd->count = 0;
+            }
+
+            // notify the storage device layer
+            luxSendDependency(list->rwcmd);
+            
+            // and dequeue this entry while preserving a pointer to the next
+            IORequest *next = list->next;
+            nvmeDequeue(list->id);
+            list = next;
+        } else {
+            list = list->next;
+        }
     }
 }
