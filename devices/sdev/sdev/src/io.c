@@ -39,5 +39,51 @@ void sdevRead(RWCommand *cmd) {
     rcmd.start = cmd->position;
     rcmd.count = cmd->length;
     rcmd.device = dev->deviceID;
+    rcmd.pid = cmd->header.header.requester;
     luxSend(dev->sd, &rcmd);
+}
+
+/* relayRead(): relays the read response from a device driver to the requester
+ * params: res - read response message
+ * returns: nothing, response relayed to the requester
+ */
+
+void relayRead(SDevRWCommand *res) {
+    // allocate a buffer of differing size according to the command's status
+    if(!res->header.status) {
+        // success
+        RWCommand *rcmd = calloc(1, sizeof(RWCommand) + res->count);
+        if(!rcmd) {
+            luxLogf(KPRINT_LEVEL_ERROR, "unable to allocate memory for I/O operations\n");
+            return;
+        }
+
+        rcmd->header.header.command = COMMAND_READ;
+        rcmd->header.header.length = sizeof(RWCommand) + res->count;
+        rcmd->header.header.response = 1;
+        rcmd->header.header.status = res->count;
+        rcmd->header.header.requester = res->pid;
+        rcmd->header.id = res->syscall;
+        rcmd->position = res->start + res->count;
+        rcmd->length = res->count;
+        memcpy(rcmd->data, res->buffer, res->count);
+
+        luxSendDependency(rcmd);
+        free(rcmd);
+    } else {
+        // I/O error, simply pass on the error code
+        RWCommand rcmd;
+        memset(&rcmd, 0, sizeof(RWCommand));
+
+        rcmd.header.header.command = COMMAND_READ;
+        rcmd.header.header.length = sizeof(RWCommand);
+        rcmd.header.header.response = 1;
+        rcmd.header.header.status = res->header.status;
+        rcmd.header.header.requester = res->pid;
+        rcmd.header.id = res->syscall;
+        rcmd.position = res->start;
+        rcmd.length = 0;
+
+        luxSendDependency(&rcmd);
+    }
 }

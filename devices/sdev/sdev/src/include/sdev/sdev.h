@@ -34,3 +34,4 @@ extern StorageDevice *sdev;
 void registerDevice(int, SDevRegisterCommand *);
 StorageDevice *findDevice(int);
 void sdevRead(RWCommand *);
+void relayRead(SDevRWCommand *);

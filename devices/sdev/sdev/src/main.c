@@ -60,8 +60,9 @@ int main() {
                 luxRecv(connections[i], msg, msg->length, false, false);    // receive the actual msg
                 switch(msg->command) {
                 case COMMAND_SDEV_REGISTER: registerDevice(connections[i], (SDevRegisterCommand *) msg); break;
+                case COMMAND_SDEV_READ: relayRead((SDevRWCommand *) msg); break;
                 default:
-                    luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X from storage device driver, dropping message\n");
+                    luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X from storage device driver, dropping message\n", msg->command);
                 }
             }
         }
