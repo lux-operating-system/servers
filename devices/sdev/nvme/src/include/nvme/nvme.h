@@ -292,3 +292,8 @@ void nvmeCompleteDoorbell(NVMEController *, int, int);
 NVMECompletionQueue *nvmePoll(NVMEController *, int, uint16_t, int);
 void nvmeSubmit(NVMEController *, int, NVMECommonCommand *);
 int nvmeIdentify(NVMEController *);
+int nvmeCreatePRP(NVMEController *, NVMECommonCommand *, void *, size_t);
+int nvmeDestroyPRP(NVMEController *, uint64_t, size_t);
+
+size_t nvmeReadSector(NVMEController *, uint64_t, uint16_t, void *);
+size_t nvmeWriteSector(NVMEController *, uint64_t, uint16_t, const void *);
