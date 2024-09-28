@@ -68,3 +68,23 @@ void registerDevice(SDevRegisterCommand *cmd) {
     
     list->next = dev;
 }
+
+/* findDevice(): finds a storage device by index
+ * params: i - index
+ * returns: pointer to storage device structure, NULL on error
+ */
+
+StorageDevice *findDevice(int i) {
+    if(i >= devCount) return NULL;
+
+    StorageDevice *list = sdev;
+    int c = 0;
+    while(list) {
+        if(c == i) return list;
+        
+        list = list->next;
+        c++;
+    }
+
+    return NULL;
+}
