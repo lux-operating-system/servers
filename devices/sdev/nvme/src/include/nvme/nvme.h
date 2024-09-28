@@ -287,6 +287,8 @@ typedef struct NVMEController {
 } NVMEController;
 
 int nvmeInit(const char *);
+int nvmeDriveCount();
+NVMEController *nvmeGetDrive(int);
 void nvmeSubmitDoorbell(NVMEController *, int, int);
 void nvmeCompleteDoorbell(NVMEController *, int, int);
 NVMECompletionQueue *nvmePoll(NVMEController *, int, uint16_t, int);
@@ -295,5 +297,5 @@ int nvmeIdentify(NVMEController *);
 int nvmeCreatePRP(NVMEController *, NVMECommonCommand *, void *, size_t);
 int nvmeDestroyPRP(NVMEController *, uint64_t, size_t);
 
-size_t nvmeReadSector(NVMEController *, int, uint64_t, uint16_t, void *);
-size_t nvmeWriteSector(NVMEController *, int, uint64_t, uint16_t, const void *);
+uint16_t nvmeReadSector(NVMEController *, int, uint64_t, uint16_t, void *);
+uint16_t nvmeWriteSector(NVMEController *, int, uint64_t, uint16_t, const void *);

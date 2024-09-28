@@ -41,6 +41,33 @@ NVMEController *nvmeAllocateDrive() {
     return dev;
 }
 
+/* nvmeDriveCount(): counts how many drives are present
+ * params: none
+ * returns: drive count
+ */
+
+int nvmeDriveCount() {
+    return deviceCount;
+}
+
+/* nvmeGetDrive(): returns the drive structure associated with an index
+ * params: i - index
+ * returns: pointer to device structure, NULL on fail
+ */
+
+NVMEController *nvmeGetDrive(int i) {
+    if(i >= deviceCount) return NULL;
+
+    NVMEController *list = devices;
+    int c = 0;
+    while(list) {
+        if(c == i) return list;
+        else list = list->next;
+    }
+
+    return NULL;
+}
+
 /* nvmeInit(): detects and initializes an NVMe controller
  * params: addr - PCI address in the format of "BB.SS.FF"
  * returns: zero on success
