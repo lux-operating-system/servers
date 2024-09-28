@@ -17,7 +17,7 @@
  * params: cmd - common command structure
  * params: data - data pointer in virtual memory
  * params: len - size of the expected data transfer
- * returns: zero on success and PRP entries populated, negative on fail
+ * returns: non-negative page boundary count on success, negative on fail
  */
 
 int nvmeCreatePRP(NVMEController *drive, NVMECommonCommand *cmd, const void *data, size_t len) {
@@ -25,24 +25,29 @@ int nvmeCreatePRP(NVMEController *drive, NVMECommonCommand *cmd, const void *dat
     size_t pageCount = (len + drive->pageSize - 1) / drive->pageSize;
     if(!pageCount) return -1;
 
-    if(pageCount == 1) {
-        // special case for exactly one page: PRP1 is the physical address,
-        // and PRP2 is reserved
+    // and how many page boundaries will be crossed
+    off_t pageOffset = (uintptr_t) data & ~drive->pageSize;
+    size_t pageBoundaries = pageCount - 1;
+    if(pageOffset) pageBoundaries++;
+
+    if(!pageBoundaries) {
+        // special case for zero page boundaries crossed: PRP1 is the physical
+        // address of the first page, and PRP2 is reserved
         cmd->dataLow = vtop((uintptr_t)data);
         cmd->dataHigh = 0;
         if(!cmd->dataLow || (cmd->dataLow & 3)) return -1;
         return 0;
     }
 
-    if(pageCount == 2) {
-        // special case for exactly two pages: PRP1 is the physical address of
-        // the first page and PRP2 is the physical address of the second page
-        // with the offset cleared to zero
+    if(pageBoundaries == 1) {
+        // special case for exactly one page boundary crossed: PRP1 is the
+        // physical address of the first page and PRP2 is the physical address
+        // of the second page with its offset cleared to zero
         cmd->dataLow = vtop((uintptr_t)data);
         cmd->dataHigh = vtop((uintptr_t)data + drive->pageSize) & ~drive->pageSize;
 
         if(!cmd->dataLow || !cmd->dataHigh || (cmd->dataLow & 3)) return -1;
-        return 0;
+        return 1;
     }
 
     // for all other cases, PRP1 is the physical address of the first page and
@@ -63,7 +68,7 @@ int nvmeCreatePRP(NVMEController *drive, NVMECommonCommand *cmd, const void *dat
     }
 
     // now populate the PRP table
-    for(int i = 1; i < pageCount; i++) {
+    for(int i = 1; i < pageBoundaries; i++) {
         prpTable[i-1] = vtop((uintptr_t)data + (i * drive->pageSize));
         prpTable[i-1] &= ~drive->pageSize;
         if(!prpTable[i-1]) {
@@ -73,7 +78,7 @@ int nvmeCreatePRP(NVMEController *drive, NVMECommonCommand *cmd, const void *dat
         }
     }
 
-    return 0;
+    return pageBoundaries;
 }
 
 /* nvmeDestroyPRP(): destroys a physical region page of an NVMe command
