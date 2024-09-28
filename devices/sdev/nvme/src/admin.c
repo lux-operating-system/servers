@@ -262,6 +262,14 @@ int nvmeIdentify(NVMEController *drive) {
 
         luxLogf(KPRINT_LEVEL_DEBUG, "- maximum %d commands per I/O queue\n", drive->ioQSize);
 
+        // set up the controller's queue entry sizes
+        uint32_t config = nvmeRead32(drive, NVME_CONFIG);
+        config &= ~(NVME_CONFIG_SQES_MASK << NVME_CONFIG_SQES_SHIFT);
+        config &= ~(NVME_CONFIG_CQES_MASK << NVME_CONFIG_CQES_SHIFT);
+        config |= (6 << NVME_CONFIG_SQES_SHIFT);        // 64 bytes
+        config |= (4 << NVME_CONFIG_CQES_SHIFT);        // 16 bytes
+        nvmeWrite32(drive, NVME_CONFIG, config);
+
         // and allocate contiguous memory for each
         for(int i = 0; i < drive->sqCount; i++) {
             drive->sqPhys[i] = pcontig(0, sizeof(NVMECommonCommand) * drive->ioQSize, 0);
@@ -283,7 +291,24 @@ int nvmeIdentify(NVMEController *drive) {
             }
 
             // request queue creation from the drive
-            // submission queues first
+            // completion queues
+            memset(&cmd, 0, sizeof(NVMECommonCommand));
+            cmd.dword0 = NVME_ADMIN_CREATE_COMQ;
+            cmd.dword0 |= (i + 0x1234) << 16;
+            cmd.dataLow = drive->cqPhys[i];         // PRP1
+            cmd.dword10 = ((drive->ioQSize-1) << 16) | (i+1);   // queue size and ID
+
+            // TODO: enable interrupts here after implementing MSI/MSI-X
+            cmd.dword11 = 0x01;     // interrupts disabled, physically contiguous
+            nvmeSubmit(drive, 0, &cmd);
+            res = nvmePoll(drive, 0, (i + 0x1234), 20);
+            
+            if(!res) {
+                luxLogf(KPRINT_LEVEL_WARNING, "- timeout while creating completion queue %d, aborting...\n", i);
+                return -1;
+            }
+
+            // submission queues next
             memset(&cmd, 0, sizeof(NVMECommonCommand));
             cmd.dword0 = NVME_ADMIN_CREATE_SUBQ;
             cmd.dword0 |= (i + 0xABCD) << 16;       // arbitrary command ID
@@ -292,23 +317,10 @@ int nvmeIdentify(NVMEController *drive) {
             cmd.dword11 = ((i+1) << 16) | 0x01;     // 1:1 mapping with completion queue; physically contiguous
             cmd.dword12 = 0;    // not associated with a specific command set
             nvmeSubmit(drive, 0, &cmd);
-            if(!nvmePoll(drive, 0, (i + 0xABCD), 20)) {
+            res = nvmePoll(drive, 0, (i + 0xABCD), 20);
+            
+            if(!res) {
                 luxLogf(KPRINT_LEVEL_WARNING, "- timeout while creating submission queue %d, aborting...\n", i);
-                return -1;
-            }
-
-            // now create the corresponding completion queue
-            memset(&cmd, 0, sizeof(NVMECommonCommand));
-            cmd.dword0 = NVME_ADMIN_CREATE_COMQ;
-            cmd.dword0 |= (i + 0x1234) << 16;
-            cmd.dataLow = drive->cqPhys[i];
-            cmd.dword10 = ((drive->ioQSize-1) << 16) | (i+1);   // queue size and ID
-
-            // TODO: enable interrupts here after implementing MSI/MSI-X
-            cmd.dword11 = 0x01;     // interrupts disabled, physically contiguous
-            nvmeSubmit(drive, 0, &cmd);
-            if(!nvmePoll(drive, 0, (i + 0x1234), 20)) {
-                luxLogf(KPRINT_LEVEL_WARNING, "- timeout while creating completion queue %d, aborting...\n", i);
                 return -1;
             }
         }
