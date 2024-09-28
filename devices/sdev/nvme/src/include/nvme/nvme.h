@@ -8,6 +8,7 @@
 #pragma once
 
 #include <sys/types.h>
+#include <liblux/sdev.h>
 
 #define ADMIN_QUEUE_SIZE        16      /* commands per admin queue */
 #define IO_DEFAULT_QUEUE_COUNT  8       /* default number of I/O queues */
@@ -312,3 +313,5 @@ int nvmeDestroyPRP(NVMEController *, uint64_t, size_t);
 // I/O functions
 int nvmeReadSector(NVMEController *, int, uint16_t, uint64_t, uint16_t, void *);
 int nvmeWriteSector(NVMEController *, int, uint16_t, uint64_t, uint16_t, const void *);
+void nvmeRead(SDevRWCommand *);
+void nvmeWrite(SDevRWCommand *);

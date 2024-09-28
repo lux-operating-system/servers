@@ -12,9 +12,11 @@
  */
 
 #include <liblux/liblux.h>
+#include <liblux/sdev.h>
 #include <nvme/nvme.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int main() {
     luxInit("nvme");
@@ -57,5 +59,37 @@ int main() {
 
     closedir(dir);
 
-    for(;;);
+    // allocate memory for message passing
+    MessageHeader *msg = calloc(1, SERVER_MAX_SIZE);
+    if(!msg) {
+        luxLogf(KPRINT_LEVEL_ERROR, "unable to allocate memory for message passing\n");
+        return -1;
+    }
+
+    // notify lumen that the server is ready
+    luxReady();
+
+    for(;;) {
+        // now wait for requests from the storage device layer
+        ssize_t s = luxRecvDependency(msg, SERVER_MAX_SIZE, false, true);   // peek
+        if(s > 0 && s <= SERVER_MAX_SIZE) {
+            if(msg->length > SERVER_MAX_SIZE) {
+                void *newptr = realloc(msg, msg->length);
+                if(!newptr) {
+                    luxLogf(KPRINT_LEVEL_ERROR, "unable to allocate memory for I/O\n");
+                    return -1;
+                }
+
+                msg = newptr;
+            }
+
+            luxRecvDependency(msg, msg->length, false, false);
+
+            switch(msg->command) {
+            case COMMAND_SDEV_READ: nvmeRead((SDevRWCommand *) msg); break;
+            default:
+                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", msg->command);
+            }
+        }
+    }
 }
