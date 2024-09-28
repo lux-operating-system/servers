@@ -36,7 +36,7 @@ uint16_t nvmeReadSector(NVMEController *drive, int ns, uint16_t id, uint64_t lba
     cmd.dword0 = NVM_READ | (id << 16);
     cmd.namespaceID = drive->ns[ns];
     cmd.metaptr = 0;
-    if(nvmeCreatePRP(drive, &cmd, buffer, len)) return 0;
+    if(nvmeCreatePRP(drive, &cmd, buffer, len) < 0) return 0;
 
     cmd.dword2 = 0;
     cmd.dword3 = 0;
@@ -74,7 +74,7 @@ uint16_t nvmeWriteSector(NVMEController *drive, int ns, uint16_t id, uint64_t lb
     cmd.dword0 = NVM_WRITE | (id << 16);
     cmd.namespaceID = drive->ns[ns];
     cmd.metaptr = 0;
-    if(nvmeCreatePRP(drive, &cmd, buffer, len)) return 0;
+    if(nvmeCreatePRP(drive, &cmd, buffer, len) < 0) return 0;
 
     cmd.dword2 = 0;
     cmd.dword3 = 0;
