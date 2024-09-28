@@ -155,10 +155,10 @@ int nvmeInit(const char *addr) {
     // enable appropriate command sets according to the recommended procedure
     cc &= ~(NVME_CONFIG_CMDS_MASK << NVME_CONFIG_CMDS_SHIFT);
 
-    if(cap & NVME_CAP_NO_IO_CMDS)
-        cc |= NVME_CONFIG_CMDS_ADMIN;
-    else if(cap & NVME_CAP_IO_CMDS)
+    if(cap & NVME_CAP_IO_CMDS)
         cc |= NVME_CONFIG_CMDS_ALL;
+    else if(cap & NVME_CAP_NO_IO_CMDS)
+        cc |= NVME_CONFIG_CMDS_ADMIN;
     else
         cc |= NVME_CONFIG_CMDS_NVM;
 
