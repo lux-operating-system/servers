@@ -146,3 +146,29 @@ int nvmeFindQueue(NVMEController *drive) {
 
     return si + 1;
 }
+
+/* nvmeStatus(): poll the completion status of a command without blocking
+ * params: drive - NVMe controller structure
+ * params: q - I/O queue number (one-based)
+ * params: id - unique command ID
+ * returns: completion queue entry on completion, NULL otherwise
+ */
+
+NVMECompletionQueue *nvmeStatus(NVMEController *drive, int q, uint16_t id) {
+    NVMECompletionQueue *cq = drive->cq[q-1];
+    for(int i = 0; i < drive->ioQSize; i++) {
+        if(cq[i].commandID == id) {
+            // update the queue busy status
+            drive->ioBusy[q-1]--;
+
+            // and the doorbell to release this queue entry
+            int head = i + 1;
+            if(head >= drive->ioQSize) head = 0;
+
+            nvmeCompleteDoorbell(drive, q, head);
+            return &cq[i];
+        }
+    }
+
+    return NULL;
+}

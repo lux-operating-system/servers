@@ -20,16 +20,19 @@
  * params: lba - starting LBA address
  * params: count - number of sectors to read
  * params: buffer - buffer to read into
- * returns: command ID on success, zero on fail
+ * returns: non-zero I/O queue number on success, zero on fail
  */
 
-uint16_t nvmeReadSector(NVMEController *drive, int ns, uint16_t id, uint64_t lba, uint16_t count, void *buffer) {
+int nvmeReadSector(NVMEController *drive, int ns, uint16_t id, uint64_t lba, uint16_t count, void *buffer) {
     // input validation
     if(ns >= drive->nsCount || !count || !id) return 0;
     if((lba + count) >= drive->nsSizes[ns]) return 0;
 
     // we will need the length of the transfer in bytes for the DMA
     size_t len = count * drive->nsSectorSizes[ns];
+
+    // allocate a queue
+    int q = nvmeFindQueue(drive);
 
     NVMECommonCommand cmd;
     memset(&cmd, 0, sizeof(NVMECommonCommand));
@@ -46,9 +49,9 @@ uint16_t nvmeReadSector(NVMEController *drive, int ns, uint16_t id, uint64_t lba
     cmd.dword13 = 0;
     cmd.dword14 = 0;
     cmd.dword15 = 0;
-    nvmeSubmit(drive, 1, &cmd);
-    
-    return id;
+    nvmeSubmit(drive, q, &cmd);
+
+    return q;
 }
 
 /* nvmeWriteSector(): writes contiguous sectors from memory to an NVMe SSD
@@ -61,13 +64,16 @@ uint16_t nvmeReadSector(NVMEController *drive, int ns, uint16_t id, uint64_t lba
  * returns: command ID on success, zero on fail
  */
 
-uint16_t nvmeWriteSector(NVMEController *drive, int ns, uint16_t id, uint64_t lba, uint16_t count, const void *buffer) {
+int nvmeWriteSector(NVMEController *drive, int ns, uint16_t id, uint64_t lba, uint16_t count, const void *buffer) {
     // input validation
     if(ns >= drive->nsCount || !count || !id) return 0;
     if((lba + count) >= drive->nsSizes[ns]) return 0;
 
     // we will need the length of the transfer in bytes for the DMA
     size_t len = count * drive->nsSectorSizes[ns];
+
+    // allocate a queue
+    int q = nvmeFindQueue(drive);
 
     NVMECommonCommand cmd;
     memset(&cmd, 0, sizeof(NVMECommonCommand));
@@ -84,7 +90,7 @@ uint16_t nvmeWriteSector(NVMEController *drive, int ns, uint16_t id, uint64_t lb
     cmd.dword13 = 0;
     cmd.dword14 = 0;
     cmd.dword15 = 0;
-    nvmeSubmit(drive, 1, &cmd);
-    
-    return id;
+    nvmeSubmit(drive, q, &cmd);
+
+    return q;
 }
