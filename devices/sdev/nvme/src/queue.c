@@ -119,3 +119,21 @@ void nvmeSubmit(NVMEController *drive, int q, NVMECommonCommand *cmd) {
     // and notify the controler by updating the queue tail doorbell
     nvmeSubmitDoorbell(drive, q, nextTail);
 }
+
+/* nvmeFindQueue(): returns the least busy I/O queue of an NVMe controller
+ * params: drive - NVMe controller structure
+ * returns: I/O queue number (one-based because zero is the admin queue)
+ */
+
+int nvmeFindQueue(NVMEController *drive) {
+    int smallest = 0xFFFFFFFF;  // arbitrarily large number that isn't allowed
+    int si = 0;
+    for(int i = 0; i < drive->sqCount; i++) {
+        if(drive->ioBusy[i] < smallest) {
+            smallest = drive->ioBusy[i];
+            si = i;
+        }
+    }
+
+    return si + 1;
+}
