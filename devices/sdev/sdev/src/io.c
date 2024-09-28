@@ -35,7 +35,7 @@ void sdevRead(RWCommand *cmd) {
     memset(&rcmd, 0, sizeof(SDevRWCommand));
     rcmd.header.command = COMMAND_SDEV_READ;
     rcmd.header.length = sizeof(SDevRWCommand);
-    rcmd.syscall = cmd->id;
+    rcmd.syscall = cmd->header.id;
     rcmd.start = cmd->position;
     rcmd.count = cmd->length;
     rcmd.device = dev->deviceID;
