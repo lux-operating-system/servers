@@ -59,10 +59,31 @@ int main() {
 
                 luxRecv(connections[i], msg, msg->length, false, false);    // receive the actual msg
                 switch(msg->command) {
-                case COMMAND_SDEV_REGISTER: registerDevice((SDevRegisterCommand *) msg); break;
+                case COMMAND_SDEV_REGISTER: registerDevice(connections[i], (SDevRegisterCommand *) msg); break;
                 default:
                     luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X from storage device driver, dropping message\n");
                 }
+            }
+        }
+
+        // and requests from devfs
+        ssize_t s = luxRecvDependency(msg, SERVER_MAX_SIZE, false, true);   // peek
+        if(s > 0 && s <= SERVER_MAX_SIZE) {
+            if(msg->length > SERVER_MAX_SIZE) {
+                void *newptr = realloc(msg, msg->length);
+                if(!newptr) {
+                    luxLogf(KPRINT_LEVEL_ERROR, "unable to allocate memory to handle I/O\n");
+                    return -1;
+                }
+
+                msg = newptr;
+            }
+
+            luxRecvDependency(msg, msg->length, false, false);
+            switch(msg->command) {
+            case COMMAND_READ: sdevRead((RWCommand *) msg); break;
+            default:
+                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X from devfs, dropping message...\n", msg->command);
             }
         }
     }

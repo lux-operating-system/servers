@@ -19,11 +19,12 @@ int devCount = 0;
 StorageDevice *sdev = NULL;
 
 /* registerDevice(): registers a storage device
+ * params: sd - socket of the driver handling this device
  * params: cmd - register command message
  * returns: nothing
  */
 
-void registerDevice(SDevRegisterCommand *cmd) {
+void registerDevice(int sd, SDevRegisterCommand *cmd) {
     // allocate a devfs device
     DevfsRegisterCommand *regcmd = calloc(1, sizeof(DevfsRegisterCommand));
     StorageDevice *dev = calloc(1, sizeof(StorageDevice));
@@ -53,6 +54,7 @@ void registerDevice(SDevRegisterCommand *cmd) {
     dev->size = cmd->size;
     dev->sectorSize = cmd->sectorSize;
     dev->root = 1;
+    dev->sd = sd;
 
     devCount++;
     luxLogf(KPRINT_LEVEL_DEBUG, "registered block device /dev%s\n",  dev->name);

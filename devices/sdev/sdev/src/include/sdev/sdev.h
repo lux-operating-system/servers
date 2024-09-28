@@ -21,6 +21,7 @@ typedef struct StorageDevice {
     uint16_t sectorSize;        // bytes
 
     int root;                   // set for the root of a partitioned device
+    int sd;                     // server socket
 
     // the remaining fields are not valid if root == 0
     uint64_t partitionStart;    // sectors
@@ -30,6 +31,6 @@ typedef struct StorageDevice {
 extern int drvCount, devCount;
 extern StorageDevice *sdev;
 
-void registerDevice(SDevRegisterCommand *);
+void registerDevice(int, SDevRegisterCommand *);
 StorageDevice *findDevice(int);
 void sdevRead(RWCommand *);
