@@ -8,6 +8,7 @@
 #pragma once
 
 #include <sys/types.h>
+#include <liblux/sdev.h>
 
 typedef struct StorageDevice {
     struct StorageDevice *next;
@@ -24,3 +25,8 @@ typedef struct StorageDevice {
     uint64_t partitionStart;    // sectors
     uint64_t partitionSize;     // sectors
 } StorageDevice;
+
+extern int drvCount, devCount;
+extern StorageDevice *sdev;
+
+void registerDevice(SDevRegisterCommand *);
