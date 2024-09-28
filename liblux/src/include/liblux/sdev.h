@@ -32,8 +32,8 @@ typedef struct {
     uint16_t syscall;           // corresponding syscall ID
 
     uint64_t device;            // driver-specific device ID
-    uint64_t start;             // sectors
-    uint64_t count;             // sectors
+    uint64_t start;             // bytes
+    uint64_t count;             // bytes
 
     uint64_t buffer[];
 } SDevRWCommand;
