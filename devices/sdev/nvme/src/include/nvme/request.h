@@ -8,7 +8,7 @@
 #pragma once
 
 #include <sys/types.h>
-#include <liblux/liblux.h>
+#include <liblux/sdev.h>
 
 /* This queue-like linked list structure will be used to track I/O requests
  * made via the storage device abstraction layer */
