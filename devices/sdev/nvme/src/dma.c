@@ -11,6 +11,8 @@
 #include <sys/lux/lux.h>
 
 /* nvmeCreatePRP(): creates a physical region page for an NVMe command
+ * note: the offset into the page must be DWORD-aligned (i.e. bits 0 and 1 of
+ * all physical addresses must always be cleared)
  * params: drive - drive to execute this command
  * params: cmd - common command structure
  * params: data - data pointer in virtual memory
@@ -27,6 +29,7 @@ int nvmeCreatePRP(NVMEController *drive, NVMECommonCommand *cmd, void *data, siz
         // special case for exactly one page: PRP1 is the physical address,
         // and PRP2 is reserved
         cmd->dataLow = vtop((uintptr_t)data);
+        cmd->dataHigh = 0;
         if(!cmd->dataLow || (cmd->dataLow & 3)) return -1;
         return 0;
     }
