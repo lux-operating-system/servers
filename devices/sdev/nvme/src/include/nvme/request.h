@@ -17,6 +17,7 @@ typedef struct IORequest {
     struct IORequest *next;
     int drive, ns;
     int queue;      // which queue the command was submitted to
+    int timeout;    // number of times to cycle before timing out
     uint16_t id;    // unique non-zero syscall ID and NVMe command ID
 
     // this will be relayed back to the sdev server
