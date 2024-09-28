@@ -47,12 +47,13 @@ void devfsOpendir(SyscallHeader *req, SyscallHeader *res) {
     // the execute permission on a directory is used to indicate permission for
     // directory listing, which is exactly what opendir() is used for
     res->header.status = 0;
-    if(cmd->uid == file->status.st_uid)         // owner
+    if(cmd->uid == file->status.st_uid) {        // owner
         if(!(file->status.st_mode & S_IXUSR)) res->header.status = -EACCES;
-    else if(cmd->gid == file->status.st_gid)    // group
+    } else if(cmd->gid == file->status.st_gid) { // group
         if(!(file->status.st_mode & S_IXGRP)) res->header.status = -EACCES;
-    else                                        // other
+    } else {                                     // other
         if(!(file->status.st_mode & S_IXOTH)) res->header.status = -EACCES;
+    }
     
     // and relay the response to the virtual file system
     luxSendDependency(res);
