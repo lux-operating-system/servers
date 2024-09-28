@@ -62,7 +62,9 @@ NVMEController *nvmeGetDrive(int i) {
     int c = 0;
     while(list) {
         if(c == i) return list;
-        else list = list->next;
+
+        list = list->next;
+        c++;
     }
 
     return NULL;
