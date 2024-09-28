@@ -297,5 +297,5 @@ int nvmeIdentify(NVMEController *);
 int nvmeCreatePRP(NVMEController *, NVMECommonCommand *, void *, size_t);
 int nvmeDestroyPRP(NVMEController *, uint64_t, size_t);
 
-uint16_t nvmeReadSector(NVMEController *, int, uint64_t, uint16_t, void *);
-uint16_t nvmeWriteSector(NVMEController *, int, uint64_t, uint16_t, const void *);
+uint16_t nvmeReadSector(NVMEController *, int, uint16_t, uint64_t, uint16_t, void *);
+uint16_t nvmeWriteSector(NVMEController *, int, uint16_t, uint64_t, uint16_t, const void *);
