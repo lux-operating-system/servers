@@ -273,6 +273,9 @@ typedef struct NVMEController {
     int adminTail, adminHead;
     int *ioTails, *ioHeads;
 
+    // I/O queue busy status (number of commands currently executing)
+    int *ioBusy;
+
     // metadata from the admin command
     uint16_t vendor;
     char serial[21];
@@ -292,6 +295,7 @@ NVMEController *nvmeGetDrive(int);
 void nvmeSubmitDoorbell(NVMEController *, int, int);
 void nvmeCompleteDoorbell(NVMEController *, int, int);
 NVMECompletionQueue *nvmePoll(NVMEController *, int, uint16_t, int);
+int nvmeFindQueue(NVMEController *);
 void nvmeSubmit(NVMEController *, int, NVMECommonCommand *);
 int nvmeIdentify(NVMEController *);
 int nvmeCreatePRP(NVMEController *, NVMECommonCommand *, const void *, size_t);

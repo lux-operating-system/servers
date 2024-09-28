@@ -258,7 +258,10 @@ int nvmeIdentify(NVMEController *drive) {
     drive->ioTails = calloc(drive->sqCount, sizeof(int));
     drive->ioHeads = calloc(drive->sqCount, sizeof(int));
 
-    if(!drive->ioTails || !drive->ioHeads) {
+    // and queue busy status
+    drive->ioBusy = calloc(drive->sqCount, sizeof(int));
+
+    if(!drive->ioTails || !drive->ioHeads || !drive->ioBusy) {
         luxLogf(KPRINT_LEVEL_WARNING, "- unable to allocate memory for I/O queues heads and tails\n");
         return -1;
     }
