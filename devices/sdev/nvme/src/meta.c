@@ -178,8 +178,6 @@ int nvmeInit(const char *addr) {
         return -1;
     }
 
-    luxLogf(KPRINT_LEVEL_DEBUG, "- admin queues at 0x%X, 0x%X\n", drive->asqPhys, drive->acqPhys);
-
     // map the queues
     drive->asq = (NVMECommonCommand *) mmio(drive->asqPhys, sizeof(NVMECommonCommand) * ADMIN_QUEUE_SIZE, MMIO_R | MMIO_W | MMIO_CD | MMIO_ENABLE);
     drive->acq = (NVMECompletionQueue *) mmio(drive->acqPhys, sizeof(NVMECompletionQueue) * ADMIN_QUEUE_SIZE, MMIO_R | MMIO_W | MMIO_CD | MMIO_ENABLE);
