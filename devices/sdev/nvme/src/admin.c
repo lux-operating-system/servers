@@ -56,7 +56,6 @@ int nvmeIdentify(NVMEController *drive) {
     memcpy(drive->qualifiedName, drive->id->qualifiedName, 256);
     drive->vendor = drive->id->pciVendor;
 
-    luxLogf(KPRINT_LEVEL_DEBUG, "- serial number: %s\n", drive->serial);
     luxLogf(KPRINT_LEVEL_DEBUG, "- model: %s\n", drive->model);
 
     int ctrlType = drive->id->controllerType-1;
@@ -168,7 +167,7 @@ int nvmeIdentify(NVMEController *drive) {
         }
     }
 
-    luxLogf(KPRINT_LEVEL_DEBUG, "- found %d namespace%s implementing NVM I/O commands\n", drive->nsCount,
+    luxLogf(KPRINT_LEVEL_DEBUG, "- found %d namespace%s implementing NVM I/O commands:\n", drive->nsCount,
         drive->nsCount != 1 ? "s" : "");
 
     // now set up the namespaces one by one
@@ -199,10 +198,122 @@ int nvmeIdentify(NVMEController *drive) {
         drive->nsSizes[i] = nvmNSID->capacity;
         uint64_t byteSize = drive->nsSizes[i] * drive->nsSectorSizes[i];
         if(byteSize >= 0x40000000)
-            luxLogf(KPRINT_LEVEL_DEBUG, "- NS %d: capacity %d GiB, %d bytes per sector\n", i+1, byteSize/0x40000000, drive->nsSectorSizes[i]);
+            luxLogf(KPRINT_LEVEL_DEBUG, " + NS %d: capacity %d GiB, %d bytes per sector\n", i+1, byteSize/0x40000000, drive->nsSectorSizes[i]);
         else
-            luxLogf(KPRINT_LEVEL_DEBUG, "- NS %d: capacity %d MiB, %d bytes per sector\n", i+1, byteSize/0x100000, drive->nsSectorSizes[i]);
+            luxLogf(KPRINT_LEVEL_DEBUG, " + NS %d: capacity %d MiB, %d bytes per sector\n", i+1, byteSize/0x100000, drive->nsSectorSizes[i]);
+        
+        // attempt to allocate a driver-specified maximum number of I/O queues
+        // and then verify how many queues the drive actually allocated
+        memset(&cmd, 0, sizeof(NVMECommonCommand));
+        cmd.dword0 = NVME_ADMIN_SET_FEATURES;
+        cmd.dword0 |= ((i + 0xC0DE) << 16);      // arbitrary command ID
+        cmd.dword10 = 0x07;         // FID 0x07 - allocate queues
+        cmd.dword11 = ((IO_DEFAULT_QUEUE_COUNT-1) << 16) | (IO_DEFAULT_QUEUE_COUNT-1);
+        nvmeSubmit(drive, 0, &cmd);
+
+        NVMECompletionQueue *res = nvmePoll(drive, 0, i + 0xC0DE, 20);
+        if(!res) {
+            luxLogf(KPRINT_LEVEL_DEBUG, "- timeout while allocating I/O queues, aborting...\n");
+            return -1;
+        }
+
+        drive->cqCount = (res->dword0 >> 16) + 1;
+        drive->sqCount = (res->dword0 & 0xFFFF) + 1;
+
+        // ensure we have a 1:1 correspondence by using only the smallest value
+        if(drive->cqCount > IO_DEFAULT_QUEUE_COUNT)
+            drive->cqCount = IO_DEFAULT_QUEUE_COUNT;
+        
+        if(drive->sqCount > IO_DEFAULT_QUEUE_COUNT)
+            drive->sqCount = IO_DEFAULT_QUEUE_COUNT;
+
+        if(drive->cqCount != drive->sqCount) {
+            luxLogf(KPRINT_LEVEL_WARNING, "- %d submission queues, %d completion queues; using smaller value\n",
+                drive->sqCount, drive->cqCount);
+            if(drive->cqCount < drive->sqCount) drive->sqCount = drive->cqCount;
+            else drive->cqCount = drive->sqCount;
+        } else {
+            luxLogf(KPRINT_LEVEL_DEBUG, "- %d submission queues, %d completion queues\n", drive->sqCount, drive->cqCount);
+        }
+
+        // now allocate memory for the queue pointer arrays
+        drive->ioTails = calloc(drive->sqCount, sizeof(int));
+        drive->ioHeads = calloc(drive->sqCount, sizeof(int));
+
+        if(!drive->ioTails || !drive->ioHeads) {
+            luxLogf(KPRINT_LEVEL_WARNING, "- unable to allocate memory for I/O queues heads and tails\n");
+            return -1;
+        }
+
+        drive->sqPhys = calloc(drive->sqCount, sizeof(uintptr_t));
+        drive->cqPhys = calloc(drive->cqCount, sizeof(uintptr_t));
+        drive->sq = calloc(drive->sqCount, sizeof(NVMECommonCommand *));
+        drive->cq = calloc(drive->cqCount, sizeof(NVMECompletionQueue *));
+
+        if(!drive->sqPhys || !drive->cqPhys || !drive->sq || !drive->cq) {
+            luxLogf(KPRINT_LEVEL_WARNING, "- unable to allocate memory for I/O queue pointer array\n");
+            return -1;
+        }
+
+        // determine the maximum size of the queue support by the device
+        drive->ioQSize = (cap & NVME_CAP_MAXQ_MASK) + 1;
+        if(drive->ioQSize > IO_DEFAULT_QUEUE_SIZE)
+            drive->ioQSize = IO_DEFAULT_QUEUE_SIZE;
+
+        luxLogf(KPRINT_LEVEL_DEBUG, "- maximum %d commands per I/O queue\n", drive->ioQSize);
+
+        // and allocate contiguous memory for each
+        for(int i = 0; i < drive->sqCount; i++) {
+            drive->sqPhys[i] = pcontig(0, sizeof(NVMECommonCommand) * drive->ioQSize, 0);
+            drive->cqPhys[i] = pcontig(0, sizeof(NVMECompletionQueue) * drive->ioQSize, 0);
+            if(!drive->sqPhys[i] || !drive->cqPhys[i]) {
+                luxLogf(KPRINT_LEVEL_WARNING, "- unable to allocate memory for I/O queues %d\n", i);
+                return -1;
+            }
+
+            // map the queues to virtual memory
+            drive->sq[i] = (NVMECommonCommand *) mmio(drive->sqPhys[i],
+                sizeof(NVMECommonCommand) * drive->ioQSize, MMIO_R | MMIO_W | MMIO_CD | MMIO_ENABLE);
+            drive->cq[i] = (NVMECompletionQueue *) mmio(drive->cqPhys[i],
+                sizeof(NVMECompletionQueue) * drive->ioQSize, MMIO_R | MMIO_W | MMIO_CD | MMIO_ENABLE);
+
+            if(!drive->sq[i] || !drive->cq[i]) {
+                luxLogf(KPRINT_LEVEL_WARNING, "- unable to map I/O queues %d to virtual memory\n", i);
+                return -1;
+            }
+
+            // request queue creation from the drive
+            // submission queues first
+            memset(&cmd, 0, sizeof(NVMECommonCommand));
+            cmd.dword0 = NVME_ADMIN_CREATE_SUBQ;
+            cmd.dword0 |= (i + 0xABCD) << 16;       // arbitrary command ID
+            cmd.dataLow = drive->sqPhys[i];         // PRP1
+            cmd.dword10 = ((drive->ioQSize-1) << 16) | (i+1);   // submission queue identifier
+            cmd.dword11 = ((i+1) << 16) | 0x01;     // 1:1 mapping with completion queue; physically contiguous
+            cmd.dword12 = 0;    // not associated with a specific command set
+            nvmeSubmit(drive, 0, &cmd);
+            if(!nvmePoll(drive, 0, (i + 0xABCD), 20)) {
+                luxLogf(KPRINT_LEVEL_WARNING, "- timeout while creating submission queue %d, aborting...\n", i);
+                return -1;
+            }
+
+            // now create the corresponding completion queue
+            memset(&cmd, 0, sizeof(NVMECommonCommand));
+            cmd.dword0 = NVME_ADMIN_CREATE_COMQ;
+            cmd.dword0 |= (i + 0x1234) << 16;
+            cmd.dataLow = drive->cqPhys[i];
+            cmd.dword10 = ((drive->ioQSize-1) << 16) | (i+1);   // queue size and ID
+
+            // TODO: enable interrupts here after implementing MSI/MSI-X
+            cmd.dword11 = 0x01;     // interrupts disabled, physically contiguous
+            nvmeSubmit(drive, 0, &cmd);
+            if(!nvmePoll(drive, 0, (i + 0x1234), 20)) {
+                luxLogf(KPRINT_LEVEL_WARNING, "- timeout while creating completion queue %d, aborting...\n", i);
+                return -1;
+            }
+        }
     }
 
-    while(1);
+    // at this point the controller is ready
+    return 0;
 }

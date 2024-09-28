@@ -10,8 +10,8 @@
 #include <sys/types.h>
 
 #define ADMIN_QUEUE_SIZE        16      /* commands per admin queue */
-#define IO_DEFAULT_QUEUE_SIZE   16      /* commands per I/O queue */
-#define IO_DEFAULT_QUEUE_COUNT  256     /* default number of I/O queues */
+#define IO_DEFAULT_QUEUE_COUNT  8       /* default number of I/O queues */
+#define IO_DEFAULT_QUEUE_SIZE   256     /* max concurrent commands per queue */
 
 /* NVMe Common Command Format: these are the entries that are submitted to the
  * admin and I/O submission queues, where the number of entries is dictated by
