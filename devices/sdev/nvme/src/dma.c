@@ -20,7 +20,7 @@
  * returns: zero on success and PRP entries populated, negative on fail
  */
 
-int nvmeCreatePRP(NVMEController *drive, NVMECommonCommand *cmd, void *data, size_t len) {
+int nvmeCreatePRP(NVMEController *drive, NVMECommonCommand *cmd, const void *data, size_t len) {
     // count how many pages this will use
     size_t pageCount = (len + drive->pageSize - 1) / drive->pageSize;
     if(!pageCount) return -1;
