@@ -70,7 +70,7 @@ typedef struct {
 
 typedef struct {
     MessageHeader header;
-    uint64_t id;            // syscall request ID
+    uint16_t id;            // syscall request ID
 } SyscallHeader;
 
 /* sysinfo command */
@@ -146,7 +146,7 @@ typedef struct {
     gid_t gid;
     off_t position;
     size_t length;
-    uint8_t data[];
+    uint64_t data[];    // for alignment
 } RWCommand;
 
 /* IRQ Notification */
