@@ -75,6 +75,12 @@ NVMECompletionQueue *nvmePoll(NVMEController *drive, int q, uint16_t id, int tim
 
     // acknowledge the completion doorbell
     nvmeCompleteDoorbell(drive, q, head);
+
+    // for I/O queues, update the busy status as well
+    if(q) {
+        drive->ioBusy[q-1]--;
+    }
+
     return &cq[entry];
 }
 
@@ -108,6 +114,9 @@ void nvmeSubmit(NVMEController *drive, int q, NVMECommonCommand *cmd) {
         if(drive->ioTails[q-1] >= drive->ioQSize)
             drive->ioTails[q-1] = 0;
         nextTail = drive->ioTails[q-1];
+
+        // update the busy status of this queue
+        drive->ioBusy[q-1]++;
     }
 
     // copy the command into the submission queue
