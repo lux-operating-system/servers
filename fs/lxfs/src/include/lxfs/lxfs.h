@@ -16,6 +16,7 @@ typedef struct Mountpoint {
     int fd;
     int sectorSize, blockSize, blockSizeBytes;
 
+    uint64_t root;              // root directory block
     void *blockTableBuffer;     // of size blockSizeBytes
 } Mountpoint;
 

@@ -98,8 +98,10 @@ void lxfsMount(MountCommand *cmd) {
     mp->blockSize = blockSize;
     mp->blockSizeBytes = blockSizeBytes;
     mp->blockTableBuffer = buffer;
+    mp->root = id->rootBlock;
 
     luxLogf(KPRINT_LEVEL_DEBUG, "- %d bytes per sector, %d sectors per block\n", mp->sectorSize, mp->blockSize);
+    luxLogf(KPRINT_LEVEL_DEBUG, "- root directory at block %d\n", mp->root);
 
     cmd->header.header.status = 0;
     luxSendDependency(cmd);
