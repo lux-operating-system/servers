@@ -120,3 +120,12 @@ int lxfsWriteBlock(Mountpoint *, uint64_t, const void *);
 uint64_t lxfsNextBlock(Mountpoint *, uint64_t);
 uint64_t lxfsReadNextBlock(Mountpoint *, uint64_t, void *);
 uint64_t lxfsWriteNextBlock(Mountpoint *, uint64_t, const void *);
+
+Mountpoint *findMP(const char *);
+int pathDepth(const char *);
+char *pathComponent(char *, const char *, int);
+
+void lxfsOpen(OpenCommand *);
+void lxfsStat(StatCommand *);
+void lxfsRead(RWCommand *);
+void lxfsWrite(RWCommand *);
