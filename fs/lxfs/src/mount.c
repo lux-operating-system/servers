@@ -67,11 +67,25 @@ void lxfsMount(MountCommand *cmd) {
         return;
     }
 
+    int sectorSize = 512 << ((id->parameters >> 1) & 3);
+    int blockSize = ((id->parameters >> 3) & 0x0F) + 1;
+    int blockSizeBytes = sectorSize * blockSize;
+
+    void *buffer = malloc(blockSizeBytes);
+    if(!buffer) {
+        cmd->header.header.status = -ENOMEM;
+        close(fd);
+        free(id);
+        luxSendDependency(cmd);
+        return;
+    }
+
     Mountpoint *mp = allocateMP();
     if(!mp) {
         cmd->header.header.status = -ENOMEM;
         close(fd);
         free(id);
+        free(buffer);
         luxSendDependency(cmd);
         return;
     }
@@ -80,9 +94,10 @@ void lxfsMount(MountCommand *cmd) {
 
     strcpy(mp->device, cmd->source);
     mp->fd = fd;
-    mp->sectorSize = 512 << ((id->parameters >> 1) & 3);
-    mp->blockSize = ((id->parameters >> 3) & 0x0F) + 1;
-    mp->blockSizeBytes = mp->sectorSize * mp->blockSize;
+    mp->sectorSize = sectorSize;
+    mp->blockSize = blockSize;
+    mp->blockSizeBytes = blockSizeBytes;
+    mp->blockTableBuffer = buffer;
 
     luxLogf(KPRINT_LEVEL_DEBUG, "- %d bytes per sector, %d sectors per block\n", mp->sectorSize, mp->blockSize);
 

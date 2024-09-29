@@ -15,6 +15,8 @@ typedef struct Mountpoint {
     char device[MAX_FILE_PATH];
     int fd;
     int sectorSize, blockSize, blockSizeBytes;
+
+    void *blockTableBuffer;     // of size blockSizeBytes
 } Mountpoint;
 
 typedef struct {
@@ -110,5 +112,9 @@ typedef struct {
     uint64_t refCount;
 } __attribute__((packed)) LXFSFileHeader;
 
-
 void lxfsMount(MountCommand *);
+int lxfsReadBlock(Mountpoint *, uint64_t, void *);
+int lxfsWriteBlock(Mountpoint *, uint64_t, const void *);
+uint64_t lxfsNextBlock(Mountpoint *, uint64_t);
+uint64_t lxfsReadNextBlock(Mountpoint *, uint64_t, void *);
+uint64_t lxfsWriteNextBlock(Mountpoint *, uint64_t, const void *);
