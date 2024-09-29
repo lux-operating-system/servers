@@ -11,6 +11,15 @@
 #include <liblux/liblux.h>
 #include <liblux/sdev.h>
 
+typedef struct {
+    uint8_t flags;
+    uint8_t chsStart[3];
+    uint8_t id;
+    uint8_t chsEnd[3];
+    uint32_t start;
+    uint32_t size;
+}__attribute__((packed)) MBRPartition;
+
 typedef struct StorageDevice {
     struct StorageDevice *next;
     char name[256];             // name under /dev
@@ -20,18 +29,18 @@ typedef struct StorageDevice {
     uint64_t size;              // sectors
     uint16_t sectorSize;        // bytes
 
-    int root;                   // set for the root of a partitioned device
     int sd;                     // server socket
 
-    // the remaining fields are not valid if root == 0
-    uint64_t partitionStart;    // sectors
-    uint64_t partitionSize;     // sectors
+    int partitionCount;
+    uint64_t partitionStart[16];    // sectors
+    uint64_t partitionSize[16];     // sectors
 } StorageDevice;
 
 extern int drvCount, devCount;
 extern StorageDevice *sdev;
 
 void registerDevice(int, SDevRegisterCommand *);
+void partitionDevice(const char *, StorageDevice *);
 StorageDevice *findDevice(int);
 void sdevRead(RWCommand *);
 void relayRead(SDevRWCommand *);

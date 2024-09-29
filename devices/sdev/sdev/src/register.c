@@ -42,7 +42,7 @@ void registerDevice(int sd, SDevRegisterCommand *cmd) {
     regcmd->status.st_blksize = cmd->sectorSize;
     regcmd->status.st_blocks = cmd->size;
 
-    strcpy(regcmd->server, cmd->server);
+    strcpy(regcmd->server, "lux:///dssdev");    // server name prefixed with lux:///ds
     sprintf(regcmd->path, "/sd%d", devCount);
     luxSendDependency(regcmd);
 
@@ -53,11 +53,35 @@ void registerDevice(int sd, SDevRegisterCommand *cmd) {
     dev->partition = cmd->partitions;
     dev->size = cmd->size;
     dev->sectorSize = cmd->sectorSize;
-    dev->root = 1;
     dev->sd = sd;
 
-    devCount++;
     luxLogf(KPRINT_LEVEL_DEBUG, "registered block device /dev%s\n",  dev->name);
+
+    // analyze partition table
+    if(dev->partition) {
+        MBRPartition *part = (MBRPartition *)((uintptr_t)cmd->boot+446);
+        
+        for(int i = 0; i < 4; i++) {
+            if(part[i].size) {
+                dev->partitionStart[dev->partitionCount] = part[i].start;
+                dev->partitionSize[dev->partitionCount] = part[i].size;
+
+                // create another block device for this partition
+                sprintf(regcmd->path, "/sd%dp%d", devCount, dev->partitionCount);
+                regcmd->status.st_size = part[i].size * cmd->sectorSize;
+                regcmd->status.st_blocks = part[i].size;
+
+                luxSendDependency(regcmd);
+
+                luxLogf(KPRINT_LEVEL_DEBUG, "registered block device /dev%s (%d -> %d)\n",
+                    regcmd->path, part[i].start, part[i].start+part[i].size-1);
+                dev->partitionCount++;
+            }
+        }
+    }
+
+    // and now we're done
+    devCount++;
 
     if(!sdev) {
         sdev = dev;
