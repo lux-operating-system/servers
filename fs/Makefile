@@ -5,6 +5,8 @@ all:
 	@make -C devfs
 	@echo "\x1B[0;1;35m make\x1B[0m servers/fs/procfs"
 	@make -C procfs
+	@echo "\x1B[0;1;35m make\x1B[0m servers/fs/lxfs"
+	@make -C lxfs
 
 install:
 	@echo "\x1B[0;1;35m make\x1B[0m install servers/fs/vfs"
@@ -13,6 +15,8 @@ install:
 	@make install -C devfs
 	@echo "\x1B[0;1;35m make\x1B[0m install servers/fs/procfs"
 	@make install -C procfs
+	@echo "\x1B[0;1;35m make\x1B[0m install servers/fs/lxfs"
+	@make install -C lxfs
 
 clean:
 	@echo "\x1B[0;1;35m make\x1B[0m clean servers/fs/vfs"
@@ -21,3 +25,5 @@ clean:
 	@make clean -C devfs
 	@echo "\x1B[0;1;35m make\x1B[0m clean servers/fs/procfs"
 	@make clean -C procfs
+	@echo "\x1B[0;1;35m make\x1B[0m clean servers/fs/lxfs"
+	@make clean -C lxfs
