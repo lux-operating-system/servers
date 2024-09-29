@@ -14,7 +14,7 @@ typedef struct Mountpoint {
     struct Mountpoint *next;
     char device[MAX_FILE_PATH];
     int fd;
-    int sectorSize, blockSize;
+    int sectorSize, blockSize, blockSizeBytes;
 } Mountpoint;
 
 typedef struct {

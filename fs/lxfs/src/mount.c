@@ -82,6 +82,7 @@ void lxfsMount(MountCommand *cmd) {
     mp->fd = fd;
     mp->sectorSize = 512 << ((id->parameters >> 1) & 3);
     mp->blockSize = ((id->parameters >> 3) & 0x0F) + 1;
+    mp->blockSizeBytes = mp->sectorSize * mp->blockSize;
 
     luxLogf(KPRINT_LEVEL_DEBUG, "- %d bytes per sector, %d sectors per block\n", mp->sectorSize, mp->blockSize);
 
