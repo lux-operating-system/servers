@@ -30,6 +30,12 @@ void sdevRead(RWCommand *cmd) {
         return;
     }
 
+    // check if we're reading from the block device itself or from a partition
+    int partition = -1;
+    for(int i = 0; i < strlen(cmd->path); i++) {
+        if(cmd->path[i] == 'p') partition = atoi(&cmd->path[i+1]);
+    }
+
     // relay the request to the appropriate device driver
     SDevRWCommand rcmd;
     memset(&rcmd, 0, sizeof(SDevRWCommand));
@@ -40,6 +46,14 @@ void sdevRead(RWCommand *cmd) {
     rcmd.count = cmd->length;
     rcmd.device = dev->deviceID;
     rcmd.pid = cmd->header.header.requester;
+    rcmd.partition = partition;
+    rcmd.sectorSize = dev->sectorSize;
+    
+    if(partition != -1) {
+        rcmd.partitionStart = dev->partitionStart[partition];
+        rcmd.start += dev->partitionStart[partition] * dev->sectorSize;
+    }
+
     luxSend(dev->sd, &rcmd);
 }
 
@@ -66,6 +80,11 @@ void relayRead(SDevRWCommand *res) {
         rcmd->header.id = res->syscall;
         rcmd->position = res->start + res->count;
         rcmd->length = res->count;
+
+        if(res->partition >= 0 && res->partition < 4) {
+            rcmd->position -= res->partitionStart * res->sectorSize;
+        }
+        
         memcpy(rcmd->data, res->buffer, res->count);
 
         luxSendDependency(rcmd);
