@@ -39,6 +39,9 @@ typedef struct {
     uint64_t count;             // bytes
 
     pid_t pid;                  // requesting process
+    int partition;              // set to partition number if partitioned, negative otherwise
+    uint64_t partitionStart;
+    uint64_t sectorSize;
 
     uint64_t buffer[];
 } SDevRWCommand;
