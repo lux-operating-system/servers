@@ -52,6 +52,19 @@ void sdevRead(RWCommand *cmd) {
     if(partition != -1) {
         rcmd.partitionStart = dev->partitionStart[partition];
         rcmd.start += dev->partitionStart[partition] * dev->sectorSize;
+
+        // ensure we don't cross partition boundaries
+        uint64_t end = dev->partitionStart[partition] + dev->partitionSize[partition];
+        uint64_t ioEnd = (rcmd.start + rcmd.count) / dev->sectorSize;
+        if(ioEnd > end) {
+            // return an I/O error if trying to cross partition boundaries
+            cmd->header.header.response = 1;
+            cmd->header.header.length = sizeof(RWCommand);
+            cmd->header.header.status = -EIO;
+            cmd->length = 0;
+            luxSendDependency(cmd);
+            return;
+        }
     }
 
     luxSend(dev->sd, &rcmd);
