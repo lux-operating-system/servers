@@ -26,6 +26,8 @@ typedef struct {
     uint64_t size;              // sectors
     uint16_t sectorSize;        // bytes
     int partitions;             // 1 if the device is partitioned, 0 if not
+
+    uint64_t boot[512];         // boot sector buffer
 } SDevRegisterCommand;
 
 typedef struct {
