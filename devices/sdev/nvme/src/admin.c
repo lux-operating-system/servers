@@ -61,9 +61,10 @@ int nvmeIdentify(NVMEController *drive) {
 
     int ctrlType = drive->id->controllerType-1;
     if(ctrlType >= 0 && ctrlType <= 2) {
-        luxLogf(KPRINT_LEVEL_DEBUG, "- controller type %d (%s)\n", drive->id->controllerType, controllerType[ctrlType]);
+        luxLogf(KPRINT_LEVEL_DEBUG, "- controller type: %s\n", controllerType[ctrlType]);
     } else {
-        luxLogf(KPRINT_LEVEL_WARNING, "- controller type %d (unimplemented), aborting...\n", drive->id->controllerType);
+        luxLogf(KPRINT_LEVEL_WARNING, "- controller type: %d (unimplemented), aborting...\n", drive->id->controllerType);
+        return -1;
     }
 
     // following the recommended setup procedure of the NVMe base spec, we now
@@ -202,22 +203,6 @@ int nvmeIdentify(NVMEController *drive) {
             luxLogf(KPRINT_LEVEL_DEBUG, " + NS %d: capacity %d GiB, %d bytes per sector\n", i+1, byteSize/0x40000000, drive->nsSectorSizes[i]);
         else
             luxLogf(KPRINT_LEVEL_DEBUG, " + NS %d: capacity %d MiB, %d bytes per sector\n", i+1, byteSize/0x100000, drive->nsSectorSizes[i]);
-        
-        // register the device with the storage device layer
-        // we will an internal numerical ID to identify NVMe devices where the
-        // lower 16 bits refer to a namespace and the higher 16 bits refer to a
-        // controller, with the highest 32 bits reserved
-        SDevRegisterCommand regcmd;
-        memset(&regcmd, 0, sizeof(SDevRegisterCommand));
-        regcmd.header.command = COMMAND_SDEV_REGISTER;
-        regcmd.header.length = sizeof(SDevRegisterCommand);
-        regcmd.device = ((nvmeDriveCount() - 1) << 16) | i;
-        regcmd.partitions = 1;
-        regcmd.size = drive->nsSizes[i];
-        regcmd.sectorSize = drive->nsSectorSizes[i];
-        strcpy(regcmd.server, "lux:///dsnvme");     // server name prefixed with lux:///
-
-        luxSendDependency(&regcmd);
     }
 
     // attempt to allocate a driver-specified maximum number of I/O queues
@@ -347,5 +332,53 @@ int nvmeIdentify(NVMEController *drive) {
     }
 
     // at this point the controller is ready
+    // now we need to allocate through the namespaces one by one, read their
+    // boot sectors, and register the device with the storage device layer
+    // we will an internal numerical ID to identify NVMe devices where the
+    // lower 16 bits refer to a namespace and the higher 16 bits refer to a
+    // controller, with the highest 32 bits reserved
+
+    SDevRegisterCommand *regcmd = malloc(sizeof(SDevRegisterCommand));
+    if(!regcmd) {
+        luxLogf(KPRINT_LEVEL_WARNING, "- unable to allocate memory to register device, aborting...\n");
+        return -1;
+    }
+
+    for(int i = 0; i < drive->nsCount; i++) {
+        memset(regcmd, 0, sizeof(SDevRegisterCommand));
+        regcmd->header.command = COMMAND_SDEV_REGISTER;
+        regcmd->header.length = sizeof(SDevRegisterCommand);
+        regcmd->device = ((nvmeDriveCount() - 1) << 16) | i;
+        regcmd->partitions = 1;
+        regcmd->size = drive->nsSizes[i];
+        regcmd->sectorSize = drive->nsSectorSizes[i];
+        strcpy(regcmd->server, "lux:///dsnvme");     // server name prefixed with lux:///
+
+        // read the boot sector into the command buffer
+        int q = nvmeReadSector(drive, i, 0x7654+i, 0, 1, regcmd->boot);
+        if(!q) {
+            luxLogf(KPRINT_LEVEL_WARNING, "- I/O error while registering device, aborting...\n");
+            free(regcmd);
+            return -1;
+        }
+
+        res = nvmePoll(drive, q, 0x7654+i, 20);
+        if(!res) {
+            luxLogf(KPRINT_LEVEL_WARNING, "- timeout while reading boot sector, aborting...\n");
+            free(regcmd);
+            return -1;
+        }
+
+        uint8_t status = (res->status >> 1) & 0xFF;
+        if(status) {
+            luxLogf(KPRINT_LEVEL_WARNING, "- I/O error while reading boot sector, error code 0x%02X, aborting...\n");
+            free(regcmd);
+            return -1;
+        }
+
+        luxSendDependency(regcmd);
+    }
+
+    free(regcmd);
     return 0;
 }
