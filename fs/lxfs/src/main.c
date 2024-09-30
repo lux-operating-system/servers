@@ -53,6 +53,7 @@ int main() {
             switch(msg->header.command) {
             case COMMAND_MOUNT: lxfsMount((MountCommand *) msg); break;
             case COMMAND_OPEN: lxfsOpen((OpenCommand *) msg); break;
+            case COMMAND_READ: lxfsRead((RWCommand *) msg); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", msg->header.command);
             }
