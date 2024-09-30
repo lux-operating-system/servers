@@ -42,7 +42,7 @@ uint64_t lxfsNextBlock(Mountpoint *mp, uint64_t block) {
     // read the relevant part of the block table
     uint64_t tableBlock = block / (mp->blockSizeBytes / 8);
     tableBlock += 33;   // the first 33 blocks are reserved
-    uint64_t tableIndex = block % (mp->blockSizeBytes % 8);
+    uint64_t tableIndex = block % (mp->blockSizeBytes / 8);
 
     if(lxfsReadBlock(mp, tableBlock, mp->blockTableBuffer)) return 0;
 
