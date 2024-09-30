@@ -8,7 +8,7 @@
 
 </div>
 
-This repository contains the microkernel servers that implement driver functionality and relayed external system call handlers for the [lux microkernel](https://github.com/lux-operating-system/kernel). The microkernel and the servers, along with [lumen](https://github.com/lux-operating-system/lumen), form the foundation of luxOS.
+This repository contains the microkernel servers that implement drivers and external system call handlers for the [lux microkernel](https://github.com/lux-operating-system/kernel). The microkernel and the servers, along with [lumen](https://github.com/lux-operating-system/lumen), form the foundation of [luxOS](https://github.com/lux-operating-system/lux).
 
 # Overview
 
