@@ -92,7 +92,7 @@ void lxfsMount(MountCommand *cmd) {
         return;
     }
 
-    void *buffer2 = malloc(blockSizeBytes);
+    void *buffer2 = malloc(blockSizeBytes*2);
     if(!buffer2) {
         cmd->header.header.status = -ENOMEM;
         close(fd);

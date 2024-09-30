@@ -12,13 +12,13 @@
 
 /* pathDepth(): helper function to calculate the depth of a path
  * params: path - full qualified path
- * returns: maximum depth of the path
+ * returns: maximum depth of the path, zero for root directory, ONE-BASED elsewhere
  */
 
 int pathDepth(const char *path) {
     if(!path || !strlen(path) || strlen(path) == 1) return 0;
 
-    int c = 0;
+    int c = 1;
     for(int i = 0; i < strlen(path); i++) {
         if(path[i] == '/') c++;
     }
@@ -36,6 +36,11 @@ int pathDepth(const char *path) {
 char *pathComponent(char *dest, const char *path, int n) {
     int depth = pathDepth(path);
     if(n > depth) return NULL;
+
+    if(depth <= 1) {
+        // special case for files on the root directory
+        return strcpy(dest, path);
+    }
 
     int c = 0;
     int len = 0;
@@ -65,5 +70,82 @@ char *pathComponent(char *dest, const char *path, int n) {
  */
 
 LXFSDirectoryEntry *lxfsFind(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path) {
-    return NULL;    // stub
+    // special case for the root directory because it does not have a true
+    // directory entry within the file system itself
+    if((strlen(path) == 1) && (path[0] == '/')) {
+        if(lxfsReadBlock(mp, mp->root, mp->dataBuffer)) return NULL;
+
+        LXFSDirectoryHeader *root = (LXFSDirectoryHeader *) mp->dataBuffer;
+        dest->size = root->sizeEntries;
+        dest->accessTime = root->accessTime;
+        dest->createTime = root->createTime;
+        dest->modTime = root->modTime;
+        dest->name[0] = 0;
+        dest->flags = LXFS_DIR_VALID | (LXFS_DIR_TYPE_DIR << LXFS_DIR_TYPE_SHIFT);
+        dest->block = mp->root;
+
+        // root directory is owned by root:root and its mode is rwxr-xr-x
+        dest->owner = 0;
+        dest->group = 0;
+        dest->permissions = LXFS_PERMS_OWNER_R | LXFS_PERMS_OWNER_W | LXFS_PERMS_OWNER_X | LXFS_PERMS_GROUP_R | LXFS_PERMS_GROUP_X | LXFS_PERMS_OTHER_R | LXFS_PERMS_OTHER_X;
+
+        return dest;
+    }
+
+    // for everything else we will need to traverse the file system starting
+    // at the root directory
+    LXFSDirectoryEntry *dir;
+    uint64_t next = mp->root;
+    int depth = pathDepth(path);
+    char component[MAX_FILE_PATH];
+
+    int i = 0;
+
+traverse:
+    while(i < depth) {
+        // iterate over each component in the path and search for it in the directory
+        if(!pathComponent(component, path, i)) return NULL;
+    
+        next = lxfsReadNextBlock(mp, next, mp->dataBuffer);
+        if(!next) return NULL;
+        
+        // read two blocks at a time for entries that cross boundaries
+        if(next != LXFS_BLOCK_EOF)
+            lxfsReadNextBlock(mp, next, mp->dataBuffer + mp->blockSizeBytes);
+
+        dir = (LXFSDirectoryEntry *)((uintptr_t)mp->dataBuffer + sizeof(LXFSDirectoryHeader));
+        off_t offset = sizeof(LXFSDirectoryHeader);
+
+        while(offset < mp->blockSizeBytes) {
+            if((dir->flags & LXFS_DIR_VALID) && !strcmp((const char *) dir->name, component)) {
+                if(i == depth-1) {
+                    // found the file we're looking for
+                    return (LXFSDirectoryEntry *) memcpy(dest, dir, dir->entrySize);
+                } else {
+                    // found a parent directory
+                    i++;
+                    luxLogf(KPRINT_LEVEL_WARNING, "TODO: implement directory trees\n");
+                }
+            }
+            
+            // advance to the next entry
+            dir = (LXFSDirectoryEntry *)((uintptr_t)dir + dir->entrySize);
+            offset += dir->entrySize;
+
+            if((offset >= mp->blockSizeBytes) && (next != LXFS_BLOCK_EOF)) {
+                // copy the second block to the first block
+                offset -= mp->blockSizeBytes;
+                dir = (LXFSDirectoryEntry *)((uintptr_t)dir - mp->blockSizeBytes);
+                memmove(mp->dataBuffer, mp->dataBuffer+mp->blockSizeBytes, mp->blockSizeBytes);
+
+                if(!dir->entrySize) return NULL;
+
+                // and read the next block
+                next = lxfsReadNextBlock(mp, next, mp->dataBuffer);
+                if(!next) return NULL;
+            }
+        }
+    }
+
+    return NULL;
 }
