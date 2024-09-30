@@ -102,6 +102,17 @@ void lxfsMount(MountCommand *cmd) {
         return;
     }
 
+    void *meta = malloc(blockSizeBytes);
+    if(!meta) {
+        cmd->header.header.status = -ENOMEM;
+        close(fd);
+        free(id);
+        free(buffer);
+        free(buffer2);
+        luxSendDependency(cmd);
+        return;
+    }
+
     Mountpoint *mp = allocateMP();
     if(!mp) {
         cmd->header.header.status = -ENOMEM;
@@ -123,6 +134,7 @@ void lxfsMount(MountCommand *cmd) {
     mp->root = id->rootBlock;
     mp->blockTableBuffer = buffer;
     mp->dataBuffer = buffer2;
+    mp->meta = meta;
 
     luxLogf(KPRINT_LEVEL_DEBUG, "- %d bytes per sector, %d sectors per block\n", mp->sectorSize, mp->blockSize);
     luxLogf(KPRINT_LEVEL_DEBUG, "- root directory at block %d\n", mp->root);
