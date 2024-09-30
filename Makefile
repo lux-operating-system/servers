@@ -7,6 +7,8 @@ all:
 	@make -C fs
 	@echo "\x1B[0;1;35m make\x1B[0m servers/devices"
 	@make -C devices
+	@echo "\x1B[0;1;35m make\x1B[0m servers/kthd"
+	@make -C kthd
 
 install:
 	@mkdir -p out
@@ -16,6 +18,8 @@ install:
 	@make install -C fs
 	@echo "\x1B[0;1;35m make\x1B[0m install servers/devices"
 	@make install -C devices
+	@echo "\x1B[0;1;35m make\x1B[0m install servers/kthd"
+	@make install -C kthd
 
 clean:
 	@echo "\x1B[0;1;35m make\x1B[0m clean servers/liblux"
@@ -24,3 +28,5 @@ clean:
 	@make clean -C fs
 	@echo "\x1B[0;1;35m make\x1B[0m clean servers/devices"
 	@make clean -C devices
+	@echo "\x1B[0;1;35m make\x1B[0m clean servers/kthd"
+	@make clean -C kthd
