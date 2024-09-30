@@ -65,6 +65,7 @@ void lxfsStat(StatCommand *cmd) {
         cmd->buffer.st_mode = S_IFLNK;
         break;
     case LXFS_DIR_TYPE_FILE:
+    case LXFS_DIR_TYPE_HARD_LINK:
     default:
         cmd->buffer.st_mode = S_IFREG;
     }
