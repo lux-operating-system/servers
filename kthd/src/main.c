@@ -8,6 +8,8 @@
 #include <liblux/liblux.h>
 #include <stdlib.h>
 
+void exec(ExecCommand *);
+
 int main() {
     luxInit("kthd");
 
@@ -38,6 +40,7 @@ int main() {
             luxRecvLumen(msg, SERVER_MAX_SIZE, false, false);
 
             switch(msg->header.command) {
+            case COMMAND_EXEC: exec((ExecCommand *) msg); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", msg->header.command);
             }
