@@ -124,6 +124,7 @@ uint64_t lxfsWriteNextBlock(Mountpoint *, uint64_t, const void *);
 Mountpoint *findMP(const char *);
 int pathDepth(const char *);
 char *pathComponent(char *, const char *, int);
+LXFSDirectoryEntry *lxfsFind(LXFSDirectoryEntry *, Mountpoint *, const char *);
 
 void lxfsOpen(OpenCommand *);
 void lxfsStat(StatCommand *);

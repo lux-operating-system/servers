@@ -56,3 +56,14 @@ char *pathComponent(char *dest, const char *path, int n) {
 
     return NULL;
 }
+
+/* lxfsFind(): finds the directory entry associated with a file
+ * params: dest - destination buffer to store the directory entry
+ * params: mp - lxfs mountpoint
+ * params: path - full qualified path
+ * returns: pointer to destination on success, NULL on fail
+ */
+
+LXFSDirectoryEntry *lxfsFind(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path) {
+    return NULL;    // stub
+}

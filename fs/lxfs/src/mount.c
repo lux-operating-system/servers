@@ -32,6 +32,18 @@ static Mountpoint *allocateMP() {
     return mp;
 }
 
+Mountpoint *findMP(const char *dev) {
+    if(!mps) return NULL;
+
+    Mountpoint *list = mps;
+    while(list) {
+        if(!strcmp(list->device, dev)) return list;
+        else list = list->next;
+    }
+
+    return NULL;
+}
+
 void lxfsMount(MountCommand *cmd) {
     cmd->header.header.response = 1;
 
