@@ -46,8 +46,8 @@ char *pathComponent(char *dest, const char *path, int n) {
     int len = 0;
     for(int i = 0; i < strlen(path); i++) {
         if(path[i] == '/') c++;
-        if(c > n) {
-            i++;
+        if(c >= n) {
+            while(path[i] == '/') i++;
             while(path[i] && (path[i] != '/')) {
                 dest[len] = path[i];
                 len++;
@@ -105,7 +105,7 @@ traverse:
     while(i < depth) {
         // iterate over each component in the path and search for it in the directory
         if(!pathComponent(component, path, i)) return NULL;
-    
+
         next = lxfsReadNextBlock(mp, next, mp->dataBuffer);
         if(!next) return NULL;
         
@@ -122,15 +122,27 @@ traverse:
                     // found the file we're looking for
                     return (LXFSDirectoryEntry *) memcpy(dest, dir, dir->entrySize);
                 } else {
-                    // found a parent directory
+                    // found a parent component, ensure it is a directory
                     i++;
-                    luxLogf(KPRINT_LEVEL_WARNING, "TODO: implement directory trees\n");
+
+                    if(((dir->flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK) != LXFS_DIR_TYPE_DIR)
+                        return NULL;
+
+                    // and go back to the beginning of the loop but searching for this component
+                    next = dir->block;
+                    goto traverse;
                 }
             }
             
             // advance to the next entry
-            dir = (LXFSDirectoryEntry *)((uintptr_t)dir + dir->entrySize);
-            offset += dir->entrySize;
+            uint16_t oldSize = dir->entrySize;
+            dir = (LXFSDirectoryEntry *)((uintptr_t)dir + oldSize);
+            offset += oldSize;
+
+            if(!dir->entrySize) {
+                // file doesn't exist
+                return NULL;
+            }
 
             if((offset >= mp->blockSizeBytes) && (next != LXFS_BLOCK_EOF)) {
                 // copy the second block to the first block
