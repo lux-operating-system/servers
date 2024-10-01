@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 void kthdExec(ExecCommand *);
+void kthdChdir(ChdirCommand *);
 
 int main() {
     luxInit("kthd");
@@ -41,6 +42,7 @@ int main() {
 
             switch(msg->header.command) {
             case COMMAND_EXEC: kthdExec((ExecCommand *) msg); break;
+            case COMMAND_CHDIR: kthdChdir((ChdirCommand *) msg); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", msg->header.command);
             }
