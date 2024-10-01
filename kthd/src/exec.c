@@ -13,7 +13,7 @@
 #include <fnctl.h>
 #include <errno.h>
 
-void exec(ExecCommand *cmd) {
+void kthdExec(ExecCommand *cmd) {
     cmd->header.header.response = 1;
     cmd->header.header.length = sizeof(ExecCommand);
 
