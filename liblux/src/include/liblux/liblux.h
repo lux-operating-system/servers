@@ -208,6 +208,14 @@ typedef struct {
     uint8_t elf[];      // ELF file
 } ExecCommand;
 
+/* chdir() */
+typedef struct {
+    SyscallHeader header;
+    char path[MAX_FILE_PATH];
+    uid_t uid;
+    gid_t gid;
+} ChdirCommand;
+
 /* wrapper functions */
 pid_t luxGetSelf();
 const char *luxGetName();
