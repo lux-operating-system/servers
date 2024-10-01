@@ -35,8 +35,10 @@ void exec(ExecCommand *cmd) {
     }
 
     cmd->header.header.status = 0;
-    if(cmd->header.header.requester == st.st_uid) {
+    if(cmd->uid == st.st_uid) {
         if(!(st.st_mode & S_IXUSR)) cmd->header.header.status = -EPERM;
+    } else if(cmd->gid == st.st_gid) {
+        if(!(st.st_mode & S_IXGRP)) cmd->header.header.status = -EPERM;
     } else {
         if(!(st.st_mode & S_IXOTH)) cmd->header.header.status = -EPERM;
     }
