@@ -18,6 +18,7 @@
 #define PTY_GET_SLAVE           (0x10 | IOCTL_OUT_PARAM)
 #define PTY_GRANT_PT            0x20
 #define PTY_UNLOCK_PT           0x30
+#define PTY_TTY_NAME            (0x40 | IOCTL_OUT_PARAM)
 
 typedef struct {
     // master read() will read from slave, write() will write to master

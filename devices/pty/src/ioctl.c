@@ -92,9 +92,26 @@ void ptyIoctlMaster(IOCTLCommand *cmd) {
  */
 
 void ptyIoctlSlave(IOCTLCommand *cmd) {
-    /* todo */
     cmd->header.header.response = 1;
     cmd->header.header.length = sizeof(IOCTLCommand);
-    cmd->header.header.status = -ENOTTY;
+
+    int id = atoi(&cmd->path[4]);   // slave ID
+
+    switch(cmd->opcode) {
+    case PTY_TTY_NAME:
+        // return the number of the pty device
+        cmd->parameter = id;
+        cmd->header.header.status = 0;
+        break;
+    
+    default:
+        if((cmd->opcode & IOCTL_IN_PARAM) || (cmd->opcode & IOCTL_OUT_PARAM))
+            luxLogf(KPRINT_LEVEL_WARNING, "unimplemented slave pty %d ioctl() opcode 0x%X with input param %d\n", cmd->id, cmd->opcode, cmd->parameter);
+        else
+            luxLogf(KPRINT_LEVEL_WARNING, "unimplemented slave pty %d ioctl() opcode 0x%X\n", cmd->id, cmd->opcode);
+        
+        cmd->header.header.status = -ENOTTY;
+    }
+
     luxSendDependency(cmd);
 }
