@@ -29,4 +29,4 @@ extern int mpCount;
 
 int findFSServer(const char *);
 void registerMountpoint(MountCommand *);
-char *resolve(char *, char *, char *, const char *);
+char *resolve(char *, char *, char *, char *);
