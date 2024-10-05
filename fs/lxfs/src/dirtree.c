@@ -76,7 +76,7 @@ LXFSDirectoryEntry *lxfsFind(LXFSDirectoryEntry *dest, Mountpoint *mp, const cha
         if(lxfsReadBlock(mp, mp->root, mp->dataBuffer)) return NULL;
 
         LXFSDirectoryHeader *root = (LXFSDirectoryHeader *) mp->dataBuffer;
-        dest->size = root->sizeEntries;
+        dest->size = 1;
         dest->accessTime = root->accessTime;
         dest->createTime = root->createTime;
         dest->modTime = root->modTime;
