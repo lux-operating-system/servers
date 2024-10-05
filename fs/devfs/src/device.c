@@ -54,6 +54,7 @@ int createDirectories(const char *name) {
     struct stat dirstat;
     memset(&dirstat, 0, sizeof(struct stat));
     dirstat.st_mode = S_IFDIR | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
+    dirstat.st_size = 1;
 
     for(int i = 0; i < depth-1; i++) {
         copyPathDepth(dirs, name, i+1);
@@ -64,6 +65,8 @@ int createDirectories(const char *name) {
         } else {
             // ensure this is a directory
             if((entry->status.st_mode & S_IFMT) != S_IFDIR) return -1;
+
+            entry->status.st_size++;
         }
     }
 
