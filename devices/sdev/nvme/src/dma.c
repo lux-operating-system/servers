@@ -44,7 +44,7 @@ int nvmeCreatePRP(NVMEController *drive, NVMECommonCommand *cmd, const void *dat
         // physical address of the first page and PRP2 is the physical address
         // of the second page with its offset cleared to zero
         cmd->dataLow = vtop((uintptr_t)data);
-        cmd->dataHigh = vtop((uintptr_t)data + drive->pageSize) & ~drive->pageSize;
+        cmd->dataHigh = vtop((uintptr_t)data + drive->pageSize) & ~(drive->pageSize-1);
 
         if(!cmd->dataLow || !cmd->dataHigh || (cmd->dataLow & 3)) return -1;
         return 1;
@@ -70,7 +70,7 @@ int nvmeCreatePRP(NVMEController *drive, NVMECommonCommand *cmd, const void *dat
     // now populate the PRP table
     for(int i = 1; i < pageBoundaries; i++) {
         prpTable[i-1] = vtop((uintptr_t)data + (i * drive->pageSize));
-        prpTable[i-1] &= ~drive->pageSize;
+        prpTable[i-1] &= ~(drive->pageSize-1);
         if(!prpTable[i-1]) {
             mmio((uintptr_t)prpTable, (pageCount-1) * drive->pageSize, 0);     // delete mapping
             pcontig(cmd->dataHigh, (pageCount-1) * drive->pageSize, 0);
