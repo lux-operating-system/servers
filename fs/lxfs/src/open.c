@@ -39,7 +39,6 @@ void lxfsOpen(OpenCommand *ocmd) {
 
     // ensure this is a file
     if(((entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK) != LXFS_DIR_TYPE_FILE) {
-        luxLogf(KPRINT_LEVEL_DEBUG, "ISNT FILE\n");
         ocmd->header.header.status = -EISDIR;
         luxSendDependency(ocmd);
         return;
