@@ -172,21 +172,18 @@ void pciEnumerate() {
         uint16_t device = pciReadWord(bus, slot, function, PCI_DEVICE);
 
         if(!vendor || vendor == 0xFFFF) {
-            if(function) {
-                function++;
-                if(function > 7) {
-                    function = 0;
-                    slot++;
-                    if(slot > 31) {
-                        slot = 0;
-                        bus++;
-                    }
+            function++;
+            if(function > 7) {
+                function = 0;
+                slot++;
+                if(slot > 31) {
+                    slot = 0;
+                    bus++;
+                    if(bus > 31) break;
                 }
-
-                continue;
-            } else {
-                break;
             }
+
+            continue;
         }
 
         uint8_t header = pciReadByte(bus, slot, function, PCI_HEADER_TYPE);
