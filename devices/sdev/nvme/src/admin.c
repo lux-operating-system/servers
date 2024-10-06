@@ -60,7 +60,9 @@ int nvmeIdentify(NVMEController *drive) {
     luxLogf(KPRINT_LEVEL_DEBUG, "- model: %s\n", drive->model);
 
     int ctrlType = drive->id->controllerType-1;
-    if(ctrlType >= 0 && ctrlType <= 2) {
+    if(!drive->id->controllerType) {
+        luxLogf(KPRINT_LEVEL_WARNING, "- controller type: %d (reserved, assuming legacy I/O controller)\n", drive->id->controllerType);
+    } else if(ctrlType >= 0 && ctrlType <= 2) {
         luxLogf(KPRINT_LEVEL_DEBUG, "- controller type: %s\n", controllerType[ctrlType]);
     } else {
         luxLogf(KPRINT_LEVEL_WARNING, "- controller type: %d (unimplemented), aborting...\n", drive->id->controllerType);
@@ -186,14 +188,14 @@ int nvmeIdentify(NVMEController *drive) {
         cmd.dword11 = 0x00;         // CSI 0x00 = NVM I/O command set
         nvmeSubmit(drive, 0, &cmd);
         if(!nvmePoll(drive, 0, i + 0xBEEF, 20)) {
-            luxLogf(KPRINT_LEVEL_WARNING, "- timeout while identifying NVM namespace %d (0x%08X), aborting...\n", i, drive->ns[i]);
-            return -1;
+            luxLogf(KPRINT_LEVEL_WARNING, "- timeout while identifying NVM namespace %d (0x%08X), skipping...\n", i, drive->ns[i]);
+            continue;
         }
 
         NVMIONSIdentification *nvmNSID = (NVMIONSIdentification *) drive->id;
         if(!nvmNSID->lbaFormatCount) {
-            luxLogf(KPRINT_LEVEL_WARNING, "- drive does not report any LBA formats, aborting...\n");
-            return -1;
+            //luxLogf(KPRINT_LEVEL_WARNING, "- NS %d: drive doesn't report any LBA formats, skipping...\n", i+1);
+            continue;
         }
 
         drive->nsSectorSizes[i] = 1 << nvmNSID->lbaFormat[0].sectorSize;
@@ -345,6 +347,8 @@ int nvmeIdentify(NVMEController *drive) {
     }
 
     for(int i = 0; i < drive->nsCount; i++) {
+        if(!drive->nsSizes[i] || !drive->nsSectorSizes[i]) continue;
+
         memset(regcmd, 0, sizeof(SDevRegisterCommand));
         regcmd->header.command = COMMAND_SDEV_REGISTER;
         regcmd->header.length = sizeof(SDevRegisterCommand);
@@ -369,9 +373,10 @@ int nvmeIdentify(NVMEController *drive) {
             return -1;
         }
 
+        uint8_t statype = (res->status >> 8) & 7;
         uint8_t status = (res->status >> 1) & 0xFF;
         if(status) {
-            luxLogf(KPRINT_LEVEL_WARNING, "- I/O error while reading boot sector, error code 0x%02X, aborting...\n");
+            luxLogf(KPRINT_LEVEL_WARNING, "- I/O error while reading boot sector, status type 0x%02X code 0x%02X, aborting...\n", statype, status);
             free(regcmd);
             return -1;
         }
