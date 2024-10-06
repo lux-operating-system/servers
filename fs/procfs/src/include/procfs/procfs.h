@@ -16,7 +16,7 @@
 #define RESOLVE_MEMUSAGE            3
 #define RESOLVE_PAGESIZE            4
 #define RESOLVE_UPTIME              5
-#define RESOLVE_SYS                 6
+#define RESOLVE_CPU                 6
 
 /* for /proc/pid/X*/
 #define RESOLVE_PID                 0x8000

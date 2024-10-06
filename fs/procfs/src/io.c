@@ -59,6 +59,7 @@ void procfsStat(StatCommand *scmd) {
     if(res & RESOLVE_DIRECTORY) scmd->buffer.st_mode |= S_IFDIR;
 
     if(res == RESOLVE_KERNEL) scmd->buffer.st_size = strlen(sysinfo->kernel);
+    else if(res == RESOLVE_CPU) scmd->buffer.st_size = strlen(sysinfo->cpu);
     else scmd->buffer.st_size = 8;
 
     luxSendDependency(scmd);
@@ -94,6 +95,10 @@ void procfsRead(RWCommand *rcmd) {
     case RESOLVE_KERNEL:
         ptr = sysinfo->kernel;
         size = strlen(sysinfo->kernel);
+        break;
+    case RESOLVE_CPU:
+        ptr = sysinfo->cpu;
+        size = strlen(sysinfo->cpu);
         break;
     case RESOLVE_MEMSIZE:
         luxSysinfo(sysinfo);
