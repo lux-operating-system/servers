@@ -32,10 +32,12 @@
 #define RESOLVE_PID_CHILDREN        (9 | RESOLVE_PID)   /* /proc/pid/children */
 #define RESOLVE_PID_STAT            (10 | RESOLVE_PID)  /* /proc/pid/stat */
 
-void procfsMount(MountCommand *, MountCommand *);
-void procfsStat(StatCommand *, StatCommand *);
-void procfsOpen(OpenCommand *, OpenCommand *);
-void procfsRead(RWCommand *, RWCommand *);
-void procfsWrite(RWCommand *, RWCommand *);
+#define RESOLVE_DIRECTORY           0x10000
 
-int procfsResolve(const char *, pid_t *);
+void procfsMount(MountCommand *);
+void procfsStat(StatCommand *);
+void procfsOpen(OpenCommand *);
+void procfsRead(RWCommand *);
+void procfsWrite(RWCommand *);
+
+int resolve(const char *, pid_t *);

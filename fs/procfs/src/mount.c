@@ -10,15 +10,13 @@
 
 /* procfsMount(): mounts the /proc file system
  * params: req - request buffer
- * params: res - response buffer
  * returns: nothing
  */
 
-void procfsMount(MountCommand *req, MountCommand *res) {
-    memcpy(res, req, sizeof(MountCommand));
-    res->header.header.response = 1;
-    res->header.header.length = sizeof(MountCommand);
-    res->header.header.status = 0;      // success
+void procfsMount(MountCommand *req) {
+    req->header.header.response = 1;
+    req->header.header.length = sizeof(MountCommand);
+    req->header.header.status = 0;      // success
 
-    luxSendDependency(res);
+    luxSendDependency(req);
 }

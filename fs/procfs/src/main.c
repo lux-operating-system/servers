@@ -52,7 +52,8 @@ int main() {
             luxRecvDependency(req, req->header.length, false, false);
 
             switch(req->header.command) {
-            case COMMAND_MOUNT: procfsMount((MountCommand *) req, (MountCommand *) res); break;
+            case COMMAND_MOUNT: procfsMount((MountCommand *) req); break;
+            case COMMAND_OPEN: procfsOpen((OpenCommand *) req); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", req->header.command);
             }
