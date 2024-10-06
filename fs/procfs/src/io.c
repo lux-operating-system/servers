@@ -88,7 +88,7 @@ void procfsRead(RWCommand *rcmd) {
 
     uint64_t data;
     void *ptr = (void *) &data;
-    size_t size = 0;
+    size_t size = 8;
 
     switch(file) {
     case RESOLVE_KERNEL:
@@ -98,10 +98,12 @@ void procfsRead(RWCommand *rcmd) {
     case RESOLVE_MEMSIZE:
         luxSysinfo(sysinfo);
         data = sysinfo->memorySize;
+        size = 4;
         break;
     case RESOLVE_MEMUSAGE:
         luxSysinfo(sysinfo);
         data = sysinfo->memoryUsage;
+        size = 4;
         break;
     case RESOLVE_UPTIME:
         luxSysinfo(sysinfo);
