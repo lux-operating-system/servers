@@ -131,3 +131,5 @@ void lxfsOpen(OpenCommand *);
 void lxfsStat(StatCommand *);
 void lxfsRead(RWCommand *);
 void lxfsWrite(RWCommand *);
+void lxfsOpendir(OpendirCommand *);
+void lxfsReaddir(ReaddirCommand *);
