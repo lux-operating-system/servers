@@ -34,6 +34,8 @@
 
 #define RESOLVE_DIRECTORY           0x10000
 
+extern SysInfoResponse *sysinfo;
+
 void procfsMount(MountCommand *);
 void procfsStat(StatCommand *);
 void procfsOpen(OpenCommand *);
