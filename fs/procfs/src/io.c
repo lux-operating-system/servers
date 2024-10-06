@@ -63,3 +63,75 @@ void procfsStat(StatCommand *scmd) {
 
     luxSendDependency(scmd);
 }
+
+void procfsRead(RWCommand *rcmd) {
+    rcmd->header.header.response = 1;
+    rcmd->header.header.length = sizeof(RWCommand);
+
+    pid_t pid;
+    int file = resolve(rcmd->path, &pid);
+    if(file < 0) {
+        rcmd->header.header.status = -ENOENT;
+        luxSendDependency(rcmd);
+        return;
+    }
+
+    RWCommand *res = calloc(1, sizeof(RWCommand) + rcmd->length);
+    if(!res) {
+        rcmd->header.header.status = -ENOMEM;
+        rcmd->length = 0;
+        luxSendDependency(rcmd);
+        return;
+    }
+
+    memcpy(res, rcmd, sizeof(RWCommand));
+
+    uint64_t data;
+    void *ptr = (void *) &data;
+    size_t size = 0;
+
+    switch(file) {
+    case RESOLVE_KERNEL:
+        ptr = sysinfo->kernel;
+        size = strlen(sysinfo->kernel);
+        break;
+    case RESOLVE_MEMSIZE:
+        luxSysinfo(sysinfo);
+        data = sysinfo->memorySize;
+        break;
+    case RESOLVE_MEMUSAGE:
+        luxSysinfo(sysinfo);
+        data = sysinfo->memoryUsage;
+        break;
+    case RESOLVE_UPTIME:
+        luxSysinfo(sysinfo);
+        data = sysinfo->uptime;
+        break;
+    default:
+        rcmd->header.header.status = -ENOENT;
+        rcmd->length = 0;
+        luxSendDependency(rcmd);
+        free(res);
+        return;
+    }
+
+    if(rcmd->position >= size) {
+        rcmd->header.header.status = -EOVERFLOW;
+        rcmd->length = 0;
+        luxSendDependency(rcmd);
+        free(res);
+        return;
+    }
+
+    size_t truelen;
+    if((rcmd->position + rcmd->length) > size) truelen = size - rcmd->position;
+    else truelen = size;
+
+    memcpy(res->data, ptr + rcmd->position, truelen);
+    res->length = truelen;
+    res->header.header.status = truelen;
+    res->header.header.length += truelen;
+    res->position += truelen;
+    luxSendDependency(res);
+    free(res);
+}

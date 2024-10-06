@@ -64,6 +64,7 @@ int main() {
             case COMMAND_MOUNT: procfsMount((MountCommand *) req); break;
             case COMMAND_OPEN: procfsOpen((OpenCommand *) req); break;
             case COMMAND_STAT: procfsStat((StatCommand *) req); break;
+            case COMMAND_READ: procfsRead((RWCommand *) req); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", req->header.command);
             }
