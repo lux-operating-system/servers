@@ -102,7 +102,7 @@ void pciReadFile(RWCommand *rcmd) {
     if((rcmd->position+rcmd->length) > file->size) truelen = file->size - rcmd->position;
     else truelen = rcmd->length;
 
-    memcpy(rcmd->data, file->data, truelen);
+    memcpy(rcmd->data, file->data + rcmd->position, truelen);
     rcmd->length = truelen;
     rcmd->header.header.status = truelen;
     rcmd->header.header.length += truelen;
