@@ -235,7 +235,7 @@ void pciEnumerate() {
             luxLogf(KPRINT_LEVEL_DEBUG, "%02x.%02x.%02x: unimplemented device - %02x%02x%02x (%04X:%04X):\n", bus, slot, function, class, subclass, progif, vendor, device);
         }
 
-        switch(header & PCI_HAS_FUNCTIONS) {
+        switch(header & 3) {
         case PCI_GENERAL_DEVICE: pciDumpGeneral(bus, slot, function); break;
         }
 
