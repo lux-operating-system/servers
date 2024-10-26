@@ -7,6 +7,8 @@
 
 #include <lxfs/lxfs.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* lxfsReadBlock(): reads a block on a mounted lxfs partition
  * params: mp - mountpoint
@@ -16,8 +18,38 @@
  */
 
 int lxfsReadBlock(Mountpoint *mp, uint64_t block, void *buffer) {
+    // check if the block is already in the cache
+    uint64_t tag = block / CACHE_SIZE;
+    uint64_t index = block % CACHE_SIZE;
+
+    if(mp->cache[index].valid && (mp->cache[index].tag == tag)) {
+        memcpy(buffer, mp->cache[index].data, mp->blockSizeBytes);
+        return 0;
+    }
+
+    // else bring it into the cache
+    if(mp->cache[index].valid && mp->cache[index].dirty) {
+        // TODO: flush cache
+        luxLogf(KPRINT_LEVEL_WARNING, "TODO: flush file system cache in read()\n");
+        return -1;
+    }
+
+    mp->cache[index].valid = 1;
+    mp->cache[index].dirty = 0;
+    mp->cache[index].tag = tag;
+
+    if(!mp->cache[index].data) mp->cache[index].data = malloc(mp->blockSizeBytes);
+    if(!mp->cache[index].data) return -1;
+
     lseek(mp->fd, block * mp->blockSizeBytes, SEEK_SET);
-    return !(read(mp->fd, buffer, mp->blockSizeBytes) == mp->blockSizeBytes);
+    ssize_t s = read(mp->fd, mp->cache[index].data, mp->blockSizeBytes);
+    if(s != mp->blockSizeBytes) {
+        mp->cache[index].valid = 0;
+        return 1;
+    }
+
+    memcpy(buffer, mp->cache[index].data, mp->blockSizeBytes);
+    return 0;
 }
 
 /* lxfsWriteBlock(): writes a block to a mounted lxfs partition

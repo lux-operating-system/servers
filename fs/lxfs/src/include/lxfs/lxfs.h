@@ -10,7 +10,8 @@
 #include <sys/types.h>
 #include <liblux/liblux.h>
 
-#define CACHE_SIZE          128     /* todo: maybe don't hard code this */
+/* with a block size of 2 KB, this will give us 8 MB of cache */
+#define CACHE_SIZE          4096
 
 typedef struct {
     int valid, dirty;
