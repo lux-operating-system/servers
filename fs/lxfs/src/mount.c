@@ -20,6 +20,12 @@ static Mountpoint *allocateMP() {
     Mountpoint *mp = calloc(1, sizeof(Mountpoint));
     if(!mp) return NULL;
 
+    mp->cache = calloc(CACHE_SIZE, sizeof(Cache));
+    if(!mp->cache) {
+        free(mp);
+        return NULL;
+    }
+
     if(!mps) {
         mps = mp;
         return mp;
