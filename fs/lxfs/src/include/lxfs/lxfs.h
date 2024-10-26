@@ -10,6 +10,14 @@
 #include <sys/types.h>
 #include <liblux/liblux.h>
 
+#define CACHE_SIZE          128     /* todo: maybe don't hard code this */
+
+typedef struct {
+    int valid;
+    uint64_t tag;
+    void *data;
+} Cache;
+
 typedef struct Mountpoint {
     struct Mountpoint *next;
     char device[MAX_FILE_PATH];
@@ -20,6 +28,8 @@ typedef struct Mountpoint {
     void *blockTableBuffer;     // of size blockSizeBytes
     void *dataBuffer;           // of size 2 * blockSizeBytes
     void *meta;                 // metadata buffer, blockSizeBytes
+
+    Cache *cache;
 } Mountpoint;
 
 typedef struct {
