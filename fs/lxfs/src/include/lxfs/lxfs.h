@@ -13,7 +13,7 @@
 #define CACHE_SIZE          128     /* todo: maybe don't hard code this */
 
 typedef struct {
-    int valid;
+    int valid, dirty;
     uint64_t tag;
     void *data;
 } Cache;
