@@ -7,7 +7,7 @@
 
 #include <errno.h>
 #include <string.h>
-#include <fnctl.h>
+#include <fcntl.h>
 #include <liblux/liblux.h>
 #include <vfs.h>
 #include <devfs/devfs.h>
