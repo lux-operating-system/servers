@@ -145,6 +145,12 @@ int main() {
                 case LFB_GET_HEIGHT:
                     ioctlcmd->parameter = fb.h;
                     break;
+                case LFB_GET_BPP:
+                    ioctlcmd->parameter = fb.bpp;
+                    break;
+                case LFB_GET_PITCH:
+                    ioctlcmd->parameter = fb.pitch;
+                    break;
                 default:
                     ioctlcmd->header.header.status = -ENOTTY;
                 }
