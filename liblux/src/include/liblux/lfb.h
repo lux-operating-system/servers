@@ -11,3 +11,5 @@
 
 #define LFB_GET_WIDTH           (0x10 | IOCTL_OUT_PARAM)
 #define LFB_GET_HEIGHT          (0x20 | IOCTL_OUT_PARAM)
+#define LFB_GET_BPP             (0x30 | IOCTL_OUT_PARAM)
+#define LFB_GET_PITCH           (0x40 | IOCTL_OUT_PARAM)
