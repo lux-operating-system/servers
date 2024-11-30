@@ -115,6 +115,7 @@ typedef struct {
 typedef struct {
     MessageHeader header;
     uint64_t buffer;        // pointer
+    uint64_t bufferPhysical;
     uint16_t w, h, pitch, bpp;
 } FramebufferResponse;
 
