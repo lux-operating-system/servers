@@ -52,7 +52,7 @@ void kthdExec(ExecCommand *cmd) {
     // now read the file into memory
     // allocate a new buffer for this
     size_t size = st.st_size + sizeof(ExecCommand);
-    ExecCommand *res = calloc(2, size);
+    ExecCommand *res = calloc(1, size);
     if(!res) {
         close(fd);
         cmd->header.header.status = -ENOMEM;
