@@ -84,3 +84,13 @@ void devfsWrite(SyscallHeader *req, SyscallHeader *res) {
         }
     }
 }
+
+/* devfsMmap(): handler for mmap() on the /dev file system
+ * params: req - request buffer
+ * params: res - response buffer
+ * returns: nothing, response forwarded to vfs server
+ */
+
+void devfsMmap(SyscallHeader *req, SyscallHeader *res) {
+    /* todo */
+}
