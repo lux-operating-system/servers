@@ -26,21 +26,21 @@ void lxfsOpen(OpenCommand *ocmd) {
     Mountpoint *mp = findMP(ocmd->device);
     if(!mp) {
         ocmd->header.header.status = -EIO;  // device doesn't exist
-        luxSendDependency(ocmd);
+        luxSendKernel(ocmd);
         return;
     }
 
     LXFSDirectoryEntry entry;
     if(!lxfsFind(&entry, mp, ocmd->path)) {
         ocmd->header.header.status = -ENOENT;   // file doesn't exist
-        luxSendDependency(ocmd);
+        luxSendKernel(ocmd);
         return;
     }
 
     // ensure this is a file
     if(((entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK) != LXFS_DIR_TYPE_FILE) {
         ocmd->header.header.status = -EISDIR;
-        luxSendDependency(ocmd);
+        luxSendKernel(ocmd);
         return;
     }
 
@@ -57,5 +57,5 @@ void lxfsOpen(OpenCommand *ocmd) {
         if((ocmd->flags & O_WRONLY) && !(entry.permissions & LXFS_PERMS_OTHER_W)) ocmd->header.header.status = -EACCES;
     }
 
-    luxSendDependency(ocmd);
+    luxSendKernel(ocmd);
 }

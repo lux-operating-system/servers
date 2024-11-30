@@ -23,21 +23,21 @@ void lxfsOpendir(OpendirCommand *ocmd) {
     Mountpoint *mp = findMP(ocmd->device);
     if(!mp) {
         ocmd->header.header.status = -EIO;  // device doesn't exist
-        luxSendDependency(ocmd);
+        luxSendKernel(ocmd);
         return;
     }
 
     LXFSDirectoryEntry entry;
     if(!lxfsFind(&entry, mp, ocmd->path)) {
         ocmd->header.header.status = -ENOENT;   // file doesn't exist
-        luxSendDependency(ocmd);
+        luxSendKernel(ocmd);
         return;
     }
 
     // ensure this is a directory
     if(((entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK) != LXFS_DIR_TYPE_DIR) {
         ocmd->header.header.status = -ENOTDIR;
-        luxSendDependency(ocmd);
+        luxSendKernel(ocmd);
         return;
     }
 
@@ -50,7 +50,7 @@ void lxfsOpendir(OpendirCommand *ocmd) {
     else if(!(entry.permissions & LXFS_PERMS_OTHER_X))
         ocmd->header.header.status = -EPERM;
 
-    luxSendDependency(ocmd);
+    luxSendKernel(ocmd);
 }
 
 /* lxfsReaddir(): reads a directory entry from an lxfs volume
@@ -65,21 +65,21 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
     Mountpoint *mp = findMP(rcmd->device);
     if(!mp) {
         rcmd->header.header.status = -EIO;  // device doesn't exist
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
     LXFSDirectoryEntry entry;
     if(!lxfsFind(&entry, mp, rcmd->path)) {
         rcmd->header.header.status = -ENOENT;   // file doesn't exist
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
     // ensure this is a directory
     if(((entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK) != LXFS_DIR_TYPE_DIR) {
         rcmd->header.header.status = -ENOTDIR;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
@@ -90,7 +90,7 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
         rcmd->position++;
         rcmd->end = 0;
         rcmd->header.header.status = 0;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     } else if(rcmd->position == 1) {
         strcpy(rcmd->entry.d_name, "..");
@@ -98,7 +98,7 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
         rcmd->position++;
         rcmd->end = 0;
         rcmd->header.header.status = 0;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
@@ -109,7 +109,7 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
 
     if(lxfsReadBlock(mp, next, mp->dataBuffer)) {
         rcmd->header.header.status = -EIO;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
@@ -117,7 +117,7 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
         next = lxfsReadNextBlock(mp, next, mp->dataBuffer);
         if(!next) {
             rcmd->header.header.status = -EIO;
-            luxSendDependency(rcmd);
+            luxSendKernel(rcmd);
             return;
         }
 
@@ -135,7 +135,7 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
                 rcmd->position++;
                 rcmd->end = 0;
                 rcmd->header.header.status = 0;
-                luxSendDependency(rcmd);
+                luxSendKernel(rcmd);
                 return;
             }
 
@@ -146,7 +146,7 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
             if(!oldSize) {
                 rcmd->header.header.status = 0;
                 rcmd->end = 1;
-                luxSendDependency(rcmd);
+                luxSendKernel(rcmd);
                 return;
             }
 
@@ -162,7 +162,7 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
                 if(!dir->entrySize) {
                     rcmd->header.header.status = 0;
                     rcmd->end = 1;
-                    luxSendDependency(rcmd);
+                    luxSendKernel(rcmd);
                     return;
                 }
 
@@ -170,7 +170,7 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
                 next = lxfsReadNextBlock(mp, next, mp->dataBuffer);
                 if(!next) {
                     rcmd->header.header.status = -EIO;
-                    luxSendDependency(rcmd);
+                    luxSendKernel(rcmd);
                     return;
                 }
             }
@@ -179,6 +179,6 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
 
     rcmd->header.header.status = 0;
     rcmd->end = 1;
-    luxSendDependency(rcmd);
+    luxSendKernel(rcmd);
     return;
 }

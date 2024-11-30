@@ -19,7 +19,7 @@ void lxfsStat(StatCommand *cmd) {
     Mountpoint *mp = findMP(cmd->source);
     if(!mp) {
         cmd->header.header.status = -EIO;
-        luxSendDependency(cmd);
+        luxSendKernel(cmd);
         return;
     }
 
@@ -27,7 +27,7 @@ void lxfsStat(StatCommand *cmd) {
     LXFSDirectoryEntry entry;
     if(!lxfsFind(&entry, mp, cmd->path)) {
         cmd->header.header.status = -ENOENT;
-        luxSendDependency(cmd);
+        luxSendKernel(cmd);
         return;
     }
 
@@ -35,7 +35,7 @@ void lxfsStat(StatCommand *cmd) {
     uint64_t first = lxfsReadNextBlock(mp, entry.block, mp->meta);
     if(!first) {
         cmd->header.header.status = -EIO;
-        luxSendDependency(cmd);
+        luxSendKernel(cmd);
         return;
     }
 
@@ -84,5 +84,5 @@ void lxfsStat(StatCommand *cmd) {
 
     // and we're done, relay the response
     cmd->header.header.status = 0;
-    luxSendDependency(cmd);
+    luxSendKernel(cmd);
 }

@@ -27,7 +27,7 @@ void lxfsRead(RWCommand *rcmd) {
     Mountpoint *mp = findMP(rcmd->device);
     if(!mp) {
         rcmd->header.header.status = -EIO;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
@@ -35,7 +35,7 @@ void lxfsRead(RWCommand *rcmd) {
     LXFSDirectoryEntry entry;
     if(!lxfsFind(&entry, mp, rcmd->path)) {
         rcmd->header.header.status = -ENOENT;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
@@ -43,7 +43,7 @@ void lxfsRead(RWCommand *rcmd) {
     uint64_t first = lxfsReadNextBlock(mp, entry.block, mp->meta);
     if(!first) {
         rcmd->header.header.status = -EIO;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
@@ -52,7 +52,7 @@ void lxfsRead(RWCommand *rcmd) {
     // input validation
     if(rcmd->position >= metadata->size) {
         rcmd->header.header.status = -EOVERFLOW;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
@@ -65,7 +65,7 @@ void lxfsRead(RWCommand *rcmd) {
     RWCommand *res = calloc(1, sizeof(RWCommand) + truelen);
     if(!res) {
         rcmd->header.header.status = -ENOMEM;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
@@ -83,7 +83,7 @@ void lxfsRead(RWCommand *rcmd) {
         if(!block) {
             free(res);
             rcmd->header.header.status = -EIO;
-            luxSendDependency(rcmd);
+            luxSendKernel(rcmd);
             return;
         }
 
@@ -133,6 +133,6 @@ void lxfsRead(RWCommand *rcmd) {
         res->header.header.status = -EIO;
     }
 
-    luxSendDependency(res);
+    luxSendKernel(res);
     free(res);
 }
