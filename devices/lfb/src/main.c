@@ -110,7 +110,7 @@ int main() {
                     cmd->position += cmd->length;
                 }
 
-                luxSendDependency(cmd);
+                luxSendKernel(cmd);
             } else if(cmd->header.header.command == COMMAND_READ) {
                 // reading from the frame buffer
                 // we use a back buffer to avoid slow reading from video RAM
@@ -131,7 +131,7 @@ int main() {
                     cmd->position += truelen;
                 }
 
-                luxSendDependency(cmd);
+                luxSendKernel(cmd);
             } else if(cmd->header.header.command == COMMAND_IOCTL) {
                 // ioctl()
                 IOCTLCommand *ioctlcmd = (IOCTLCommand *) cmd;
@@ -155,7 +155,7 @@ int main() {
                     ioctlcmd->header.header.status = -ENOTTY;
                 }
 
-                luxSendDependency(ioctlcmd);
+                luxSendKernel(ioctlcmd);
             } else {
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", cmd->header.header.command);
             }
