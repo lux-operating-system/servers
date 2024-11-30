@@ -60,20 +60,6 @@ uint64_t parseHex(const char *str) {
     return num;
 }
 
-/* pciParseAddress(): parses a string in the format of bb.ss.ff
- * params: str - source string
- * params: bus - destination buffer for the bus
- * params: slot - destination buffer for the slot
- * params: function - destination buffer for the function
- * returns: nothing
- */
-
-static void pciParseAddress(const char *str, uint8_t *bus, uint8_t *slot, uint8_t *function) {
-    *bus = parseHex(str);
-    *slot = parseHex(str+3);
-    *function = parseHex(str+6);
-}
-
 /* pciReadFile(): reads from a PCI configuration space file under /dev/pci/
  * params: rcmd - read command message
  * returns: nothing, response relayed to devfs
@@ -87,14 +73,14 @@ void pciReadFile(RWCommand *rcmd) {
     if(!file) {
         rcmd->header.header.status = -ENOENT;
         rcmd->length = 0;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
     if(rcmd->position >= file->size) {
         rcmd->header.header.status = -EIO;
         rcmd->length = 0;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
@@ -107,5 +93,5 @@ void pciReadFile(RWCommand *rcmd) {
     rcmd->header.header.status = truelen;
     rcmd->header.header.length += truelen;
     rcmd->position += truelen;
-    luxSendDependency(rcmd);
+    luxSendKernel(rcmd);
 }
