@@ -67,13 +67,13 @@ void kthdChdir(ChdirCommand *cmd) {
     struct stat st;
     if(stat(cmd->path, &st)) {
         cmd->header.header.status = -1*errno;
-        luxSendLumen(cmd);
+        luxSendKernel(cmd);
         return;
     }
 
     if((st.st_mode & S_IFMT) != S_IFDIR) {
         cmd->header.header.status = -ENOTDIR;
-        luxSendLumen(cmd);
+        luxSendKernel(cmd);
         return;
     }
 
@@ -89,5 +89,5 @@ void kthdChdir(ChdirCommand *cmd) {
 
     // success, clean up the path
     clean(cmd->path);
-    luxSendLumen(cmd);
+    luxSendKernel(cmd);
 }

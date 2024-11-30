@@ -21,7 +21,7 @@ void kthdExec(ExecCommand *cmd) {
     int fd = open(cmd->path, O_RDONLY);
     if(fd < 0) {
         cmd->header.header.status = -ENOENT;
-        luxSendLumen(cmd);
+        luxSendKernel(cmd);
         return;
     }
 
@@ -30,7 +30,7 @@ void kthdExec(ExecCommand *cmd) {
     if(fstat(fd, &st)) {
         close(fd);
         cmd->header.header.status = -1*errno;
-        luxSendLumen(cmd);
+        luxSendKernel(cmd);
         return;
     }
 
@@ -45,7 +45,7 @@ void kthdExec(ExecCommand *cmd) {
 
     if(cmd->header.header.status) {
         close(fd);
-        luxSendLumen(cmd);
+        luxSendKernel(cmd);
         return;
     }
 
@@ -56,7 +56,7 @@ void kthdExec(ExecCommand *cmd) {
     if(!res) {
         close(fd);
         cmd->header.header.status = -ENOMEM;
-        luxSendLumen(cmd);
+        luxSendKernel(cmd);
         return;
     }
 
@@ -66,13 +66,13 @@ void kthdExec(ExecCommand *cmd) {
         close(fd);
         free(res);
         cmd->header.header.status = -1*errno;
-        luxSendLumen(cmd);
+        luxSendKernel(cmd);
         return;
     }
 
     // and relay the response
     res->header.header.length += st.st_size;
     res->header.header.status = 0;
-    luxSendLumen(res);
+    luxSendKernel(res);
     free(res);
 }
