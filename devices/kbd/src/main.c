@@ -119,7 +119,7 @@ int main() {
                 }
 
                 // and finally respond to the request
-                luxSendDependency(msgBuffer);
+                luxSendKernel(msgBuffer);
             } else {
                 luxLogf(KPRINT_LEVEL_WARNING, "undefined command 0x%X, dropping message...\n", msgBuffer->command);
             }
