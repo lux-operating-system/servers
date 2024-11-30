@@ -25,21 +25,21 @@ void devfsOpendir(SyscallHeader *req, SyscallHeader *res) {
 
     if(strlen(cmd->path) == 1 && cmd->path[0] == '/') {
         res->header.status = 0;
-        luxSendDependency(res);
+        luxSendKernel(res);
         return;
     }
 
     DeviceFile *file = findDevice(cmd->path);
     if(!file) {
         res->header.status = -ENOENT;   // directory doesn't exist
-        luxSendDependency(res);
+        luxSendKernel(res);
         return;
     }
 
     // this syscall is only valid for directories
     if((file->status.st_mode & S_IFMT) != S_IFDIR) {
         res->header.status = -ENOTDIR;
-        luxSendDependency(res);
+        luxSendKernel(res);
         return;
     }
 
@@ -55,8 +55,8 @@ void devfsOpendir(SyscallHeader *req, SyscallHeader *res) {
         if(!(file->status.st_mode & S_IXOTH)) res->header.status = -EACCES;
     }
     
-    // and relay the response to the virtual file system
-    luxSendDependency(res);
+    // and relay the response to the kernel
+    luxSendKernel(res);
 }
 
 /* countPath(): helper function to count the depth of a directory
@@ -94,14 +94,14 @@ void devfsReaddir(SyscallHeader *req, SyscallHeader *res) {
         response->position++;
         response->header.header.status = 0;
         response->end = 0;
-        luxSendDependency(res);
+        luxSendKernel(res);
         return;
     } else if(cmd->position == 1) {
         strcpy(response->entry.d_name, "..");   // parent directory
         response->position++;
         response->header.header.status = 0;
         response->end = 0;
-        luxSendDependency(res);
+        luxSendKernel(res);
         return;
     }
 
@@ -120,7 +120,7 @@ void devfsReaddir(SyscallHeader *req, SyscallHeader *res) {
                 response->position++;
                 response->header.header.status = 0;
                 response->end = 0;
-                luxSendDependency(res);
+                luxSendKernel(res);
                 return;
             }
         }
@@ -129,5 +129,5 @@ void devfsReaddir(SyscallHeader *req, SyscallHeader *res) {
     // reached end of directory
     response->header.header.status = 0;
     response->end = 1;
-    luxSendDependency(res);
+    luxSendKernel(res);
 }

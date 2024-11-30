@@ -27,7 +27,7 @@ void devfsRead(SyscallHeader *req, SyscallHeader *res) {
     DeviceFile *dev = findDevice(cmd->path);
     if(!dev) {
         res->header.status = -ENOENT;       // file doesn't exist
-        luxSendDependency(res);
+        luxSendKernel(res);
     } else {
         if(!dev->external) {
             // for devices built-in to the /dev server
@@ -41,7 +41,7 @@ void devfsRead(SyscallHeader *req, SyscallHeader *res) {
             }
 
             res->header.status = status;
-            luxSendDependency(res);
+            luxSendKernel(res);
         } else {
             // for external devices, relay the request again
             driverRead(cmd, dev);
@@ -65,7 +65,7 @@ void devfsWrite(SyscallHeader *req, SyscallHeader *res) {
     DeviceFile *dev = findDevice(cmd->path);
     if(!dev) {
         res->header.status = -ENOENT;       // file doesn't exist
-        luxSendDependency(res);
+        luxSendKernel(res);
     } else {
         if(!dev->external) {
             // for devices built-in to the /dev server
@@ -77,7 +77,7 @@ void devfsWrite(SyscallHeader *req, SyscallHeader *res) {
             else req->header.length = 0;
 
             res->header.status = status;
-            luxSendDependency(res);
+            luxSendKernel(res);
         } else {
             // for external devices, relay the request again
             driverWrite(cmd, dev);
