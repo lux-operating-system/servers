@@ -22,13 +22,13 @@ void procfsOpen(OpenCommand *ocmd) {
     int res = resolve(ocmd->path, &pid);
     if(res < 0) {
         ocmd->header.header.status = -ENOENT;
-        luxSendDependency(ocmd);
+        luxSendKernel(ocmd);
         return;
     }
 
     if(res & RESOLVE_DIRECTORY) {
         ocmd->header.header.status = -EISDIR;
-        luxSendDependency(ocmd);
+        luxSendKernel(ocmd);
         return;
     }
 
@@ -37,7 +37,7 @@ void procfsOpen(OpenCommand *ocmd) {
     else
         ocmd->header.header.status = 0;
     
-    luxSendDependency(ocmd);
+    luxSendKernel(ocmd);
 }
 
 void procfsStat(StatCommand *scmd) {
@@ -48,7 +48,7 @@ void procfsStat(StatCommand *scmd) {
     int res = resolve(scmd->path, &pid);
     if(res < 0) {
         scmd->header.header.status = -ENOENT;
-        luxSendDependency(scmd);
+        luxSendKernel(scmd);
         return;
     }
 
@@ -62,7 +62,7 @@ void procfsStat(StatCommand *scmd) {
     else if(res == RESOLVE_CPU) scmd->buffer.st_size = strlen(sysinfo->cpu);
     else scmd->buffer.st_size = 8;
 
-    luxSendDependency(scmd);
+    luxSendKernel(scmd);
 }
 
 void procfsRead(RWCommand *rcmd) {
@@ -73,7 +73,7 @@ void procfsRead(RWCommand *rcmd) {
     int file = resolve(rcmd->path, &pid);
     if(file < 0) {
         rcmd->header.header.status = -ENOENT;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
@@ -81,7 +81,7 @@ void procfsRead(RWCommand *rcmd) {
     if(!res) {
         rcmd->header.header.status = -ENOMEM;
         rcmd->length = 0;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         return;
     }
 
@@ -117,7 +117,7 @@ void procfsRead(RWCommand *rcmd) {
     default:
         rcmd->header.header.status = -ENOENT;
         rcmd->length = 0;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         free(res);
         return;
     }
@@ -125,7 +125,7 @@ void procfsRead(RWCommand *rcmd) {
     if(rcmd->position >= size) {
         rcmd->header.header.status = -EOVERFLOW;
         rcmd->length = 0;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         free(res);
         return;
     }
@@ -139,6 +139,6 @@ void procfsRead(RWCommand *rcmd) {
     res->header.header.status = truelen;
     res->header.header.length += truelen;
     res->position += truelen;
-    luxSendDependency(res);
+    luxSendKernel(res);
     free(res);
 }
