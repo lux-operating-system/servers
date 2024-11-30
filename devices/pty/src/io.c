@@ -29,7 +29,7 @@ void ptyWrite(RWCommand *wcmd) {
             if(!ptys[id].master) {
                 wcmd->header.header.status = -ENOMEM;
                 wcmd->length = 0;
-                luxSendDependency(wcmd);
+                luxSendKernel(wcmd);
                 return;
             }
 
@@ -42,7 +42,7 @@ void ptyWrite(RWCommand *wcmd) {
             if(!newptr) {
                 wcmd->header.header.status = -ENOMEM;
                 wcmd->length = 0;
-                luxSendDependency(wcmd);
+                luxSendKernel(wcmd);
                 return;
             }
 
@@ -54,7 +54,7 @@ void ptyWrite(RWCommand *wcmd) {
         ptys[id].masterDataSize += wcmd->length;
 
         wcmd->header.header.status = wcmd->length;
-        luxSendDependency(wcmd);
+        luxSendKernel(wcmd);
     } else {
         // slave
         int id = atoi(&wcmd->path[4]);
@@ -63,7 +63,7 @@ void ptyWrite(RWCommand *wcmd) {
             if(!ptys[id].slave) {
                 wcmd->header.header.status = -ENOMEM;
                 wcmd->length = 0;
-                luxSendDependency(wcmd);
+                luxSendKernel(wcmd);
                 return;
             }
 
@@ -76,7 +76,7 @@ void ptyWrite(RWCommand *wcmd) {
             if(!newptr) {
                 wcmd->header.header.status = -ENOMEM;
                 wcmd->length = 0;
-                luxSendDependency(wcmd);
+                luxSendKernel(wcmd);
                 return;
             }
 
@@ -88,7 +88,7 @@ void ptyWrite(RWCommand *wcmd) {
         ptys[id].slaveDataSize += wcmd->length;
 
         wcmd->header.header.status = wcmd->length;
-        luxSendDependency(wcmd);
+        luxSendKernel(wcmd);
     }
 }
 
@@ -108,7 +108,7 @@ void ptyRead(RWCommand *rcmd) {
         if(!ptys[id].slave || !ptys[id].slaveDataSize || !ptys[id].slaveSize) {
             rcmd->header.header.status = -EWOULDBLOCK;  // no data available
             rcmd->length = 0;
-            luxSendDependency(rcmd);
+            luxSendKernel(rcmd);
             return;
         }
 
@@ -125,14 +125,14 @@ void ptyRead(RWCommand *rcmd) {
         rcmd->header.header.status = truelen;
         rcmd->header.header.length += truelen;
         rcmd->length = truelen;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
     } else {
         // slave, read from the master
         int id = atoi(&rcmd->path[4]);
         if(!ptys[id].master || !ptys[id].masterDataSize || !ptys[id].masterSize) {
             rcmd->header.header.status = -EWOULDBLOCK;  // no data available
             rcmd->length = 0;
-            luxSendDependency(rcmd);
+            luxSendKernel(rcmd);
             return;
         }
 
@@ -149,6 +149,6 @@ void ptyRead(RWCommand *rcmd) {
         rcmd->header.header.status = truelen;
         rcmd->header.header.length += truelen;
         rcmd->length = truelen;
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
     }
 }
