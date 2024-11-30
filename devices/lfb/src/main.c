@@ -156,6 +156,15 @@ int main() {
                 }
 
                 luxSendKernel(ioctlcmd);
+            } else if(cmd->header.header.command == COMMAND_MMAP) {
+                MmapCommand *mmapcmd = (MmapCommand *) cmd;
+                mmapcmd->header.header.response = 1;
+                mmapcmd->header.header.length = sizeof(MmapCommand);
+                mmapcmd->header.header.status = 0;
+                mmapcmd->responseType = 1;
+                mmapcmd->mmio = fb.bufferPhysical;
+                
+                luxSendKernel(mmapcmd);
             } else {
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", cmd->header.header.command);
             }
