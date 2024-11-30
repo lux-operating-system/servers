@@ -98,8 +98,6 @@ void devfsMmap(SyscallHeader *req, SyscallHeader *res) {
     res->header.response = 1;
     res->header.length = sizeof(MmapCommand);
 
-    luxLogf(KPRINT_LEVEL_DEBUG, "mmap for %s\n", cmd->path);
-
     DeviceFile *dev = findDevice(cmd->path);
     if(!dev) {
         res->header.status = -ENOENT;
