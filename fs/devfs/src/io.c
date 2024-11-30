@@ -92,5 +92,24 @@ void devfsWrite(SyscallHeader *req, SyscallHeader *res) {
  */
 
 void devfsMmap(SyscallHeader *req, SyscallHeader *res) {
-    /* todo */
+    MmapCommand *cmd = (MmapCommand *) req;
+    memcpy(res, req, sizeof(MmapCommand));
+
+    res->header.response = 1;
+    res->header.length = sizeof(MmapCommand);
+
+    luxLogf(KPRINT_LEVEL_DEBUG, "mmap for %s\n", cmd->path);
+
+    DeviceFile *dev = findDevice(cmd->path);
+    if(!dev) {
+        res->header.status = -ENOENT;
+        luxSendKernel(res);
+    } else if(dev->external) {
+        luxSend(dev->socket, cmd);
+    } else {
+        // mmap() is only supported for external drivers and not by the default
+        // devices (null, random, etc) provided by this server
+        res->header.status = -ENODEV;
+        luxSendKernel(res);
+    }
 }
