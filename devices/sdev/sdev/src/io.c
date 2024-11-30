@@ -100,7 +100,7 @@ void relayRead(SDevRWCommand *res) {
         
         memcpy(rcmd->data, res->buffer, res->count);
 
-        luxSendDependency(rcmd);
+        luxSendKernel(rcmd);
         free(rcmd);
     } else {
         // I/O error, simply pass on the error code
@@ -116,6 +116,6 @@ void relayRead(SDevRWCommand *res) {
         rcmd.position = res->start;
         rcmd.length = 0;
 
-        luxSendDependency(&rcmd);
+        luxSendKernel(&rcmd);
     }
 }
