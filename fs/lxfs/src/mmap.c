@@ -67,6 +67,7 @@ void lxfsMmap(MmapCommand *cmd) {
 
     uint64_t block = first;
     void *position = (void *) res->data;
+    size_t remaining = cmd->len;
     for(size_t i = 0; i < blockCount; i++) {
         block = lxfsReadNextBlock(mp, block, mp->dataBuffer);
         if(!block) {
@@ -76,7 +77,12 @@ void lxfsMmap(MmapCommand *cmd) {
             return;
         }
 
-        memcpy(position, mp->dataBuffer, mp->blockSizeBytes);
+        if(remaining >= mp->blockSizeBytes)
+            memcpy(position, mp->dataBuffer, mp->blockSizeBytes);
+        else
+            memcpy(position, mp->dataBuffer, remaining);
+        
+        remaining -= mp->blockSizeBytes;
 
         if(block == LXFS_BLOCK_EOF) break;
         position = (void *)(uintptr_t) position + mp->blockSizeBytes;
