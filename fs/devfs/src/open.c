@@ -20,7 +20,7 @@ void devfsOpen(SyscallHeader *req, SyscallHeader *res) {
     DeviceFile *file = findDevice(cmd->path);
     if(!file) {
         res->header.status = -ENOENT;   // file doesn't exist
-        luxSendDependency(res);
+        luxSendKernel(res);
 
         return;
     }
@@ -52,6 +52,6 @@ void devfsOpen(SyscallHeader *req, SyscallHeader *res) {
         luxSend(file->socket, cmd);
     } else {
         // respond if the open() call is not overridden
-        luxSendDependency(res);
+        luxSendKernel(res);
     }
 }
