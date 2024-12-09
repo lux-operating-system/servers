@@ -25,7 +25,7 @@ void ptyOpen(OpenCommand *opencmd) {
     opencmd->header.header.length = sizeof(OpenCommand);
     opencmd->header.header.status = -ENOENT;
     opencmd->header.header.response = 1;
-    luxSendDependency(opencmd);
+    luxSendKernel(opencmd);
 }
 
 /* ptyOpenMaster(): handles open() syscalls for the master multiplexer
@@ -50,7 +50,7 @@ void ptyOpenMaster(OpenCommand *opencmd) {
         opencmd->header.header.length = sizeof(OpenCommand);
         opencmd->header.header.status = -ENOENT;
         opencmd->header.header.response = 1;
-        luxSendDependency(opencmd);
+        luxSendKernel(opencmd);
         return;
     }
 
@@ -94,7 +94,7 @@ void ptyOpenMaster(OpenCommand *opencmd) {
     opencmd->header.header.status = 0;  // success
     opencmd->id = (uint64_t) slaveID;
 
-    luxSendDependency(opencmd);
+    luxSendKernel(opencmd);
 }
 
 /* ptyOpenSlave(): handles open() syscalls for slave terminals
@@ -115,5 +115,5 @@ void ptyOpenSlave(OpenCommand *opencmd) {
     else
         opencmd->id = slaveID;
     
-    luxSendDependency(opencmd);
+    luxSendKernel(opencmd);
 }
