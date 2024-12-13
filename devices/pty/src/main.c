@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <pty/pty.h>
 
 Pty *ptys;
@@ -81,21 +82,8 @@ int main() {
     luxReady();
 
     for(;;) {
-        ssize_t s = luxRecvDependency(msg, SERVER_MAX_SIZE, false, true);   // peek first
-        if(s > 0 && s <= SERVER_MAX_SIZE) {
-            if(msg->header.length > SERVER_MAX_SIZE) {
-                void *newptr = realloc(msg, msg->header.length);
-                if(!newptr) {
-                    luxLogf(KPRINT_LEVEL_ERROR, "unable to allocate memory for message handling\n");
-                    return -1;
-                }
-
-                msg = newptr;
-            }
-
-            // receive the actual message
-            luxRecvDependency(msg, msg->header.length, false, false);
-
+        ssize_t s = luxRecvCommand((void **) &msg);
+        if(s > 0) {
             switch(msg->header.command) {
             case COMMAND_OPEN: ptyOpen((OpenCommand *) msg); break;
             case COMMAND_IOCTL: ptyIoctl((IOCTLCommand *) msg); break;
@@ -104,6 +92,8 @@ int main() {
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", msg->header.command);
             }
+        } else {
+            sched_yield();
         }
     }
 }
