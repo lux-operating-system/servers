@@ -58,20 +58,23 @@ int main() {
 
     for(;;) {
         // accept incoming connections from keyboard drivers
+        int actions = 0;
+
         if(kbdCount < MAX_KEYBOARDS) {
             int sd = luxAccept();
             if(sd > 0) {
+                actions++;
                 connections[kbdCount] = sd;
                 kbdCount++;
             }
         }
 
-        if(!kbdCount) sched_yield();
-
         // receive key presses
-        for(int i = 0; i < kbdCount; i++) {
+        for(int i = 0; kbdCount && (i < kbdCount); i++) {
             ssize_t s = luxRecv(connections[i], msgBuffer, SERVER_MAX_SIZE, false, false);
             if(s > 0 && s < SERVER_MAX_SIZE) {
+                actions++;
+
                 // add the key press to the buffer
                 if(bufferSize < KEYBOARD_BUFFER) {
                     buffer[bufferSize] = msgBuffer->status;
@@ -83,6 +86,8 @@ int main() {
         // and receive read requests
         ssize_t s = luxRecvDependency(msgBuffer, SERVER_MAX_SIZE, false, false);
         if(s > 0 && s < SERVER_MAX_SIZE) {
+            actions++;
+
             RWCommand *rwcmd = (RWCommand *) msgBuffer;
             size_t rwSize, trueSize;
 
@@ -124,5 +129,7 @@ int main() {
                 luxLogf(KPRINT_LEVEL_WARNING, "undefined command 0x%X, dropping message...\n", msgBuffer->command);
             }
         }
+
+        if(!actions) sched_yield();
     }
 }
