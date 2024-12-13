@@ -10,6 +10,7 @@
 #include <vfs.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 int main() {
     luxInit("lxfs");
@@ -36,20 +37,8 @@ int main() {
 
     for(;;) {
         // handle requests here
-        ssize_t s = luxRecvDependency(msg, SERVER_MAX_SIZE, false, true);   // peek first
-        if(s > 0 && s <= SERVER_MAX_SIZE) {
-            if(msg->header.length > SERVER_MAX_SIZE) {
-                void *newptr = realloc(msg, msg->header.length);
-                if(!newptr) {
-                    luxLogf(KPRINT_LEVEL_ERROR, "failed to allocate memory for message handling\n");
-                    exit(-1);
-                }
-
-                msg = newptr;
-            }
-
-            luxRecvDependency(msg, msg->header.length, false, false);
-
+        ssize_t s = luxRecvCommand((void **) &msg);
+        if(s > 0) {
             switch(msg->header.command) {
             case COMMAND_MOUNT: lxfsMount((MountCommand *) msg); break;
             case COMMAND_OPEN: lxfsOpen((OpenCommand *) msg); break;
@@ -61,6 +50,8 @@ int main() {
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", msg->header.command);
             }
+        } else {
+            sched_yield();
         }
     }
 }
