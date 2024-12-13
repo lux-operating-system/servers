@@ -9,6 +9,7 @@
 #include <liblux/liblux.h>
 #include <sys/io.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 int main() {
     luxInit("pci");
@@ -34,12 +35,14 @@ int main() {
 
     while(1) {
         ssize_t s = luxRecvDependency(cmd, SERVER_MAX_SIZE, false, false);
-        if(s <= 0) continue;
-
-        switch(cmd->header.command) {
-        case COMMAND_READ: pciReadFile((RWCommand *) cmd); break;
-        default:
-            luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", cmd->header.command);
+        if(s > 0 && s <= SERVER_MAX_SIZE) {
+            switch(cmd->header.command) {
+            case COMMAND_READ: pciReadFile((RWCommand *) cmd); break;
+            default:
+                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", cmd->header.command);
+            }
+        } else {
+            sched_yield();
         }
     }
 }
