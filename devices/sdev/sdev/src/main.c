@@ -32,21 +32,23 @@ int main() {
     luxReady();
 
     for(;;) {
+        int actions = 0;
+
         // wait for connections from device drivers
         if(drvCount < MAX_DRIVERS) {
             int sd = luxAccept();
             if(sd > 0) {
+                actions++;
                 connections[drvCount] = sd;
                 drvCount++;
             }
         }
 
-        if(!drvCount) sched_yield();
-
         // receive requests and responses from device drivers
-        for(int i = 0; i < drvCount; i++) {
+        for(int i = 0; drvCount && (i < drvCount); i++) {
             ssize_t s = luxRecv(connections[i], msg, SERVER_MAX_SIZE, false, true);     // peek first
             if(s > 0 && s <= SERVER_MAX_SIZE) {
+                actions++;
                 if(msg->length > SERVER_MAX_SIZE) {
                     void *newptr = realloc(msg, msg->length);
                     if(!newptr) {
@@ -70,6 +72,7 @@ int main() {
         // and requests from devfs
         ssize_t s = luxRecvDependency(msg, SERVER_MAX_SIZE, false, true);   // peek
         if(s > 0 && s <= SERVER_MAX_SIZE) {
+            actions++;
             if(msg->length > SERVER_MAX_SIZE) {
                 void *newptr = realloc(msg, msg->length);
                 if(!newptr) {
@@ -87,5 +90,7 @@ int main() {
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X from devfs, dropping message...\n", msg->command);
             }
         }
+
+        if(!actions) sched_yield();
     }
 }
