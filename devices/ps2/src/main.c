@@ -6,6 +6,7 @@
  */
 
 #include <string.h>
+#include <unistd.h>
 #include <liblux/liblux.h>
 #include <liblux/kbd.h>
 #include <sys/io.h>
@@ -92,6 +93,8 @@ int main() {
                     luxSendDependency(&msg);
                 }
             }
+        } else {
+            sched_yield();
         }
     }
 }
