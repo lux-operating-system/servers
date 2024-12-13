@@ -13,6 +13,7 @@
 #include <liblux/liblux.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 
 static IORequest *requestQueue = NULL;
@@ -163,12 +164,19 @@ void nvmeRead(SDevRWCommand *cmd) {
 
 void nvmeCycle() {
     IORequest *list = requestQueue;
+    if(!list) {
+        sched_yield();
+        return;
+    }
+
+    int actions = 0;
 
     while(list) {
         // check completion status
         NVMECompletionQueue *cq = nvmeStatus(nvmeGetDrive(list->drive), list->queue, list->id);
         if(cq) {
             // command has completed, check its status
+            actions++;
             uint8_t statusType = (cq->status >> 9) & 7;
             uint8_t statusCode = (cq->status >> 1) & 0xFF;
 
@@ -193,4 +201,6 @@ void nvmeCycle() {
             list = list->next;
         }
     }
+
+    if(!actions) sched_yield();
 }
