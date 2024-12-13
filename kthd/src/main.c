@@ -7,6 +7,7 @@
 
 #include <liblux/liblux.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 void kthdExec(ExecCommand *);
 void kthdChdir(ChdirCommand *);
@@ -46,6 +47,8 @@ int main() {
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", msg->header.command);
             }
+        } else {
+            sched_yield();
         }
     }
 }
