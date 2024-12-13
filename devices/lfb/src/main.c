@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 
 static FramebufferResponse fb;
@@ -168,6 +169,8 @@ int main() {
             } else {
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", cmd->header.header.command);
             }
+        } else {
+            sched_yield();
         }
     }
 }
