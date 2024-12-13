@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <liblux/liblux.h>
 #include <liblux/devfs.h>
@@ -46,15 +47,20 @@ void driverInit() {
 
 void driverHandle() {
     // accept incoming connections
+    int actions = 0;
     addrlens[count] = sizeof(struct sockaddr);
     int sd = luxAcceptAddr(&servers[count], &addrlens[count]);
     if(sd > 0) {
+        actions++;
         connections[count] = sd;
         luxLogf(KPRINT_LEVEL_DEBUG, "connected to driver '%s' at socket %d\n", &servers[count].sa_data[9], sd);
         count++;
     }
 
-    if(!count) return;
+    if(!count) {
+        sched_yield();
+        return;
+    }
 
     // and receive requests from dependent servers
     for(int i = 0; i < count; i++) {
@@ -74,6 +80,7 @@ void driverHandle() {
             }
 
             luxRecv(connections[i], in, hdr->length, false, false);
+            actions++;
 
             if(hdr->command == COMMAND_READ || hdr->command == COMMAND_WRITE ||
                 hdr->command == COMMAND_OPEN || hdr->command == COMMAND_IOCTL) {
@@ -87,6 +94,8 @@ void driverHandle() {
             }
         }
     }
+
+    if(!actions) sched_yield();
 }
 
 /* driverRegister(): registers an external device on the /dev file system
