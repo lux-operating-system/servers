@@ -10,6 +10,7 @@
 #include <sys/un.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -189,7 +190,7 @@ ssize_t luxRecvKernel(void *buffer, size_t len, bool block, bool peek) {
         size = recv(kernelsd, buffer, len, peek ? MSG_PEEK : 0);
         if(size > 0 && size <= len) {
             return size;
-        } else if(size == -1) {
+        } else if(size < 0) {
             if((errno != EAGAIN) && (errno != EWOULDBLOCK)) return -1;
         }
     } while(block && size <= 0);
@@ -213,7 +214,7 @@ ssize_t luxRecvLumen(void *buffer, size_t len, bool block, bool peek) {
         size = recv(lumensd, buffer, len, peek ? MSG_PEEK : 0);
         if(size > 0 && size <= len) {
             return size;
-        } else if(size == -1) {
+        } else if(size < 0) {
             if((errno != EAGAIN) && (errno != EWOULDBLOCK)) return -1;
         }
     } while(block && size <= 0);
@@ -249,7 +250,7 @@ ssize_t luxRecvDependency(void *buffer, size_t len, bool block, bool peek) {
         size = recv(depsd, buffer, len, peek ? MSG_PEEK : 0);
         if(size > 0 && size <= len) {
             return size;
-        } else if(size == -1) {
+        } else if(size < 0) {
             if((errno != EAGAIN) && (errno != EWOULDBLOCK)) return -1;
         }
     } while(block && size <= 0);
@@ -332,7 +333,7 @@ ssize_t luxRecv(int sd, void *buffer, size_t len, bool block, bool peek) {
         size = recv(sd, buffer, len, peek ? MSG_PEEK : 0);
         if(size > 0 && size <= len) {
             return size;
-        } else if(size == -1) {
+        } else if(size < 0) {
             if((errno != EAGAIN) && (errno != EWOULDBLOCK)) return -1;
         }
     } while(block && size <= 0);
@@ -366,4 +367,98 @@ int luxReady() {
     send(lumensd, &msg, sizeof(MessageHeader), 0);
 
     return 0;
+}
+
+static int lastRecv = 0;
+
+static ssize_t luxRecvDK(void **buffer) {
+    lastRecv = 1;
+    SyscallHeader *hdr = (SyscallHeader *) *buffer;
+    ssize_t s = luxRecvDependency(*buffer, SERVER_MAX_SIZE, false, true);
+    if(s > 0 && s <= SERVER_MAX_SIZE) {
+        if(hdr->header.length > SERVER_MAX_SIZE) {
+            void *newptr = realloc(*buffer, hdr->header.length);
+            hdr = newptr;
+            if(!newptr) return 0;
+
+            *buffer = newptr;
+        }
+
+        s = luxRecvDependency(*buffer, hdr->header.length, false, false);
+        if(s != hdr->header.length) return 0;
+        lastRecv = 1;
+        return s;
+    }
+
+    s = luxRecvKernel(*buffer, SERVER_MAX_SIZE, false, true);
+    if(s > 0 && s <= SERVER_MAX_SIZE) {
+        if(hdr->header.length > SERVER_MAX_SIZE) {
+            void *newptr = realloc(*buffer, hdr->header.length);
+            hdr = newptr;
+            if(!newptr) return 0;
+
+            *buffer = newptr;
+        }
+
+        s = luxRecvKernel(*buffer, hdr->header.length, false, false);
+        if(s != hdr->header.length) return 0;
+        lastRecv = 0;
+        return s;
+    }
+
+    return 0;
+}
+
+static ssize_t luxRecvKD(void **buffer) {
+    lastRecv = 0;
+    SyscallHeader *hdr = (SyscallHeader *) *buffer;
+    ssize_t s = luxRecvKernel(*buffer, SERVER_MAX_SIZE, false, true);
+    if(s > 0 && s <= SERVER_MAX_SIZE) {
+        if(hdr->header.length > SERVER_MAX_SIZE) {
+            void *newptr = realloc(*buffer, hdr->header.length);
+            hdr = newptr;
+            if(!newptr) return 0;
+
+            *buffer = newptr;
+        }
+
+        s = luxRecvKernel(*buffer, hdr->header.length, false, false);
+        if(s != hdr->header.length) return 0;
+        return s;
+    }
+
+    s = luxRecvDependency(*buffer, SERVER_MAX_SIZE, false, true);
+    if(s > 0 && s <= SERVER_MAX_SIZE) {
+        if(hdr->header.length > SERVER_MAX_SIZE) {
+            void *newptr = realloc(*buffer, hdr->header.length);
+            hdr = newptr;
+            if(!newptr) return 0;
+
+            *buffer = newptr;
+        }
+
+        s = luxRecvDependency(*buffer, hdr->header.length, false, false);
+        if(s != hdr->header.length) return 0;
+        return s;
+    }
+
+    return 0;
+}
+
+/* luxRecvCommand(): receives a command from a server dependency or the kernel
+ * params: buffer - pointer to buffer pointer
+ * returns: number of bytes read
+ */
+
+ssize_t luxRecvCommand(void **buffer) {
+    ssize_t s;
+    if(lastRecv) {
+        s = luxRecvKD(buffer);
+        if(!s) s = luxRecvDK(buffer);
+        return s;
+    }
+
+    s = luxRecvDK(buffer);
+    if(!s) s = luxRecvKD(buffer);
+    return s;
 }

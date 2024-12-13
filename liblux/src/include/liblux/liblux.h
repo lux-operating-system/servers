@@ -15,7 +15,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 
-#define SERVER_MAX_SIZE         0x2000             // default max msg size is 8 KiB
+#define SERVER_MAX_SIZE         0x8000             // default max msg size is 32 KiB
 #define MAX_FILE_PATH           2048
 
 #define SERVER_KERNEL_PATH      "lux:///kernel"     // not a real file, special path
@@ -265,6 +265,7 @@ int luxAccept();
 int luxAcceptAddr(struct sockaddr *, socklen_t *);
 ssize_t luxSend(int, void *);
 ssize_t luxRecv(int, void *, size_t, bool, bool);
+ssize_t luxRecvCommand(void **);
 void luxLog(int, const char *);
 void luxLogf(int, const char *, ...);
 int luxRequestFramebuffer(FramebufferResponse *);
