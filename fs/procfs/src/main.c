@@ -10,6 +10,7 @@
 #include <vfs.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 SysInfoResponse *sysinfo;
 
@@ -46,20 +47,8 @@ int main() {
 
     for(;;) {
         // wait for requests from the vfs
-        ssize_t s = luxRecvDependency(req, SERVER_MAX_SIZE, false, true);   // peek first
-        if(s > 0 && s <= SERVER_MAX_SIZE) {
-            if(req->header.length > SERVER_MAX_SIZE) {
-                void *newptr = realloc(req, req->header.length);
-                if(!newptr) {
-                    luxLogf(KPRINT_LEVEL_ERROR, "unable to allocate memory for message handling\n");
-                    exit(-1);
-                }
-
-                req = newptr;
-            }
-
-            luxRecvDependency(req, req->header.length, false, false);
-
+        ssize_t s = luxRecvCommand((void **) &req);
+        if(s > 0) {
             switch(req->header.command) {
             case COMMAND_MOUNT: procfsMount((MountCommand *) req); break;
             case COMMAND_OPEN: procfsOpen((OpenCommand *) req); break;
@@ -68,6 +57,8 @@ int main() {
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", req->header.command);
             }
+        } else {
+            sched_yield();
         }
     }
 }
