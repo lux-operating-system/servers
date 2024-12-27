@@ -11,6 +11,32 @@
 #include <stdlib.h>
 #include <errno.h>
 
+/* pushSlave(): helper function to push one character to the slave terminal
+ * params: pty - pty to push to
+ * params: c - character to push
+ * returns: nothing
+ */
+
+static void pushSlave(Pty *pty, int c) {
+    if(!pty->slave || !pty->slaveSize) {
+        pty->slave = malloc(32);
+        if(!pty->slave) return;
+        pty->slaveSize = 32;
+    }
+
+    if(pty->slaveDataSize+1 > pty->slaveSize) {
+        void *newptr = realloc(pty->slave, pty->slaveSize+32);
+        if(!newptr) return;
+
+        pty->slave = newptr;
+        pty->slaveSize += 32;
+    }
+
+    char *ptr = pty->slave;
+    *ptr = c;
+    pty->slaveDataSize++;
+}
+
 /* ptyWrite(): writes to a pty device
  * params: wcmd - write command message
  * returns: nothing
@@ -60,16 +86,20 @@ void ptyWrite(RWCommand *wcmd) {
             char *master = (char *) ptys[id].master;
             for(int i = 0; i < wcmd->length; i++) {
                 if(input[i] == '\b') {
-                    if(ptys[id].masterDataSize) ptys[id].masterDataSize--;
+                    if(ptys[id].masterDataSize) {
+                        ptys[id].masterDataSize--;
+                        if(ptys[id].termios.c_lflag & ECHO) pushSlave(&ptys[id], '\b');
+                    }
                 } else {
                     master[ptys[id].masterDataSize] = input[i];
                     ptys[id].masterDataSize++;
+                    if(ptys[id].termios.c_lflag & ECHO) pushSlave(&ptys[id], input[i]);
                 }
             }
         }
 
         // if ECHO is enabled, write to the slave as well for echo
-        if(ptys[id].termios.c_lflag & ECHO) {
+        if((!(ptys[id].termios.c_lflag & ICANON) && (ptys[id].termios.c_lflag & ECHO))) {
             if(!ptys[id].slave) {
                 ptys[id].slave = malloc(wcmd->length);
                 if(!ptys[id].slave) {
