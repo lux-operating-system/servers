@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <termios.h>
 
 /* ptyOpen(): handles open() syscalls for a pseudo-terminal
  * params: opencmd - open command message
@@ -67,6 +68,10 @@ void ptyOpenMaster(OpenCommand *opencmd) {
     ptys[slaveID].masterDataSize = 0;
     ptys[slaveID].slaveDataSize = 0;
     ptys[slaveID].locked = 1;
+    ptys[slaveID].termios.c_iflag = ICRNL | IGNCR | IGNPAR;
+    ptys[slaveID].termios.c_oflag = ONLRET;
+    ptys[slaveID].termios.c_cflag = CS8 | HUPCL;
+    ptys[slaveID].termios.c_lflag = ECHO | ECHOE | ECHOK | ECHONL | ICANON;
 
     ptyCount++;
 
