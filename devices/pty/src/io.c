@@ -59,9 +59,9 @@ void ptyWrite(RWCommand *wcmd) {
             char *input = (char *) wcmd->data;
             char *master = (char *) ptys[id].master;
             for(int i = 0; i < wcmd->length; i++) {
-                if(input[i] == '\b' && ptys[id].masterDataSize)
-                    ptys[id].masterDataSize--;
-                else {
+                if(input[i] == '\b') {
+                    if(ptys[id].masterDataSize) ptys[id].masterDataSize--;
+                } else {
                     master[ptys[id].masterDataSize] = input[i];
                     ptys[id].masterDataSize++;
                 }
