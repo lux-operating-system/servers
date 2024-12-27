@@ -96,6 +96,7 @@ void ptyIoctlSlave(IOCTLCommand *cmd) {
     cmd->header.header.length = sizeof(IOCTLCommand);
 
     int id = atoi(&cmd->path[4]);   // slave ID
+    Pty *pty = &ptys[id];
 
     switch(cmd->opcode) {
     case PTY_TTY_NAME:
@@ -104,6 +105,46 @@ void ptyIoctlSlave(IOCTLCommand *cmd) {
         cmd->header.header.status = 0;
         break;
     
+    case PTY_GET_CONTROL:
+        cmd->parameter = pty->termios.c_cflag;
+        cmd->header.header.status = 0;
+        break;
+    
+    case PTY_GET_INPUT:
+        cmd->parameter = pty->termios.c_iflag;
+        cmd->header.header.status = 0;
+        break;
+
+    case PTY_GET_OUTPUT:
+        cmd->parameter = pty->termios.c_oflag;
+        cmd->header.header.status = 0;
+        break;
+
+    case PTY_GET_LOCAL:
+        cmd->parameter = pty->termios.c_lflag;
+        cmd->header.header.status = 0;
+        break;
+
+    case PTY_SET_CONTROL:
+        pty->termios.c_cflag = cmd->parameter;
+        cmd->header.header.status = 0;
+        break;
+
+    case PTY_SET_INPUT:
+        pty->termios.c_iflag = cmd->parameter;
+        cmd->header.header.status = 0;
+        break;
+
+    case PTY_SET_OUTPUT:
+        pty->termios.c_oflag = cmd->parameter;
+        cmd->header.header.status = 0;
+        break;
+
+    case PTY_SET_LOCAL:
+        pty->termios.c_lflag = cmd->parameter;
+        cmd->header.header.status = 0;
+        break;
+
     default:
         if((cmd->opcode & IOCTL_IN_PARAM) || (cmd->opcode & IOCTL_OUT_PARAM))
             luxLogf(KPRINT_LEVEL_WARNING, "unimplemented slave pty %d ioctl() opcode 0x%X with input param %d\n", cmd->id, cmd->opcode, cmd->parameter);
