@@ -47,6 +47,7 @@ void ptyWrite(RWCommand *wcmd) {
             }
 
             ptys[id].master = newptr;
+            ptys[id].masterSize += wcmd->length;
         }
 
         // now we can safely write to the buffer
@@ -78,6 +79,7 @@ void ptyWrite(RWCommand *wcmd) {
                 }
 
                 ptys[id].slave = newptr;
+                ptys[id].slaveSize += wcmd->length;
             }
 
             memcpy((void *)((uintptr_t)ptys[id].slave + ptys[id].slaveDataSize), wcmd->data, wcmd->length);
@@ -112,6 +114,7 @@ void ptyWrite(RWCommand *wcmd) {
             }
 
             ptys[id].slave = newptr;
+            ptys[id].slaveSize += wcmd->length;
         }
 
         // now we can safely write to the buffer
