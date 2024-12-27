@@ -53,6 +53,37 @@ void ptyWrite(RWCommand *wcmd) {
         memcpy((void *)((uintptr_t)ptys[id].master + ptys[id].masterDataSize), wcmd->data, wcmd->length);
         ptys[id].masterDataSize += wcmd->length;
 
+        // if ECHO is enabled, write to the slave as well for echo
+        if(ptys[id].termios.c_lflag & ECHO) {
+            if(!ptys[id].slave) {
+                ptys[id].slave = malloc(wcmd->length);
+                if(!ptys[id].slave) {
+                    wcmd->header.header.status = -ENOMEM;
+                    wcmd->length = 0;
+                    luxSendKernel(wcmd);
+                    return;
+                }
+
+                ptys[id].slaveSize = wcmd->length;
+            }
+
+            if((wcmd->length + ptys[id].slaveDataSize) > ptys[id].slaveSize) {
+                // allocate more memory if necessary
+                void *newptr = realloc(ptys[id].slave, wcmd->length + ptys[id].slaveDataSize);
+                if(!newptr) {
+                    wcmd->header.header.status = -ENOMEM;
+                    wcmd->length = 0;
+                    luxSendKernel(wcmd);
+                    return;
+                }
+
+                ptys[id].slave = newptr;
+            }
+
+            memcpy((void *)((uintptr_t)ptys[id].slave + ptys[id].slaveDataSize), wcmd->data, wcmd->length);
+            ptys[id].slaveDataSize += wcmd->length;
+        }
+
         wcmd->header.header.status = wcmd->length;
         luxSendKernel(wcmd);
     } else {
