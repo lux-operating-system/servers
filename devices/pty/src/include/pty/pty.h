@@ -15,6 +15,11 @@
 #define MAX_PTYS                4096
 #define PTY_BUFFER_INCREMENTS   4096
 
+#define DEFAULT_IFLAG           (ICRNL | IGNCR | IGNPAR)
+#define DEFAULT_OFLAG           (ONLRET)
+#define DEFAULT_CFLAG           (CS8 | HUPCL)
+#define DEFAULT_LFLAG           (ECHO | ECHOE | ECHOK | ECHONL | ICANON)
+
 /* ioctl commands, more to come for controlling terminal size/scroll/etc */
 #define PTY_GET_SLAVE           (0x10 | IOCTL_OUT_PARAM)
 #define PTY_GRANT_PT            0x20

@@ -68,10 +68,12 @@ void ptyOpenMaster(OpenCommand *opencmd) {
     ptys[slaveID].masterDataSize = 0;
     ptys[slaveID].slaveDataSize = 0;
     ptys[slaveID].locked = 1;
-    ptys[slaveID].termios.c_iflag = ICRNL | IGNCR | IGNPAR;
-    ptys[slaveID].termios.c_oflag = ONLRET;
-    ptys[slaveID].termios.c_cflag = CS8 | HUPCL;
-    ptys[slaveID].termios.c_lflag = ECHO | ECHOE | ECHOK | ECHONL | ICANON;
+
+    /* reset default terminal state */
+    ptys[slaveID].termios.c_iflag = DEFAULT_IFLAG;
+    ptys[slaveID].termios.c_oflag = DEFAULT_OFLAG;
+    ptys[slaveID].termios.c_cflag = DEFAULT_CFLAG;
+    ptys[slaveID].termios.c_lflag = DEFAULT_LFLAG;
 
     ptyCount++;
 
