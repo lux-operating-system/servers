@@ -26,6 +26,17 @@
 #define PTY_UNLOCK_PT           0x30
 #define PTY_TTY_NAME            (0x40 | IOCTL_OUT_PARAM)
 
+/* termios commands */
+#define PTY_SET_INPUT           (0x50 | IOCTL_IN_PARAM)
+#define PTY_SET_OUTPUT          (0x60 | IOCTL_IN_PARAM)
+#define PTY_SET_LOCAL           (0x70 | IOCTL_IN_PARAM)
+#define PTY_SET_CONTROL         (0x80 | IOCTL_IN_PARAM)
+
+#define PTY_GET_INPUT           (0x90 | IOCTL_OUT_PARAM)
+#define PTY_GET_OUTPUT          (0xA0 | IOCTL_OUT_PARAM)
+#define PTY_GET_LOCAL           (0xB0 | IOCTL_OUT_PARAM)
+#define PTY_GET_CONTROL         (0xC0 | IOCTL_OUT_PARAM)
+
 typedef struct {
     // master read() will read from slave, write() will write to master
     // slave read() will read from master, write() will write to slave
