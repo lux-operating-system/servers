@@ -51,8 +51,22 @@ void ptyWrite(RWCommand *wcmd) {
         }
 
         // now we can safely write to the buffer
-        memcpy((void *)((uintptr_t)ptys[id].master + ptys[id].masterDataSize), wcmd->data, wcmd->length);
-        ptys[id].masterDataSize += wcmd->length;
+        if(!(ptys[id].termios.c_lflag & ICANON)) {
+            memcpy((void *)((uintptr_t)ptys[id].master + ptys[id].masterDataSize), wcmd->data, wcmd->length);
+            ptys[id].masterDataSize += wcmd->length;
+        } else {
+            // for canonical mode, we need special handling for backspace
+            char *input = (char *) wcmd->data;
+            char *master = (char *) ptys[id].master;
+            for(int i = 0; i < wcmd->length; i++) {
+                if(input[i] == '\b' && ptys[id].masterDataSize)
+                    ptys[id].masterDataSize--;
+                else {
+                    master[ptys[id].masterDataSize] = input[i];
+                    ptys[id].masterDataSize++;
+                }
+            }
+        }
 
         // if ECHO is enabled, write to the slave as well for echo
         if(ptys[id].termios.c_lflag & ECHO) {
@@ -174,15 +188,60 @@ void ptyRead(RWCommand *rcmd) {
         if(rcmd->length > ptys[id].masterDataSize) truelen = ptys[id].masterDataSize;
         else truelen = rcmd->length;
 
-        // and read the data
-        memcpy(rcmd->data, ptys[id].master, truelen);
-        memmove(ptys[id].master, (const void *)(uintptr_t)ptys[id].master + truelen, ptys[id].masterDataSize - truelen);
-        ptys[id].masterDataSize -= truelen;
+        if(!(ptys[id].termios.c_lflag & ICANON)) {
+            memcpy(rcmd->data, ptys[id].master, truelen);
+            memmove(ptys[id].master, (const void *)(uintptr_t)ptys[id].master + truelen, ptys[id].masterDataSize - truelen);
+            ptys[id].masterDataSize -= truelen;
 
-        // respond
-        rcmd->header.header.status = truelen;
-        rcmd->header.header.length += truelen;
-        rcmd->length = truelen;
+            rcmd->header.header.status = truelen;
+            rcmd->header.header.length += truelen;
+            rcmd->length = truelen;
+        } else {
+            // in canonical mode, no input is available until the user presses enter
+            const char *master = (const char *) ptys[id].master;
+
+            bool readable = false;
+            for(int i = 0; i < ptys[id].masterDataSize; i++) {
+                if(master[i] == '\n') {
+                    readable = true;
+                    break;
+                }
+            }
+
+            if(!readable) {
+                rcmd->header.header.status = -EWOULDBLOCK;
+                rcmd->length = 0;
+                luxSendKernel(rcmd);
+                return;
+            }
+
+            char *data = (char *) rcmd->data;
+
+            rcmd->length = 0;
+            rcmd->header.header.status = 0;
+            size_t canonicalCount = 0;
+            for(int i = 0; i < truelen; i++) {
+                canonicalCount++;
+
+                if(master[i] == '\b') {
+                    if(rcmd->length) {
+                        rcmd->length--;
+                        rcmd->header.header.status--;
+                        rcmd->header.header.length--;
+                    }
+                } else {
+                    data[rcmd->length] = master[i];
+                    rcmd->length++;
+                    rcmd->header.header.status++;
+                    rcmd->header.header.length++;
+                    if(master[i] == '\n') break;
+                }
+            }
+
+            memmove(ptys[id].master, (const void *)(uintptr_t)ptys[id].master + canonicalCount, ptys[id].masterDataSize - canonicalCount);
+            ptys[id].masterDataSize -= canonicalCount;
+        }
+
         luxSendKernel(rcmd);
     }
 }
