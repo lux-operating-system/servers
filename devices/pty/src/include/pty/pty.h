@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <termios.h>
 #include <liblux/liblux.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -27,6 +28,7 @@ typedef struct {
     void *master, *slave;
     size_t masterSize, slaveSize;           // buffer size
     size_t masterDataSize, slaveDataSize;   // available data size
+    struct termios termios;
 } Pty;
 
 extern Pty *ptys;
