@@ -86,6 +86,7 @@ int main() {
             luxRecvDependency(msg, msg->length, false, false);
             switch(msg->command) {
             case COMMAND_READ: sdevRead((RWCommand *) msg); break;
+            case COMMAND_WRITE: sdevWrite((RWCommand *) msg); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X from devfs, dropping message...\n", msg->command);
             }

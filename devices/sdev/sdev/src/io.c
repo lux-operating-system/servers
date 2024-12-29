@@ -119,3 +119,72 @@ void relayRead(SDevRWCommand *res) {
         luxSendKernel(&rcmd);
     }
 }
+
+/* sdevWrite(): writes to a storage device
+ * params: cmd - write command message
+ * returns: nothing, request relayed to storage device driver
+ */
+
+void sdevWrite(RWCommand *cmd) {
+    int i = atoi(&cmd->path[3]);
+    StorageDevice *dev = findDevice(i);
+    if(!dev) {
+        // no such entry somehow - possible hotpluggable device removed
+        cmd->header.header.response = 1;
+        cmd->header.header.length = sizeof(RWCommand);
+        cmd->header.header.status = -ENODEV;
+        cmd->length = 0;
+        luxSendDependency(cmd);
+        return;
+    }
+
+    // check if we're reading from the block device itself or from a partition
+    int partition = -1;
+    for(int i = 0; i < strlen(cmd->path); i++) {
+        if(cmd->path[i] == 'p') partition = atoi(&cmd->path[i+1]);
+    }
+
+    // relay the request to the appropriate device driver
+    SDevRWCommand *rcmd = malloc(sizeof(SDevRWCommand) + cmd->length);
+    if(!rcmd) {
+        cmd->header.header.response = 1;
+        cmd->header.header.length = sizeof(RWCommand);
+        cmd->header.header.status = -ENOMEM;
+        cmd->length = 0;
+        luxSendDependency(cmd);
+        return;
+    }
+
+    memset(rcmd, 0, sizeof(SDevRWCommand));
+    rcmd->header.command = COMMAND_SDEV_READ;
+    rcmd->header.length = sizeof(SDevRWCommand) + cmd->length;
+    rcmd->syscall = cmd->header.id;
+    rcmd->start = cmd->position;
+    rcmd->count = cmd->length;
+    rcmd->device = dev->deviceID;
+    rcmd->pid = cmd->header.header.requester;
+    rcmd->partition = partition;
+    rcmd->sectorSize = dev->sectorSize;
+    
+    if(partition != -1) {
+        rcmd->partitionStart = dev->partitionStart[partition];
+        rcmd->start += dev->partitionStart[partition] * dev->sectorSize;
+
+        // ensure we don't cross partition boundaries
+        uint64_t end = dev->partitionStart[partition] + dev->partitionSize[partition];
+        uint64_t ioEnd = (rcmd->start + rcmd->count) / dev->sectorSize;
+        if(ioEnd > end) {
+            // return an I/O error if trying to cross partition boundaries
+            cmd->header.header.response = 1;
+            cmd->header.header.length = sizeof(RWCommand);
+            cmd->header.header.status = -EIO;
+            cmd->length = 0;
+            luxSendDependency(cmd);
+            return;
+        }
+    }
+
+    memcpy(rcmd->buffer, cmd->data, cmd->length);
+    luxSend(dev->sd, rcmd);
+    free(rcmd);
+}
