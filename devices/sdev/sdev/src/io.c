@@ -188,3 +188,34 @@ void sdevWrite(RWCommand *cmd) {
     luxSend(dev->sd, wcmd);
     free(wcmd);
 }
+
+/* relayWrite(): relays the write response from a device driver to the requester
+ * params: res - write response message
+ * returns: nothing, response relayed to the requester
+ */
+
+void relayWrite(SDevRWCommand *res) {
+    // allocate a buffer of differing size according to the command's status
+    RWCommand wcmd;
+    memset(&wcmd, 0, sizeof(RWCommand));
+    wcmd.header.header.command = COMMAND_WRITE;
+    wcmd.header.header.length = sizeof(RWCommand);
+    wcmd.header.header.response = 1;
+    wcmd.header.header.requester = res->pid;
+    wcmd.header.id = res->syscall;
+
+    if(!res->header.status) {
+        wcmd.header.header.status = res->count;
+        wcmd.position = res->start + res->count;
+        wcmd.length = res->count;
+
+        if(res->partition >= 0 && res->partition < 4) {
+            wcmd.position -= res->partitionStart * res->sectorSize;        
+        }
+    } else {
+        wcmd.length = 0;
+        wcmd.header.header.status = res->header.status;
+    }
+
+    luxSendKernel(&wcmd);
+}
