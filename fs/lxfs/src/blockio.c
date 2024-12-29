@@ -105,3 +105,22 @@ uint64_t lxfsWriteNextBlock(Mountpoint *mp, uint64_t block, const void *buffer) 
     if(lxfsWriteBlock(mp, block, buffer)) return 0;
     return lxfsNextBlock(mp, block);
 }
+
+/* lxfsFindFreeBlock(): finds a free block on the LXFS volume
+ * params: mp - mountpoint
+ * params: index - zero-based index of free blocks to return
+ * i.e. guarantee the volume has at least (index) free blocks
+ * returns: block number, zero if no space available
+ */
+
+uint64_t lxfsFindFreeBlock(Mountpoint *mp, uint64_t index) {
+    uint64_t block;
+    uint64_t current = 0;
+    for(uint64_t i = 33; i < mp->volumeSize; i++) {
+        block = lxfsNextBlock(mp, i);
+        if(block == LXFS_BLOCK_FREE) current++;
+        if(current > index) return i;
+    }
+
+    return 0;
+}
