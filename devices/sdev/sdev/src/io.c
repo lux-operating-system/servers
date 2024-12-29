@@ -156,7 +156,7 @@ void sdevWrite(RWCommand *cmd) {
     }
 
     memset(wcmd, 0, sizeof(SDevRWCommand));
-    wcmd->header.command = COMMAND_SDEV_READ;
+    wcmd->header.command = COMMAND_SDEV_WRITE;
     wcmd->header.length = sizeof(SDevRWCommand) + cmd->length;
     wcmd->syscall = cmd->header.id;
     wcmd->start = cmd->position;
