@@ -132,6 +132,7 @@ int lxfsWriteBlock(Mountpoint *, uint64_t, const void *);
 uint64_t lxfsNextBlock(Mountpoint *, uint64_t);
 uint64_t lxfsReadNextBlock(Mountpoint *, uint64_t, void *);
 uint64_t lxfsWriteNextBlock(Mountpoint *, uint64_t, const void *);
+uint64_t lxfsFindFreeBlock(Mountpoint *, uint64_t);
 
 Mountpoint *findMP(const char *);
 int pathDepth(const char *);
