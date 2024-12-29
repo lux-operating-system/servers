@@ -145,8 +145,8 @@ void sdevWrite(RWCommand *cmd) {
     }
 
     // relay the request to the appropriate device driver
-    SDevRWCommand *rcmd = malloc(sizeof(SDevRWCommand) + cmd->length);
-    if(!rcmd) {
+    SDevRWCommand *wcmd = malloc(sizeof(SDevRWCommand) + cmd->length);
+    if(!wcmd) {
         cmd->header.header.response = 1;
         cmd->header.header.length = sizeof(RWCommand);
         cmd->header.header.status = -ENOMEM;
@@ -155,24 +155,24 @@ void sdevWrite(RWCommand *cmd) {
         return;
     }
 
-    memset(rcmd, 0, sizeof(SDevRWCommand));
-    rcmd->header.command = COMMAND_SDEV_READ;
-    rcmd->header.length = sizeof(SDevRWCommand) + cmd->length;
-    rcmd->syscall = cmd->header.id;
-    rcmd->start = cmd->position;
-    rcmd->count = cmd->length;
-    rcmd->device = dev->deviceID;
-    rcmd->pid = cmd->header.header.requester;
-    rcmd->partition = partition;
-    rcmd->sectorSize = dev->sectorSize;
+    memset(wcmd, 0, sizeof(SDevRWCommand));
+    wcmd->header.command = COMMAND_SDEV_READ;
+    wcmd->header.length = sizeof(SDevRWCommand) + cmd->length;
+    wcmd->syscall = cmd->header.id;
+    wcmd->start = cmd->position;
+    wcmd->count = cmd->length;
+    wcmd->device = dev->deviceID;
+    wcmd->pid = cmd->header.header.requester;
+    wcmd->partition = partition;
+    wcmd->sectorSize = dev->sectorSize;
     
     if(partition != -1) {
-        rcmd->partitionStart = dev->partitionStart[partition];
-        rcmd->start += dev->partitionStart[partition] * dev->sectorSize;
+        wcmd->partitionStart = dev->partitionStart[partition];
+        wcmd->start += dev->partitionStart[partition] * dev->sectorSize;
 
         // ensure we don't cross partition boundaries
         uint64_t end = dev->partitionStart[partition] + dev->partitionSize[partition];
-        uint64_t ioEnd = (rcmd->start + rcmd->count) / dev->sectorSize;
+        uint64_t ioEnd = (wcmd->start + wcmd->count) / dev->sectorSize;
         if(ioEnd > end) {
             // return an I/O error if trying to cross partition boundaries
             cmd->header.header.response = 1;
@@ -184,7 +184,7 @@ void sdevWrite(RWCommand *cmd) {
         }
     }
 
-    memcpy(rcmd->buffer, cmd->data, cmd->length);
-    luxSend(dev->sd, rcmd);
-    free(rcmd);
+    memcpy(wcmd->buffer, cmd->data, cmd->length);
+    luxSend(dev->sd, wcmd);
+    free(wcmd);
 }
