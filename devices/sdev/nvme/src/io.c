@@ -201,7 +201,7 @@ void nvmeWrite(SDevRWCommand *cmd) {
     }
 
     req->rwcmd = src;
-    memcpy(req->rwcmd, cmd, sizeof(SDevRWCommand));
+    memcpy(req->rwcmd, cmd, cmd->header.length);
 
     // we're being optimistic here
     req->rwcmd->header.response = 1;
