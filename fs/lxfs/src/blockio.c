@@ -39,7 +39,10 @@ int lxfsReadBlock(Mountpoint *mp, uint64_t block, void *buffer) {
     mp->cache[index].tag = tag;
 
     if(!mp->cache[index].data) mp->cache[index].data = malloc(mp->blockSizeBytes);
-    if(!mp->cache[index].data) return -1;
+    if(!mp->cache[index].data) {
+        mp->cache[index].valid = 0;
+        return 1;
+    }
 
     lseek(mp->fd, block * mp->blockSizeBytes, SEEK_SET);
     ssize_t s = read(mp->fd, mp->cache[index].data, mp->blockSizeBytes);
