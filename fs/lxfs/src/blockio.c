@@ -78,8 +78,31 @@ int lxfsReadBlock(Mountpoint *mp, uint64_t block, void *buffer) {
  */
 
 int lxfsWriteBlock(Mountpoint *mp, uint64_t block, const void *buffer) {
-    lseek(mp->fd, block * mp->blockSizeBytes, SEEK_SET);
-    return !(write(mp->fd, buffer, mp->blockSizeBytes) == mp->blockSizeBytes);
+    uint64_t tag = block / CACHE_SIZE;
+    uint64_t index = block % CACHE_SIZE;
+
+    if(mp->cache[index].valid && (mp->cache[index].tag == tag)) {
+        memcpy(mp->cache[index].data, buffer, mp->blockSizeBytes);
+        mp->cache[index].dirty = 1;
+        return 0;
+    }
+
+    if(mp->cache[index].valid && mp->cache[index].dirty) {
+        if(lxfsFlushBlock(mp, index)) return 1;
+    }
+
+    mp->cache[index].valid = 1;
+    mp->cache[index].dirty = 1;
+    mp->cache[index].tag = tag;
+
+    if(!mp->cache[index].data) mp->cache[index].data = malloc(mp->blockSizeBytes);
+    if(!mp->cache[index].data) {
+        mp->cache[index].valid = 0;
+        return 1;
+    }
+
+    memcpy(mp->cache[index].data, buffer, mp->blockSizeBytes);
+    return 0;
 }
 
 /* lxfsNextBlock(): returns the next block in a chain of blocks
