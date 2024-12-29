@@ -10,6 +10,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* lxfsFlushBlock(): flush a dirty block from the cache to the physical drive
+ * params: mp - mountpoint
+ * params: index - cache index
+ * returns: zero on success
+ */
+
+int lxfsFlushBlock(Mountpoint *mp, uint64_t index) {
+    uint64_t block = (mp->cache[index].tag*CACHE_SIZE) + (index%CACHE_SIZE);
+
+    lseek(mp->fd, block * mp->blockSizeBytes, SEEK_SET);
+    ssize_t s = write(mp->fd, mp->cache[index].data, mp->blockSizeBytes);
+    if(s != mp->blockSizeBytes) return 1;
+
+    mp->cache[index].dirty = 0;
+    return 0;
+}
+
 /* lxfsReadBlock(): reads a block on a mounted lxfs partition
  * params: mp - mountpoint
  * params: block - block number
@@ -27,11 +44,9 @@ int lxfsReadBlock(Mountpoint *mp, uint64_t block, void *buffer) {
         return 0;
     }
 
-    // else bring it into the cache
+    // flush the cache if necessary
     if(mp->cache[index].valid && mp->cache[index].dirty) {
-        // TODO: flush cache
-        luxLogf(KPRINT_LEVEL_WARNING, "TODO: flush file system cache in read()\n");
-        return -1;
+        if(lxfsFlushBlock(mp, index)) return 1;
     }
 
     mp->cache[index].valid = 1;
