@@ -137,6 +137,7 @@ void lxfsMount(MountCommand *cmd) {
     mp->sectorSize = sectorSize;
     mp->blockSize = blockSize;
     mp->blockSizeBytes = blockSizeBytes;
+    mp->volumeSize = id->volumeSize;
     mp->root = id->rootBlock;
     mp->blockTableBuffer = buffer;
     mp->dataBuffer = buffer2;
