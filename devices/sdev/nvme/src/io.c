@@ -206,7 +206,7 @@ void nvmeWrite(SDevRWCommand *cmd) {
     // we're being optimistic here
     req->rwcmd->header.response = 1;
     req->rwcmd->header.status = 0;
-    req->rwcmd->header.length = sizeof(SDevRWCommand) + cmd->count;
+    req->rwcmd->header.length = sizeof(SDevRWCommand);
 
     req->drive = cmd->device >> 16;
     req->ns = cmd->device & 0xFFFF;
