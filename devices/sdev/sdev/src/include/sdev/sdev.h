@@ -44,3 +44,5 @@ void partitionDevice(const char *, StorageDevice *);
 StorageDevice *findDevice(int);
 void sdevRead(RWCommand *);
 void relayRead(SDevRWCommand *);
+void sdevWrite(RWCommand *);
+void relayWrite(SDevRWCommand *);
