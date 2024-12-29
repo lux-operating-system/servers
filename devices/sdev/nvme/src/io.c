@@ -157,6 +157,79 @@ void nvmeRead(SDevRWCommand *cmd) {
     }
 }
 
+/* nvmeWrite(): handler for write requests from an NVMe drive
+ * params: cmd - write command message
+ * returns: nothing
+ */
+
+void nvmeWrite(SDevRWCommand *cmd) {
+    NVMEController *drive = nvmeGetDrive(cmd->device >> 16);
+    if(!drive) {
+        cmd->header.response = 1;
+        cmd->header.status = -ENODEV;
+        luxSendDependency(cmd);
+        return;
+    }
+
+    int ns = cmd->device & 0xFFFF;
+
+    // TODO: don't actually enforce everything to be in multiples of sector sizes
+    if((cmd->start % drive->nsSectorSizes[ns]) || (cmd->count % drive->nsSectorSizes[ns])) {
+        cmd->header.response = 1;
+        cmd->header.status = -EIO;
+        luxSendDependency(cmd);
+        return;
+    }
+
+    SDevRWCommand *src = malloc(cmd->header.length);
+    if(!src) {
+        cmd->header.length = sizeof(SDevRWCommand);
+        cmd->header.response = 1;
+        cmd->header.status = -ENOMEM;
+        luxSendDependency(cmd);
+        return;
+    }
+
+    IORequest *req = nvmeEnqueueRequest();
+    if(!req) {
+        free(src);
+        cmd->header.length = sizeof(SDevRWCommand);
+        cmd->header.response = 1;
+        cmd->header.status = -ENOMEM;
+        luxSendDependency(cmd);
+        return;
+    }
+
+    req->rwcmd = src;
+    memcpy(req->rwcmd, cmd, sizeof(SDevRWCommand));
+
+    // we're being optimistic here
+    req->rwcmd->header.response = 1;
+    req->rwcmd->header.status = 0;
+    req->rwcmd->header.length = sizeof(SDevRWCommand) + cmd->count;
+
+    req->drive = cmd->device >> 16;
+    req->ns = cmd->device & 0xFFFF;
+    req->id = cmd->syscall;
+
+    // submit the command
+    uint64_t lba = cmd->start / drive->nsSectorSizes[ns];
+    uint16_t count = cmd->count / drive->nsSectorSizes[ns];
+
+    req->queue = nvmeWriteSector(drive, ns, req->id, lba, count, req->rwcmd->buffer);
+    if(!req->queue) {
+        // I/O error
+        luxLogf(KPRINT_LEVEL_WARNING, "I/O error on drive %d ns %d\n", req->drive, req->ns);
+        free(src);
+        nvmeDequeueLast();
+
+        cmd->header.length = sizeof(SDevRWCommand);
+        cmd->header.response = 1;
+        cmd->header.status = -EIO;
+        luxSendDependency(cmd);
+    }
+}
+
 /* nvmeCycle(): cycles through NVMe I/O commands and checks their status
  * params: none
  * returns: nothing
