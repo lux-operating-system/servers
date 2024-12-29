@@ -74,11 +74,11 @@ void nvmeDequeue(uint16_t id) {
 
     while(list) {
         if(list->id == id) {
-            free(list->rwcmd);
-            free(list);
-            if(prev) prev->next = NULL;
-            else requestQueue = NULL;
+            if(list->rwcmd) free(list->rwcmd);
+            if(prev) prev->next = list->next;
+            else requestQueue = list->next;
 
+            free(list);
             return;
         }
 
@@ -269,7 +269,6 @@ void nvmeCycle() {
             // and dequeue this entry while preserving a pointer to the next
             IORequest *next = list->next;
             nvmeDequeue(list->id);
-            free(list->rwcmd);
             list = next;
         } else {
             list = list->next;
