@@ -87,6 +87,7 @@ int main() {
 
             switch(msg->command) {
             case COMMAND_SDEV_READ: nvmeRead((SDevRWCommand *) msg); break;
+            case COMMAND_SDEV_WRITE: nvmeWrite((SDevRWCommand *) msg); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", msg->command);
             }
