@@ -196,6 +196,7 @@ void nvmeCycle() {
             // and dequeue this entry while preserving a pointer to the next
             IORequest *next = list->next;
             nvmeDequeue(list->id);
+            free(list->rwcmd);
             list = next;
         } else {
             list = list->next;
