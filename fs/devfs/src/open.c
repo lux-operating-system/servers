@@ -52,6 +52,9 @@ void devfsOpen(SyscallHeader *req, SyscallHeader *res) {
         luxSend(file->socket, cmd);
     } else {
         // respond if the open() call is not overridden
+        OpenCommand *rescmd = (OpenCommand *) res;
+        if(file->status.st_mode & S_IFCHR) rescmd->charDev = 1;
+        else rescmd->charDev = 0;
         luxSendKernel(res);
     }
 }
