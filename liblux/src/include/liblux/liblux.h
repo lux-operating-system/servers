@@ -154,6 +154,7 @@ typedef struct {
 /* read() and write() */
 typedef struct {
     SyscallHeader header;
+    int silent;         // request no response
     char path[MAX_FILE_PATH];
     char device[MAX_FILE_PATH];
     uint64_t id;
