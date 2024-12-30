@@ -148,6 +148,7 @@ typedef struct {
     uid_t uid;
     gid_t gid;
     uint64_t id;    // unique ID
+    int charDev;
 } OpenCommand;
 
 /* read() and write() */
