@@ -100,6 +100,7 @@ void ptyOpenMaster(OpenCommand *opencmd) {
     opencmd->header.header.response = 1;
     opencmd->header.header.status = 0;  // success
     opencmd->id = (uint64_t) slaveID;
+    opencmd->charDev = 1;
 
     luxSendKernel(opencmd);
 }
@@ -122,5 +123,7 @@ void ptyOpenSlave(OpenCommand *opencmd) {
     else
         opencmd->id = slaveID;
     
+    if(!opencmd->header.header.status)
+        opencmd->charDev = 1;
     luxSendKernel(opencmd);
 }
