@@ -37,6 +37,7 @@ void lxfsOpen(OpenCommand *ocmd) {
             // no idea why this kinda masking is necessary but POSIX says so lol
             // https://pubs.opengroup.org/onlinepubs/9799919799/functions/open.html
             mode_t mode = ocmd->mode & ~ocmd->umask;
+            mode |= S_IFREG;
 
             ocmd->header.header.status = 0;
             if((ocmd->flags & O_RDONLY) && !(mode & S_IRUSR))
@@ -49,7 +50,7 @@ void lxfsOpen(OpenCommand *ocmd) {
                 return;
             }
 
-            ocmd->header.header.status = lxfsCreateFile(&entry, mp, ocmd->path, mode, ocmd->uid, ocmd->gid);
+            ocmd->header.header.status = lxfsCreate(&entry, mp, ocmd->path, mode, ocmd->uid, ocmd->gid);
             luxSendKernel(ocmd);
             return;
         }
