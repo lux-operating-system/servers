@@ -32,7 +32,36 @@ void lxfsOpen(OpenCommand *ocmd) {
 
     LXFSDirectoryEntry entry;
     if(!lxfsFind(&entry, mp, ocmd->path)) {
-        ocmd->header.header.status = -ENOENT;   // file doesn't exist
+        // file doesn't exist, check if it should be created
+        if(ocmd->flags & O_CREAT) {
+            // no idea why this kinda masking is necessary but POSIX says so lol
+            // https://pubs.opengroup.org/onlinepubs/9799919799/functions/open.html
+            mode_t mode = ocmd->mode & ~ocmd->umask;
+
+            ocmd->header.header.status = 0;
+            if((ocmd->flags & O_RDONLY) && !(mode & S_IRUSR))
+                ocmd->header.header.status = -EACCES;
+            if((ocmd->flags & O_WRONLY) && !(mode & S_IWUSR))
+                ocmd->header.header.status = -EACCES;
+
+            if(ocmd->header.header.status) {
+                luxSendKernel(ocmd);
+                return;
+            }
+
+            ocmd->header.header.status = lxfsCreateFile(&entry, mp, ocmd->path, mode, ocmd->uid, ocmd->gid);
+            luxSendKernel(ocmd);
+            return;
+        }
+
+        ocmd->header.header.status = -ENOENT;
+        luxSendKernel(ocmd);
+        return;
+    }
+
+    // file exists, ensure O_CREATE | O_EXCL are not set
+    if((ocmd->flags & O_CREAT) && (ocmd->flags & O_EXCL)) {
+        ocmd->header.header.status = -EEXIST;
         luxSendKernel(ocmd);
         return;
     }
