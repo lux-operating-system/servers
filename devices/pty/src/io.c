@@ -131,7 +131,7 @@ void ptyWrite(RWCommand *wcmd) {
         }
 
         wcmd->header.header.status = wcmd->length;
-        luxSendKernel(wcmd);
+        if(!wcmd->silent) luxSendKernel(wcmd);
     } else {
         // slave
         int id = atoi(&wcmd->path[4]);
@@ -166,7 +166,7 @@ void ptyWrite(RWCommand *wcmd) {
         ptys[id].slaveDataSize += wcmd->length;
 
         wcmd->header.header.status = wcmd->length;
-        luxSendKernel(wcmd);
+        if(!wcmd->silent) luxSendKernel(wcmd);
     }
 }
 
