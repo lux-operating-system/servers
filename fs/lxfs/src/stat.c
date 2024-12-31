@@ -39,18 +39,13 @@ void lxfsStat(StatCommand *cmd) {
         return;
     }
 
-    LXFSFileHeader *metadata = (LXFSFileHeader *) mp->meta;
-
     // now construct the stat structure
     cmd->buffer.st_atime = entry.accessTime;
     cmd->buffer.st_mtime = entry.modTime;
     cmd->buffer.st_ctime = entry.createTime;
     cmd->buffer.st_blksize = mp->blockSizeBytes;
-    cmd->buffer.st_blocks = (metadata->size + mp->blockSizeBytes) / mp->blockSizeBytes;
-    cmd->buffer.st_size = metadata->size;
     cmd->buffer.st_uid = entry.owner;
     cmd->buffer.st_gid = entry.group;
-    cmd->buffer.st_nlink = metadata->refCount;
     cmd->buffer.st_dev = mp->fd;
     cmd->buffer.st_rdev = mp->fd;
     cmd->buffer.st_ino = first;
@@ -59,15 +54,27 @@ void lxfsStat(StatCommand *cmd) {
     uint8_t type = (entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK;
     switch(type) {
     case LXFS_DIR_TYPE_DIR:
+        LXFSDirectoryHeader *dirMeta = (LXFSDirectoryHeader *) mp->meta;
         cmd->buffer.st_mode = S_IFDIR;
+        cmd->buffer.st_size = dirMeta->sizeEntries;
+        cmd->buffer.st_blocks = (dirMeta->sizeBytes+mp->blockSizeBytes-1) / mp->blockSizeBytes;
+        cmd->buffer.st_nlink = 1;
+        cmd->buffer.st_atime = dirMeta->accessTime;
+        cmd->buffer.st_mtime = dirMeta->modTime;
+        cmd->buffer.st_ctime = dirMeta->createTime;
         break;
     case LXFS_DIR_TYPE_SOFT_LINK:
         cmd->buffer.st_mode = S_IFLNK;
+        cmd->buffer.st_nlink = 1;
         break;
     case LXFS_DIR_TYPE_FILE:
     case LXFS_DIR_TYPE_HARD_LINK:
     default:
+        LXFSFileHeader *fileMeta = (LXFSFileHeader *) mp->meta;
         cmd->buffer.st_mode = S_IFREG;
+        cmd->buffer.st_blocks = (fileMeta->size+mp->blockSizeBytes-1) / mp->blockSizeBytes;
+        cmd->buffer.st_size = fileMeta->size;
+        cmd->buffer.st_nlink = fileMeta->refCount;
     }
 
     if(entry.permissions & LXFS_PERMS_OWNER_R) cmd->buffer.st_mode |= S_IRUSR;
