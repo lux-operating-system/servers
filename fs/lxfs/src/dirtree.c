@@ -90,7 +90,7 @@ LXFSDirectoryEntry *lxfsFind(LXFSDirectoryEntry *dest, Mountpoint *mp, const cha
         dest->permissions = LXFS_PERMS_OWNER_R | LXFS_PERMS_OWNER_W | LXFS_PERMS_OWNER_X | LXFS_PERMS_GROUP_R | LXFS_PERMS_GROUP_X | LXFS_PERMS_OTHER_R | LXFS_PERMS_OTHER_X;
 
         dest->entrySize = sizeof(LXFSDirectoryEntry) - 510; // 2 bytes path
-        strcpy(dest->name, "/");
+        strcpy((char *) dest->name, "/");
 
         return dest;
     }
