@@ -88,6 +88,7 @@ LXFSDirectoryEntry *lxfsFind(LXFSDirectoryEntry *dest, Mountpoint *mp, const cha
         dest->owner = 0;
         dest->group = 0;
         dest->permissions = LXFS_PERMS_OWNER_R | LXFS_PERMS_OWNER_W | LXFS_PERMS_OWNER_X | LXFS_PERMS_GROUP_R | LXFS_PERMS_GROUP_X | LXFS_PERMS_OTHER_R | LXFS_PERMS_OTHER_X;
+        strcpy(dest->name, "/");
 
         return dest;
     }
