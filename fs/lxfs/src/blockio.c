@@ -165,3 +165,22 @@ uint64_t lxfsFindFreeBlock(Mountpoint *mp, uint64_t index) {
 
     return 0;
 }
+
+/* lxfsSetNextBlock(): sets the next block in a chain
+ * params: mp - mountpoint
+ * params: block - block to modify
+ * params: next - next block in chain
+ * returns: zero on success
+ */
+
+int lxfsSetNextBlock(Mountpoint *mp, uint64_t block, uint64_t next) {
+    uint64_t tableBlock = block / (mp->blockSizeBytes / 8);
+    tableBlock += 33;   // the first 33 blocks are reserved
+    uint64_t tableIndex = block % (mp->blockSizeBytes / 8);
+
+    if(lxfsReadBlock(mp, tableBlock, mp->blockTableBuffer)) return 0;
+
+    uint64_t *data = (uint64_t *) mp->blockTableBuffer;
+    data[tableIndex] = next;
+    return lxfsWriteBlock(mp, tableBlock, mp->blockTableBuffer);
+}
