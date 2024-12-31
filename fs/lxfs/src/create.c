@@ -107,6 +107,7 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
     uint64_t block = parent.block;
     uint64_t prevBlock;
 
+    LXFSDirectoryHeader *parentHeader = (LXFSDirectoryHeader *) mp->dataBuffer;
     LXFSDirectoryEntry *dir = (LXFSDirectoryEntry *)((uintptr_t) mp->dataBuffer + sizeof(LXFSDirectoryHeader));
     off_t offset = sizeof(LXFSDirectoryHeader);
 
@@ -133,7 +134,6 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
                     lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
                     return -EIO;
                 }
-                return 0;
             } else {
                 // free entry but it crosses a block boundary, so allocate one more block
                 block = lxfsFindFreeBlock(mp, 0);
@@ -150,9 +150,18 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
                     return -EIO;
                 if(lxfsWriteBlock(mp, block, mp->dataBuffer + mp->blockSizeBytes))
                     return -EIO;
-                
-                return 0;
             }
+
+            // TODO: is there a better way to handle errors here?
+            // I'd argue this is a forgiveable error for lack of a better word
+            // and the POSIX spec doesn't cover this afaik
+            if(lxfsReadBlock(mp, parent.block, mp->dataBuffer))
+                return 0;
+
+            parentHeader->sizeBytes += dest->entrySize;
+            parentHeader->sizeEntries++;
+            lxfsWriteBlock(mp, parent.block, mp->dataBuffer);
+            return 0;
         }
 
         if(block == LXFS_BLOCK_EOF) {
