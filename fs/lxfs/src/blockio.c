@@ -1,6 +1,6 @@
 /*
  * luxOS - a unix-like operating system
- * Omar Elghoul, 2024
+ * Omar Elghoul, 2024-25
  * 
  * lxfs: Driver for the lxfs file system
  */
@@ -183,4 +183,39 @@ int lxfsSetNextBlock(Mountpoint *mp, uint64_t block, uint64_t next) {
     uint64_t *data = (uint64_t *) mp->blockTableBuffer;
     data[tableIndex] = next;
     return lxfsWriteBlock(mp, tableBlock, mp->blockTableBuffer);
+}
+
+/* lxfsAllocate(): allocates new blocks
+ * params: mp - mountpoint
+ * params: count - number of blocks to allocate
+ * returns: first block in chain, zero on fail
+ */
+
+uint64_t lxfsAllocate(Mountpoint *mp, uint64_t count) {
+    uint64_t *blocks = calloc(count, sizeof(uint64_t));
+    if(!blocks) return 0;
+
+    for(uint64_t i = 0; i < count; i++) {
+        blocks[i] = lxfsFindFreeBlock(mp, i);
+        if(!blocks[i]) {
+            free(blocks);
+            return 0;
+        }
+    }
+
+    for(uint64_t i = 0; i < count-1; i++) {
+        if(lxfsSetNextBlock(mp, blocks[i], blocks[i+1])) {
+            free(blocks);
+            return 0;
+        }
+    }
+    
+    if(lxfsSetNextBlock(mp, blocks[count-1], LXFS_BLOCK_EOF)) {
+        free(blocks);
+        return 0;
+    }
+
+    uint64_t block = blocks[0];
+    free(blocks);
+    return block;
 }

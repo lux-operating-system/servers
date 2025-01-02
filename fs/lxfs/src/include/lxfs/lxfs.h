@@ -1,6 +1,6 @@
 /*
  * luxOS - a unix-like operating system
- * Omar Elghoul, 2024
+ * Omar Elghoul, 2024-25
  * 
  * lxfs: Driver for the lxfs file system
  */
@@ -136,6 +136,7 @@ uint64_t lxfsReadNextBlock(Mountpoint *, uint64_t, void *);
 uint64_t lxfsWriteNextBlock(Mountpoint *, uint64_t, const void *);
 uint64_t lxfsFindFreeBlock(Mountpoint *, uint64_t);
 int lxfsSetNextBlock(Mountpoint *, uint64_t, uint64_t);
+uint64_t lxfsAllocate(Mountpoint *, uint64_t);
 
 Mountpoint *findMP(const char *);
 int pathDepth(const char *);
