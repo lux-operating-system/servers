@@ -17,6 +17,7 @@
  */
 
 int lxfsFlushBlock(Mountpoint *mp, uint64_t index) {
+    if(!mp->cache[index].valid || !mp->cache[index].dirty) return 0;
     uint64_t block = (mp->cache[index].tag*CACHE_SIZE) + (index%CACHE_SIZE);
 
     lseek(mp->fd, block * mp->blockSizeBytes, SEEK_SET);
