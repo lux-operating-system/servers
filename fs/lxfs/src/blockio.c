@@ -220,3 +220,24 @@ uint64_t lxfsAllocate(Mountpoint *mp, uint64_t count) {
     free(blocks);
     return block;
 }
+
+/* lxfsGetBlock(): returns the block containing the nth byte of a file
+ * params: mp - mountpoint
+ * params: first - first block of file data
+ * params: index - byte index to search for
+ * returns: block number, zero if it doesn't exist
+ */
+
+uint64_t lxfsGetBlock(Mountpoint *mp, uint64_t first, uint64_t index) {
+    if(index < mp->blockSizeBytes) return first;
+    uint64_t blockIndex = index / mp->blockSizeBytes;
+
+    uint64_t block = first;
+    for(uint64_t i = 0; i < blockIndex; i++) {
+        block = lxfsNextBlock(mp, block);
+        if(block == LXFS_BLOCK_EOF) return 0;
+        if(i == (blockIndex-1)) return block;
+    }
+
+    return 0;
+}
