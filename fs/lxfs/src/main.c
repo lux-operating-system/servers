@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 
 int main() {
     luxInit("lxfs");
@@ -52,6 +53,8 @@ int main() {
             case COMMAND_CHOWN: lxfsChown((ChownCommand *) msg); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", msg->header.command);
+                msg->header.status = -ENOSYS;
+                luxSendKernel(msg);
             }
         } else {
             sched_yield();
