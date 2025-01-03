@@ -1,10 +1,11 @@
 /*
  * luxOS - a unix-like operating system
- * Omar Elghoul, 2024
+ * Omar Elghoul, 2024-25
  * 
  * devfs: Microkernel server implementing the /dev file system
  */
 
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -74,6 +75,9 @@ int main(int argc, char **argv) {
                 dispatchTable[req->header.command&0x7FFF](req, res);
             } else {
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X for pid %d\n", req->header.command, req->header.requester);
+                req->header.status = -ENOSYS;
+                req->header.response = 1;
+                luxSendKernel(req);
             }
         }
 
