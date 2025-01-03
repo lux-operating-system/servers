@@ -151,4 +151,6 @@ void lxfsRead(RWCommand *);
 void lxfsWrite(RWCommand *);
 void lxfsOpendir(OpendirCommand *);
 void lxfsReaddir(ReaddirCommand *);
+void lxfsChmod(ChmodCommand *);
+void lxfsChown(ChownCommand *);
 void lxfsMmap(MmapCommand *);
