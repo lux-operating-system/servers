@@ -125,6 +125,30 @@ void vfsDispatchMmap(SyscallHeader *hdr) {
     }
 }
 
+void vfsDispatchChmod(SyscallHeader *hdr) {
+    ChmodCommand *cmd = (ChmodCommand *) hdr;
+    char type[32];
+    if(resolve(cmd->path, type, cmd->device, cmd->path)) {
+        int sd = findFSServer(type);
+        if(sd <= 0) luxLogf(KPRINT_LEVEL_WARNING, "no file system driver loaded for '%s'\n", type);
+        else luxSend(sd, cmd);
+    } else {
+        luxLogf(KPRINT_LEVEL_WARNING, "could not resolve path '%s'\n", cmd->path);
+    }
+}
+
+void vfsDispatchChown(SyscallHeader *hdr) {
+    ChownCommand *cmd = (ChownCommand *) hdr;
+    char type[32];
+    if(resolve(cmd->path, type, cmd->device, cmd->path)) {
+        int sd = findFSServer(type);
+        if(sd <= 0) luxLogf(KPRINT_LEVEL_WARNING, "no file system driver loaded for '%s'\n", type);
+        else luxSend(sd, cmd);
+    } else {
+        luxLogf(KPRINT_LEVEL_WARNING, "could not resolve path '%s'\n", cmd->path);
+    }
+}
+
 void (*vfsDispatchTable[])(SyscallHeader *) = {
     vfsDispatchStat,    // 0 - stat()
     NULL,               // 1 - flush()
@@ -136,8 +160,8 @@ void (*vfsDispatchTable[])(SyscallHeader *) = {
     vfsDispatchIoctl,   // 7 - ioctl()
     vfsDispatchOpendir, // 8 - opendir()
     vfsDispatchReaddir, // 9 - readdir_r()
-    NULL,               // 10 - chmod()
-    NULL,               // 11 - chown()
+    vfsDispatchChmod,   // 10 - chmod()
+    vfsDispatchChown,   // 11 - chown()
     NULL,               // 12 - link()
     NULL,               // 13 - mkdir()
     NULL,               // 14 - rmdir()
