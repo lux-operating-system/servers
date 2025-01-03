@@ -105,8 +105,15 @@ void lxfsWrite(RWCommand *wcmd) {
     LXFSFileHeader *metadata = (LXFSFileHeader *) mp->meta;
 
     // the kernel will communicate O_APPEND by setting position to -1
-    if(wcmd->position == -1) {
+    if(wcmd->position == -1)
         wcmd->position = metadata->size;
+
+    /* TODO: handle case for padding with zeroes when position > actual size */
+    if(wcmd->position > metadata->size) {
+        luxLogf(KPRINT_LEVEL_ERROR, "TODO: position > file size, handle zero pad case\n");
+        wcmd->header.header.status = -ENOSYS;   /* not implemented */
+        luxSendKernel(wcmd);
+        return;
     }
 
     // check if this is a new file
@@ -115,5 +122,90 @@ void lxfsWrite(RWCommand *wcmd) {
         return;
     }
 
-    luxLogf(KPRINT_LEVEL_ERROR, "TODO: overwrite existing file\n");
+    // here we're writing to an existing file
+    uint64_t block = lxfsGetBlock(mp, first, wcmd->position);
+    uint64_t prevBlock;
+    if(wcmd->position >= mp->blockSizeBytes)
+        prevBlock = lxfsGetBlock(mp, first, wcmd->position-mp->blockSizeBytes);
+    else
+        prevBlock = block;
+
+    uint64_t size = wcmd->length;
+    uint64_t position = 0;
+    uint64_t tempPosition = wcmd->position % mp->blockSizeBytes;
+
+    while(size && block && (block != LXFS_BLOCK_EOF)) {
+        if(lxfsReadBlock(mp, block, mp->dataBuffer)) {
+            wcmd->header.header.status = -EIO;
+            luxSendKernel(wcmd);
+            return;
+        }
+
+        if(size >= (mp->blockSizeBytes - tempPosition)) {
+            memcpy((void *)((uintptr_t)mp->dataBuffer+tempPosition), (const void *)((uintptr_t)wcmd->data+position), mp->blockSizeBytes - tempPosition);
+            size -= (mp->blockSizeBytes - tempPosition);
+            position += (mp->blockSizeBytes - tempPosition);
+            tempPosition = 0;
+        } else {
+            memcpy((void *)((uintptr_t)mp->dataBuffer+tempPosition), (const void *)((uintptr_t)wcmd->data+position), size);
+            size = 0;
+        }
+
+        prevBlock = block;
+        block = lxfsWriteNextBlock(mp, block, mp->dataBuffer);
+        if(!block) {
+            wcmd->header.header.status = -EIO;
+            luxSendKernel(wcmd);
+            return;
+        }
+    }
+
+    if(size) {
+        // allocate new blocks for the remaining bytes
+        uint64_t blockCount = (size+mp->blockSizeBytes-1) / mp->blockSizeBytes;
+        uint64_t newBlock = lxfsAllocate(mp, blockCount);
+        uint64_t firstNewBlock = newBlock;
+        if(!newBlock) {
+            wcmd->header.header.status = -ENOSPC;   /* out of storage */
+            luxSendKernel(wcmd);
+            return;
+        }
+
+        while(size) {
+            if(size > mp->blockSizeBytes) {
+                memcpy(mp->dataBuffer, (const void *)((uintptr_t)wcmd->data + position), mp->blockSizeBytes);
+                size -= mp->blockSizeBytes;
+                position += mp->blockSizeBytes;
+            } else {
+                memcpy(mp->dataBuffer, (const void *)((uintptr_t)wcmd->data + position), size);
+                size = 0;
+            }
+
+            newBlock = lxfsWriteNextBlock(mp, newBlock, mp->dataBuffer);
+            if(!newBlock) {
+                wcmd->header.header.status = -EIO;
+                luxSendKernel(wcmd);
+                return;
+            }
+        }
+
+        // update the block list
+        if(lxfsSetNextBlock(mp, prevBlock, firstNewBlock)) {
+            wcmd->header.header.status = -EIO;
+            luxSendKernel(wcmd);
+            return;
+        }
+    }
+
+    // and finally update the file metadata header
+    metadata->size += wcmd->length;
+    if(lxfsWriteBlock(mp, entry.block, mp->meta)) {
+        wcmd->header.header.status = -EIO;
+        luxSendKernel(wcmd);
+        return;
+    }
+
+    wcmd->header.header.status = wcmd->length;
+    wcmd->position += wcmd->length;
+    luxSendKernel(wcmd);
 }
