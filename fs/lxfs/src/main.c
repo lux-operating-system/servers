@@ -1,6 +1,6 @@
 /*
  * luxOS - a unix-like operating system
- * Omar Elghoul, 2024
+ * Omar Elghoul, 2024-25
  * 
  * lxfs: Driver for the lxfs file system
  */
@@ -43,6 +43,7 @@ int main() {
             case COMMAND_MOUNT: lxfsMount((MountCommand *) msg); break;
             case COMMAND_OPEN: lxfsOpen((OpenCommand *) msg); break;
             case COMMAND_READ: lxfsRead((RWCommand *) msg); break;
+            case COMMAND_WRITE: lxfsWrite((RWCommand *) msg); break;
             case COMMAND_STAT: lxfsStat((StatCommand *) msg); break;
             case COMMAND_OPENDIR: lxfsOpendir((OpendirCommand *) msg); break;
             case COMMAND_READDIR: lxfsReaddir((ReaddirCommand *) msg); break;
