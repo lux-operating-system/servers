@@ -66,10 +66,12 @@ char *pathComponent(char *dest, const char *path, int n) {
  * params: dest - destination buffer to store the directory entry
  * params: mp - lxfs mountpoint
  * params: path - full qualified path
+ * params: blockPtr - pointer to store starting block
+ * params: offPtr - pointer to store starting offset within the block
  * returns: pointer to destination on success, NULL on fail
  */
 
-LXFSDirectoryEntry *lxfsFind(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path) {
+LXFSDirectoryEntry *lxfsFind(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path, uint64_t *blockPtr, off_t *offPtr) {
     // special case for the root directory because it does not have a true
     // directory entry within the file system itself
     if((strlen(path) == 1) && (path[0] == '/')) {
@@ -98,6 +100,7 @@ LXFSDirectoryEntry *lxfsFind(LXFSDirectoryEntry *dest, Mountpoint *mp, const cha
     // for everything else we will need to traverse the file system starting
     // at the root directory
     LXFSDirectoryEntry *dir;
+    uint64_t prev;
     uint64_t next = mp->root;
     int depth = pathDepth(path);
     char component[MAX_FILE_PATH];
@@ -109,6 +112,7 @@ traverse:
         // iterate over each component in the path and search for it in the directory
         if(!pathComponent(component, path, i)) return NULL;
 
+        prev = next;
         next = lxfsReadNextBlock(mp, next, mp->dataBuffer);
         if(!next) return NULL;
         
@@ -123,6 +127,8 @@ traverse:
             if((dir->flags & LXFS_DIR_VALID) && !strcmp((const char *) dir->name, component)) {
                 if(i == depth-1) {
                     // found the file we're looking for
+                    if(blockPtr) *blockPtr = prev;
+                    if(offPtr) *offPtr = offset;
                     return (LXFSDirectoryEntry *) memcpy(dest, dir, dir->entrySize);
                 } else {
                     // found a parent component, ensure it is a directory

@@ -25,7 +25,7 @@ void lxfsStat(StatCommand *cmd) {
 
     // and the file entry
     LXFSDirectoryEntry entry;
-    if(!lxfsFind(&entry, mp, cmd->path)) {
+    if(!lxfsFind(&entry, mp, cmd->path, NULL, NULL)) {
         cmd->header.header.status = -ENOENT;
         luxSendKernel(cmd);
         return;

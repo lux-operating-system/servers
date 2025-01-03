@@ -33,7 +33,7 @@ void lxfsRead(RWCommand *rcmd) {
 
     // and the file entry
     LXFSDirectoryEntry entry;
-    if(!lxfsFind(&entry, mp, rcmd->path)) {
+    if(!lxfsFind(&entry, mp, rcmd->path, NULL, NULL)) {
         rcmd->header.header.status = -ENOENT;
         luxSendKernel(rcmd);
         return;

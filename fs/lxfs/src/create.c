@@ -28,7 +28,7 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
     LXFSDirectoryEntry parent;
     int depth = pathDepth(path);
     if(depth <= 1) {
-        if(!lxfsFind(&parent, mp, "/")) return -EIO;
+        if(!lxfsFind(&parent, mp, "/", NULL, NULL)) return -EIO;
     } else {
         char *parentPath = strdup(path);
         if(!parentPath) return -1 * errno;
@@ -40,7 +40,7 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
 
         *last = 0;  // truncate to keep only the parent directory
 
-        if(!lxfsFind(&parent, mp, parentPath)) {
+        if(!lxfsFind(&parent, mp, parentPath, NULL, NULL)) {
             free(parentPath);
             return -ENOENT;
         }

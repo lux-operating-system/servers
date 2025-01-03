@@ -28,7 +28,7 @@ void lxfsOpendir(OpendirCommand *ocmd) {
     }
 
     LXFSDirectoryEntry entry;
-    if(!lxfsFind(&entry, mp, ocmd->path)) {
+    if(!lxfsFind(&entry, mp, ocmd->path, NULL, NULL)) {
         ocmd->header.header.status = -ENOENT;   // file doesn't exist
         luxSendKernel(ocmd);
         return;
@@ -70,7 +70,7 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
     }
 
     LXFSDirectoryEntry entry;
-    if(!lxfsFind(&entry, mp, rcmd->path)) {
+    if(!lxfsFind(&entry, mp, rcmd->path, NULL, NULL)) {
         rcmd->header.header.status = -ENOENT;   // file doesn't exist
         luxSendKernel(rcmd);
         return;

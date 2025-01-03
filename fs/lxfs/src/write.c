@@ -89,7 +89,7 @@ void lxfsWrite(RWCommand *wcmd) {
     }
 
     LXFSDirectoryEntry entry;
-    if(!lxfsFind(&entry, mp, wcmd->path)) {
+    if(!lxfsFind(&entry, mp, wcmd->path, NULL, NULL)) {
         wcmd->header.header.status = -ENOENT;
         luxSendKernel(wcmd);
         return;

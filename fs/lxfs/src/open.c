@@ -31,7 +31,7 @@ void lxfsOpen(OpenCommand *ocmd) {
     }
 
     LXFSDirectoryEntry entry;
-    if(!lxfsFind(&entry, mp, ocmd->path)) {
+    if(!lxfsFind(&entry, mp, ocmd->path, NULL, NULL)) {
         // file doesn't exist, check if it should be created
         if(ocmd->flags & O_CREAT) {
             // no idea why this kinda masking is necessary but POSIX says so lol
