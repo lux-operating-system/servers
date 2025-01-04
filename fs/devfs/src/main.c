@@ -74,7 +74,6 @@ int main(int argc, char **argv) {
             if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND && dispatchTable[req->header.command&0x7FFF]) {
                 dispatchTable[req->header.command&0x7FFF](req, res);
             } else {
-                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X for pid %d\n", req->header.command, req->header.requester);
                 req->header.status = -ENOSYS;
                 req->header.response = 1;
                 luxSendKernel(req);
