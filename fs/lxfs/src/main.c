@@ -52,7 +52,7 @@ int main() {
             case COMMAND_CHMOD: lxfsChmod((ChmodCommand *) msg); break;
             case COMMAND_CHOWN: lxfsChown((ChownCommand *) msg); break;
             default:
-                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X, dropping message...\n", msg->header.command);
+                msg->header.response = 1;
                 msg->header.status = -ENOSYS;
                 luxSendKernel(msg);
             }
