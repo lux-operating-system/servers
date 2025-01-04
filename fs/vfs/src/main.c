@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #include <liblux/liblux.h>
 #include <vfs.h>
 #include <vfs/vfs.h>
@@ -65,7 +66,6 @@ int main(int argc, char **argv) {
                     luxLogf(KPRINT_LEVEL_DEBUG, "loaded file system driver for '%s'\n", servers[i].type);
                 } else if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND) {
                     if(req->header.command == COMMAND_MOUNT) registerMountpoint((MountCommand *)req);
-                    //luxSendLumen(req);  // relay responses to lumen
                     luxSendKernel(req);     // relay response directly to the kernel
                 } else {
                     luxLogf(KPRINT_LEVEL_WARNING, "unimplemented response to command 0x%X from file system driver for '%s'\n", req->header.command, servers[i].type);
@@ -92,7 +92,9 @@ int main(int argc, char **argv) {
             if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND && vfsDispatchTable[req->header.command&0x7FFF]) {
                 vfsDispatchTable[req->header.command&0x7FFF](req);
             } else {
-                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented syscall request 0x%X for pid %d\n", req->header.command, req->header.requester);
+                req->header.response = 1;
+                req->header.status = -ENOSYS;
+                luxSendKernel(req);
             }
         }
     }
