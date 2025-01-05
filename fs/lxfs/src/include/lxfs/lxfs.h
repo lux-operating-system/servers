@@ -155,3 +155,4 @@ void lxfsChmod(ChmodCommand *);
 void lxfsChown(ChownCommand *);
 void lxfsMmap(MmapCommand *);
 void lxfsMkdir(MkdirCommand *);
+void lxfsUtime(UtimeCommand *);
