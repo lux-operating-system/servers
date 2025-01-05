@@ -170,3 +170,32 @@ traverse:
 
     return NULL;
 }
+
+/* lxfsMkdir(): implementation of mkdir() for lxfs
+ * params: cmd - mkdir command message
+ * returns: nothing, response relayed to kernel
+ */
+
+void lxfsMkdir(MkdirCommand *cmd) {
+    cmd->header.header.response = 1;
+    cmd->header.header.length = sizeof(MkdirCommand);
+
+    Mountpoint *mp = findMP(cmd->device);
+    if(!mp) {
+        cmd->header.header.status = -EIO;   // device doesn't exist
+        luxSendKernel(cmd);
+        return;
+    }
+
+    LXFSDirectoryEntry entry;
+    if(lxfsFind(&entry, mp, cmd->path, NULL, NULL)) {
+        cmd->header.header.status = -EEXIST;    // directory already exists
+        luxSendKernel(cmd);
+        return;
+    }
+
+    mode_t mode = cmd->mode & ~cmd->umask;  // again this mask gives me the ick
+    mode |= S_IFDIR;
+    cmd->header.header.status = lxfsCreate(&entry, mp, cmd->path, mode, cmd->uid, cmd->gid);
+    luxSendKernel(cmd);
+}
