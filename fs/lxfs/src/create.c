@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <time.h>
 
 /* lxfsCreate(): creates a file or directory on the lxfs volume
  * params: dest - destination buffer to store directory entry
@@ -84,7 +85,10 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
     dest->owner = uid;
     dest->group = gid;
     
-    /* TODO: create timestamps here */
+    time_t timestamp = time(NULL);
+    dest->accessTime = timestamp;
+    dest->createTime = timestamp;
+    dest->modTime = timestamp;
 
     memset(dest->reserved, 0, sizeof(dest->reserved));
     dest->block = lxfsFindFreeBlock(mp, 0);
@@ -160,6 +164,8 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
 
             parentHeader->sizeBytes += dest->entrySize;
             parentHeader->sizeEntries++;
+            parentHeader->accessTime = timestamp;
+            parentHeader->modTime = timestamp;
             lxfsWriteBlock(mp, parent.block, mp->dataBuffer);
             return 0;
         }
