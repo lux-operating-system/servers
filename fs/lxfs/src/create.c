@@ -106,6 +106,18 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
             lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
             return -EIO;
         }
+    } else if(S_ISDIR(mode)) {
+        LXFSDirectoryHeader *dirHeader = (LXFSDirectoryHeader *) mp->dataBuffer;
+        dirHeader->accessTime = timestamp;
+        dirHeader->createTime = timestamp;
+        dirHeader->modTime = timestamp;
+        dirHeader->reserved = 0;
+        dirHeader->sizeBytes = sizeof(LXFSDirectoryHeader);
+        dirHeader->sizeEntries = 0;
+        if(lxfsWriteBlock(mp, dest->block, mp->dataBuffer)) {
+            lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
+            return -EIO;
+        }
     }
 
     uint64_t block = parent.block;
