@@ -235,6 +235,7 @@ typedef struct {
     uid_t uid;
     gid_t gid;
     mode_t mode;
+    mode_t umask;
 } MkdirCommand;
 
 /* exec() */
