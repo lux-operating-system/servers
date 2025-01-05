@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <time.h>
 
 /* lxfsWriteNew(): helper function to write to a new file
  * params: wcmd - write command message
@@ -203,6 +204,35 @@ void lxfsWrite(RWCommand *wcmd) {
         wcmd->header.header.status = -EIO;
         luxSendKernel(wcmd);
         return;
+    }
+
+    // and update the timestamps
+    time_t timestamp = time(NULL);
+    uint64_t dirBlock;
+    off_t dirOffset;
+    if(!lxfsFind(&entry, mp, wcmd->path, &dirBlock, &dirOffset)) {
+        wcmd->header.header.status = -EIO;
+        luxSendKernel(wcmd);
+        return;
+    }
+
+    LXFSDirectoryEntry *dir = (LXFSDirectoryEntry *)((uintptr_t)mp->dataBuffer + dirOffset);
+    dir->accessTime = timestamp;
+    dir->modTime = timestamp;
+
+    uint64_t next = lxfsWriteNextBlock(mp, dirBlock, mp->dataBuffer);
+    if(!next) {
+        wcmd->header.header.status = -EIO;
+        luxSendKernel(wcmd);
+        return;
+    }
+
+    if((dirOffset + entry.entrySize) > mp->blockSizeBytes) {
+        if(lxfsWriteBlock(mp, next, (const void *)((uintptr_t)mp->dataBuffer + mp->blockSizeBytes))) {
+            wcmd->header.header.status = -EIO;
+            luxSendKernel(wcmd);
+            return;
+        }
     }
 
     wcmd->header.header.status = wcmd->length;
