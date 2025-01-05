@@ -52,6 +52,7 @@ int main() {
             case COMMAND_CHMOD: lxfsChmod((ChmodCommand *) msg); break;
             case COMMAND_CHOWN: lxfsChown((ChownCommand *) msg); break;
             case COMMAND_MKDIR: lxfsMkdir((MkdirCommand *) msg); break;
+            case COMMAND_UTIME: lxfsUtime((UtimeCommand *) msg); break;
             default:
                 msg->header.response = 1;
                 msg->header.status = -ENOSYS;

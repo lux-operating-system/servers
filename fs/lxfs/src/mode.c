@@ -139,3 +139,84 @@ void lxfsChown(ChownCommand *cmd) {
     luxSendKernel(cmd);
     return;
 }
+
+/* lxfsUtime(): implementation of utime() for lxfs
+ * params: cmd - utime command message
+ * returns: nothing, response relayed to kernel
+ */
+
+void lxfsUtime(UtimeCommand *cmd) {
+    cmd->header.header.response = 1;
+    cmd->header.header.length = sizeof(UtimeCommand);
+
+    Mountpoint *mp = findMP(cmd->device);
+    if(!mp) {
+        cmd->header.header.status = -EIO;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    uint64_t block;
+    off_t offset;
+    LXFSDirectoryEntry entry;
+    if(!lxfsFind(&entry, mp, cmd->path, &block, &offset)) {
+        cmd->header.header.status = -ENOENT;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    // only file owner or someone else with write perms can do this
+    cmd->header.header.status = 0;
+    if(cmd->uid != entry.owner) {
+        if((cmd->gid == entry.group) && !(entry.permissions & LXFS_PERMS_GROUP_W))
+            cmd->header.header.status = -EPERM;
+        else if(!(entry.permissions & LXFS_PERMS_OTHER_W))
+            cmd->header.header.status = -EPERM;
+    }
+
+    if(cmd->header.header.status) {
+        luxSendKernel(cmd);
+        return;
+    }
+
+    LXFSDirectoryEntry *dir = (LXFSDirectoryEntry *)((uintptr_t)mp->dataBuffer + offset);
+    dir->accessTime = cmd->accessTime;
+    dir->modTime = cmd->modifiedTime;
+
+    uint64_t next = lxfsWriteNextBlock(mp, block, mp->dataBuffer);
+    if(!next) {
+        cmd->header.header.status = -EIO;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    if((offset + entry.entrySize) > mp->blockSizeBytes) {
+        if(lxfsWriteBlock(mp, next, (const void *)((uintptr_t)mp->dataBuffer + mp->blockSizeBytes))) {
+            cmd->header.header.status = -EIO;
+            luxSendKernel(cmd);
+            return;
+        }
+    }
+
+    // update the directory header as well
+    if(((dir->flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK) == LXFS_DIR_TYPE_DIR) {
+        LXFSDirectoryHeader *dirHeader = (LXFSDirectoryHeader *) mp->dataBuffer;
+        if(lxfsReadBlock(mp, entry.block, mp->dataBuffer)) {
+            cmd->header.header.status = -EIO;
+            luxSendKernel(cmd);
+            return;
+        }
+
+        dirHeader->accessTime = cmd->accessTime;
+        dirHeader->modTime = cmd->modifiedTime;
+        if(lxfsWriteBlock(mp, entry.block, mp->dataBuffer)) {
+            cmd->header.header.status = -EIO;
+            luxSendKernel(cmd);
+            return;
+        }
+    }
+
+    cmd->header.header.status = 0;
+    luxSendKernel(cmd);
+    return;
+}
