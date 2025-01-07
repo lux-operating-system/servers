@@ -40,4 +40,7 @@ void (*dispatchTable[])(SyscallHeader *, SyscallHeader *) = {
 
     devfsMmap,          // 18 - mmap()
     NULL,               // 19 - msync()
+    NULL,               // 20 - unlink()
+    NULL,               // 21 - symlink()
+    NULL,               // 22 - readlink()
 };
