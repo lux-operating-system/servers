@@ -66,6 +66,8 @@ void lxfsStat(StatCommand *cmd) {
     case LXFS_DIR_TYPE_SOFT_LINK:
         cmd->buffer.st_mode = S_IFLNK;
         cmd->buffer.st_nlink = 1;
+        cmd->buffer.st_size = entry.size;
+        cmd->buffer.st_blocks = (entry.size+mp->blockSizeBytes-1) / mp->blockSizeBytes;
         break;
     case LXFS_DIR_TYPE_FILE:
     case LXFS_DIR_TYPE_HARD_LINK:
