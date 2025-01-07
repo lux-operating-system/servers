@@ -149,6 +149,31 @@ void vfsDispatchChown(SyscallHeader *hdr) {
     }
 }
 
+void vfsDispatchLink(SyscallHeader *hdr) {
+    LinkCommand *cmd = (LinkCommand *) hdr;
+    char type[32];
+    char device[MAX_FILE_PATH];
+    char *ptr = resolve(cmd->newPath, type, cmd->device, cmd->newPath);
+    if(!ptr) ptr = resolve(cmd->oldPath, type, device, cmd->oldPath);
+    if(!ptr) {
+        if(strcmp(cmd->device, device)) {
+            // https://pubs.opengroup.org/onlinepubs/9799919799/functions/link.html
+            // linking between different file systems is an optional feature
+            // and so until i see a clean way to implement them, we'll skip this
+            cmd->header.header.response = 1;
+            cmd->header.header.status = -EXDEV;
+            luxSendKernel(cmd);
+            return;
+        }
+
+        int sd = findFSServer(type);
+        if(sd <= 0) luxLogf(KPRINT_LEVEL_WARNING, "no file system driver loaded for '%s'\n", type);
+        else luxSend(sd, cmd);
+    } else {
+        luxLogf(KPRINT_LEVEL_WARNING, "could not resolve paths '%s', '%s'\n", cmd->newPath, cmd->oldPath);
+    }
+}
+
 void vfsDispatchMkdir(SyscallHeader *hdr) {
     MkdirCommand *cmd = (MkdirCommand *) hdr;
     char type[32];
@@ -173,6 +198,40 @@ void vfsDispatchUtime(SyscallHeader *hdr) {
     }
 }
 
+void vfsDispatchUnlink(SyscallHeader *hdr) {
+    UnlinkCommand *cmd = (UnlinkCommand *) hdr;
+    char type[32];
+    if(resolve(cmd->path, type, cmd->device, cmd->path)) {
+        int sd = findFSServer(type);
+        if(sd <= 0) luxLogf(KPRINT_LEVEL_WARNING, "no file system driver loaded for '%s'\n", type);
+        else luxSend(sd, cmd);
+    } else {
+        luxLogf(KPRINT_LEVEL_WARNING, "could not resolve path '%s'\n", cmd->path);
+    }
+}
+
+void vfsDispatchSymlink(SyscallHeader *hdr) {
+    LinkCommand *cmd = (LinkCommand *) hdr;
+    char type[32];
+    char device[MAX_FILE_PATH];
+    char *ptr = resolve(cmd->newPath, type, cmd->device, cmd->newPath);
+    if(!ptr) ptr = resolve(cmd->oldPath, type, device, cmd->oldPath);
+    if(!ptr) {
+        if(strcmp(cmd->device, device)) {
+            cmd->header.header.response = 1;
+            cmd->header.header.status = -EXDEV;
+            luxSendKernel(cmd);
+            return;
+        }
+
+        int sd = findFSServer(type);
+        if(sd <= 0) luxLogf(KPRINT_LEVEL_WARNING, "no file system driver loaded for '%s'\n", type);
+        else luxSend(sd, cmd);
+    } else {
+        luxLogf(KPRINT_LEVEL_WARNING, "could not resolve paths '%s', '%s'\n", cmd->newPath, cmd->oldPath);
+    }
+}
+
 void (*vfsDispatchTable[])(SyscallHeader *) = {
     vfsDispatchStat,    // 0 - stat()
     NULL,               // 1 - flush()
@@ -186,7 +245,7 @@ void (*vfsDispatchTable[])(SyscallHeader *) = {
     vfsDispatchReaddir, // 9 - readdir_r()
     vfsDispatchChmod,   // 10 - chmod()
     vfsDispatchChown,   // 11 - chown()
-    NULL,               // 12 - link()
+    vfsDispatchLink,    // 12 - link()
     vfsDispatchMkdir,   // 13 - mkdir()
     vfsDispatchUtime,   // 14 - utime()
 
@@ -194,4 +253,7 @@ void (*vfsDispatchTable[])(SyscallHeader *) = {
 
     vfsDispatchMmap,    // 18 - mmap()
     NULL,               // 19 - msync()
+    vfsDispatchUnlink,  // 20 - unlink()
+    vfsDispatchSymlink, // 21 - symlink()
+    NULL                // 22 - readlink()
 };
