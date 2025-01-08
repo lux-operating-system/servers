@@ -129,6 +129,7 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
         if(lxfsReadBlock(mp, dest->block, mp->dataBuffer)) return -EIO;
         LXFSFileHeader *fileHeader = (LXFSFileHeader *) mp->dataBuffer;
         fileHeader->refCount++;
+        dest->size = fileHeader->size;
         if(lxfsWriteBlock(mp, dest->block, mp->dataBuffer)) return -EIO;
     }
 
