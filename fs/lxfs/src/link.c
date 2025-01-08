@@ -75,6 +75,13 @@ void lxfsUnlink(UnlinkCommand *cmd) {
     cmd->header.header.response = 1;
     cmd->header.header.length = sizeof(UnlinkCommand);
 
+    // special case so we can't delete the root directory
+    if(strlen(cmd->path) <= 1) {
+        cmd->header.header.status = -EPERM;
+        luxSendKernel(cmd);
+        return;
+    }
+
     Mountpoint *mp = findMP(cmd->device);
     if(!mp) {
         cmd->header.header.status = -EIO;
