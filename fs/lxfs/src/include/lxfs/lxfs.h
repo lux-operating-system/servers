@@ -143,7 +143,7 @@ Mountpoint *findMP(const char *);
 int pathDepth(const char *);
 char *pathComponent(char *, const char *, int);
 LXFSDirectoryEntry *lxfsFind(LXFSDirectoryEntry *, Mountpoint *, const char *, uint64_t *, off_t *);
-int lxfsCreate(LXFSDirectoryEntry *, Mountpoint *, const char *, mode_t, uid_t, gid_t);
+int lxfsCreate(LXFSDirectoryEntry *, Mountpoint *, const char *, mode_t, uid_t, gid_t, ...);
 
 void lxfsOpen(OpenCommand *);
 void lxfsStat(StatCommand *);

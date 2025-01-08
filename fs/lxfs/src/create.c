@@ -10,6 +10,7 @@
 #include <vfs.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <errno.h>
 #include <time.h>
 
@@ -21,12 +22,21 @@
  * params: mode - file mode bits
  * params: uid - user ID of the owner
  * params: gid - group ID of the file
+ * params: optional path to link target for symbolic links
  * returns: zero on success, negative errno error code on fail
  */
 
 int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
-               mode_t mode, uid_t uid, gid_t gid) {
+               mode_t mode, uid_t uid, gid_t gid, ...) {
     uint64_t hardLink = dest->block;
+    const char *symlink = NULL;
+
+    if(S_ISLNK(mode)) {
+        va_list args;
+        va_start(args, gid);
+        symlink = va_arg(args, const char *);
+        va_end(args);
+    }
 
     // get the parent directory
     LXFSDirectoryEntry parent;
@@ -124,6 +134,14 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
                 lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
                 return -EIO;
             }
+        } else if(S_ISLNK(mode)) {
+            strcpy((char *) mp->dataBuffer, symlink);
+            if(lxfsWriteBlock(mp, dest->block, mp->dataBuffer)) {
+                lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
+                return -EIO;
+            }
+
+            dest->size = strlen(symlink);
         }
     } else {
         if(lxfsReadBlock(mp, dest->block, mp->dataBuffer)) return -EIO;
