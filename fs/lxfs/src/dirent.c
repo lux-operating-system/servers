@@ -34,8 +34,30 @@ void lxfsOpendir(OpendirCommand *ocmd) {
         return;
     }
 
-    // ensure this is a directory
-    if(((entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK) != LXFS_DIR_TYPE_DIR) {
+    // ensure this is a directory or a symbolic link to a directory
+    uint8_t type = (entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK;
+    if(type == LXFS_DIR_TYPE_SOFT_LINK) {
+        if(lxfsReadBlock(mp, entry.block, mp->meta)) {
+            ocmd->header.header.status = -EIO;
+            luxSendKernel(ocmd);
+            return;
+        }
+
+        memset(ocmd->path, 0, sizeof(ocmd->path));
+        memcpy(ocmd->path, mp->meta, entry.size);
+        if(ocmd->path[0] == '/') {
+            memmove(ocmd->path, ocmd->path+1, entry.size-1);
+            ocmd->path[entry.size-1] = 0;
+        }
+
+        strcpy(ocmd->abspath+1, ocmd->path);
+        ocmd->abspath[0] = '/';
+
+        lxfsOpendir(ocmd);
+        return;
+    }
+
+    if(type != LXFS_DIR_TYPE_DIR) {
         ocmd->header.header.status = -ENOTDIR;
         luxSendKernel(ocmd);
         return;
