@@ -196,6 +196,7 @@ void lxfsMkdir(MkdirCommand *cmd) {
 
     mode_t mode = cmd->mode & ~cmd->umask;  // again this mask gives me the ick
     mode |= S_IFDIR;
+    entry.block = 0;
     cmd->header.header.status = lxfsCreate(&entry, mp, cmd->path, mode, cmd->uid, cmd->gid);
     luxSendKernel(cmd);
 }

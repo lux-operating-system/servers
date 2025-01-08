@@ -50,6 +50,7 @@ void lxfsOpen(OpenCommand *ocmd) {
                 return;
             }
 
+            entry.block = 0;
             ocmd->header.header.status = lxfsCreate(&entry, mp, ocmd->path, mode, ocmd->uid, ocmd->gid);
             luxSendKernel(ocmd);
             return;
