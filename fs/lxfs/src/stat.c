@@ -56,7 +56,7 @@ void lxfsStat(StatCommand *cmd) {
     case LXFS_DIR_TYPE_DIR:
         LXFSDirectoryHeader *dirMeta = (LXFSDirectoryHeader *) mp->meta;
         cmd->buffer.st_mode = S_IFDIR;
-        cmd->buffer.st_size = dirMeta->sizeEntries;
+        cmd->buffer.st_size = dirMeta->sizeBytes;
         cmd->buffer.st_blocks = (dirMeta->sizeBytes+mp->blockSizeBytes-1) / mp->blockSizeBytes;
         cmd->buffer.st_nlink = 1;
         cmd->buffer.st_atime = dirMeta->accessTime;
