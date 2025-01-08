@@ -156,3 +156,7 @@ void lxfsChown(ChownCommand *);
 void lxfsMmap(MmapCommand *);
 void lxfsMkdir(MkdirCommand *);
 void lxfsUtime(UtimeCommand *);
+void lxfsLink(LinkCommand *);
+void lxfsSymlink(LinkCommand *);
+void lxfsUnlink(UnlinkCommand *);
+void lxfsReadlink(ReadLinkCommand *);
