@@ -154,8 +154,8 @@ void vfsDispatchLink(SyscallHeader *hdr) {
     char type[32];
     char device[MAX_FILE_PATH];
     char *ptr = resolve(cmd->newPath, type, cmd->device, cmd->newPath);
-    if(!ptr) ptr = resolve(cmd->oldPath, type, device, cmd->oldPath);
-    if(!ptr) {
+    if(ptr) ptr = resolve(cmd->oldPath, type, device, cmd->oldPath);
+    if(ptr) {
         if(strcmp(cmd->device, device)) {
             // https://pubs.opengroup.org/onlinepubs/9799919799/functions/link.html
             // linking between different file systems is an optional feature
@@ -215,8 +215,8 @@ void vfsDispatchSymlink(SyscallHeader *hdr) {
     char type[32];
     char device[MAX_FILE_PATH];
     char *ptr = resolve(cmd->newPath, type, cmd->device, cmd->newPath);
-    if(!ptr) ptr = resolve(cmd->oldPath, type, device, cmd->oldPath);
-    if(!ptr) {
+    if(ptr) ptr = resolve(cmd->oldPath, type, device, cmd->oldPath);
+    if(ptr) {
         if(strcmp(cmd->device, device)) {
             cmd->header.header.response = 1;
             cmd->header.header.status = -EXDEV;
