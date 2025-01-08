@@ -7,6 +7,9 @@
 
 #include <liblux/liblux.h>
 #include <lxfs/lxfs.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include <errno.h>
 
 /* lxfsLink(): creates a new hard link on an lxfs volume
@@ -60,5 +63,185 @@ void lxfsLink(LinkCommand *cmd) {
 
     newFile.block = oldFile.block;
     cmd->header.header.status = lxfsCreate(&newFile, mp, cmd->newPath, mode, cmd->uid, cmd->gid);
+    luxSendKernel(cmd);
+}
+
+/* lxfsUnlink(): removes a link to a file or directory
+ * params: cmd - unlink command message
+ * returns: nothing, response relayed to kernel
+ */
+
+void lxfsUnlink(UnlinkCommand *cmd) {
+    cmd->header.header.response = 1;
+    cmd->header.header.length = sizeof(UnlinkCommand);
+
+    Mountpoint *mp = findMP(cmd->device);
+    if(!mp) {
+        cmd->header.header.status = -EIO;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    LXFSDirectoryEntry entry;
+    uint64_t block;
+    off_t offset;
+    if(!lxfsFind(&entry, mp, cmd->path, &block, &offset)) {
+        cmd->header.header.status = -ENOENT;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    // permission check
+    cmd->header.header.status = 0;
+    if(cmd->uid == entry.owner) {
+        if(!(entry.permissions & LXFS_PERMS_OWNER_W)) cmd->header.header.status = -EPERM;
+    } else if(cmd->gid == entry.group) {
+        if(!(entry.permissions & LXFS_PERMS_GROUP_W)) cmd->header.header.status = -EPERM;
+    } else {
+        if(!(entry.permissions & LXFS_PERMS_OTHER_W)) cmd->header.header.status = -EPERM;
+    }
+
+    if(cmd->header.header.status) {
+        luxSendKernel(cmd);
+        return;
+    }
+
+    // ensure non-empty directory
+    uint8_t type = (entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK;
+    if(type == LXFS_DIR_TYPE_DIR) {
+        if(lxfsReadBlock(mp, entry.block, mp->meta)) {
+            cmd->header.header.status = -EIO;
+            luxSendKernel(cmd);
+            return;
+        }
+
+        LXFSDirectoryHeader *dirHeader = (LXFSDirectoryHeader *) mp->meta;
+        if(dirHeader->sizeEntries) {
+            cmd->header.header.status = -ENOTEMPTY;
+            luxSendKernel(cmd);
+            return;
+        }
+    }
+
+    // delete the associated directory entry
+    LXFSDirectoryEntry *dir = (LXFSDirectoryEntry *)((uintptr_t)mp->dataBuffer+offset);
+    dir->flags = LXFS_DIR_DELETED;
+    uint64_t next = lxfsWriteNextBlock(mp, block, mp->dataBuffer);
+    if(!next) {
+        cmd->header.header.status = -EIO;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    if((offset + entry.entrySize) > mp->blockSizeBytes) {
+        if(lxfsWriteBlock(mp, next, (const void *)((uintptr_t)mp->dataBuffer + mp->blockSizeBytes))) {
+            cmd->header.header.status = -EIO;
+            luxSendKernel(cmd);
+            return;
+        }
+    }
+
+    // for regular files and hard links, decrement file ref counter
+    if((type == LXFS_DIR_TYPE_FILE) || (type == LXFS_DIR_TYPE_HARD_LINK)) {
+        if(lxfsReadBlock(mp, entry.block, mp->meta)) {
+            cmd->header.header.status = -EIO;
+            luxSendKernel(cmd);
+            return;
+        }
+
+        LXFSFileHeader *fileHeader = (LXFSFileHeader *) mp->meta;
+        fileHeader->refCount--;
+        if(fileHeader->refCount) {
+            // references still exist, update the count
+            if(lxfsWriteBlock(mp, entry.block, mp->meta)) {
+                cmd->header.header.status = -EIO;
+                luxSendKernel(cmd);
+                return;
+            }
+        } else {
+            // last reference deleted, free up all blocks used by the file
+            uint64_t prev = entry.block;
+            while(prev && prev != LXFS_BLOCK_EOF) {
+                next = lxfsNextBlock(mp, prev);
+                if(lxfsSetNextBlock(mp, prev, 0)) {
+                    cmd->header.header.status = -EIO;
+                    luxSendKernel(cmd);
+                    return;
+                }
+
+                prev = next;
+            }
+        }
+    } else {
+        // for symbolic links and directories, free up the blocks
+        uint64_t prev = entry.block;
+        while(prev && prev != LXFS_BLOCK_EOF) {
+            next = lxfsNextBlock(mp, prev);
+            if(lxfsSetNextBlock(mp, prev, 0)) {
+                cmd->header.header.status = -EIO;
+                luxSendKernel(cmd);
+                return;
+            }
+
+            prev = next;
+        }
+    }
+
+    // update the entry count and timestamps of the parent directory
+    LXFSDirectoryEntry parent;
+    int depth = pathDepth(cmd->path);
+    if(depth <= 1) {
+        if(!lxfsFind(&parent, mp, "/", NULL, NULL)) {
+            cmd->header.header.status = -EIO;
+            luxSendKernel(cmd);
+            return;
+        }
+    } else {
+        char *parentPath = strdup(cmd->path);
+        if(!parentPath) {
+            cmd->header.header.status = -ENOMEM;
+            luxSendKernel(cmd);
+            return;
+        }
+
+        char *last = strrchr(parentPath, '/');
+        if(!last) {
+            free(parentPath);
+            cmd->header.header.status = -ENOENT;
+            luxSendKernel(cmd);
+            return;
+        }
+
+        *last = 0;  // truncate to keep only the parent directory
+
+        if(!lxfsFind(&parent, mp, parentPath, NULL, NULL)) {
+            free(parentPath);
+            cmd->header.header.status = -ENOENT;
+            luxSendKernel(cmd);
+            return;
+        }
+
+        free(parentPath);
+    }
+
+    if(lxfsReadBlock(mp, parent.block, mp->meta)) {
+        cmd->header.header.status = -EIO;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    time_t timestamp = time(NULL);
+    LXFSDirectoryHeader *parentHeader = (LXFSDirectoryHeader *) mp->meta;
+    parentHeader->sizeEntries--;
+    parentHeader->accessTime = timestamp;
+    parentHeader->modTime = timestamp;
+
+    if(lxfsWriteBlock(mp, parent.block, mp->meta)) {
+        cmd->header.header.status = -EIO;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    cmd->header.header.status = 0;
     luxSendKernel(cmd);
 }
