@@ -53,6 +53,7 @@ int main() {
             case COMMAND_CHOWN: lxfsChown((ChownCommand *) msg); break;
             case COMMAND_MKDIR: lxfsMkdir((MkdirCommand *) msg); break;
             case COMMAND_UTIME: lxfsUtime((UtimeCommand *) msg); break;
+            case COMMAND_LINK: lxfsLink((LinkCommand *) msg); break;
             default:
                 msg->header.response = 1;
                 msg->header.status = -ENOSYS;
