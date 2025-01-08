@@ -69,7 +69,8 @@ void lxfsOpen(OpenCommand *ocmd) {
     }
 
     // ensure this is a file
-    if(((entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK) != LXFS_DIR_TYPE_FILE) {
+    uint8_t type = (entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK;
+    if((type != LXFS_DIR_TYPE_FILE) && (type != LXFS_DIR_TYPE_HARD_LINK)) {
         ocmd->header.header.status = -EISDIR;
         luxSendKernel(ocmd);
         return;
