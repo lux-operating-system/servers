@@ -70,13 +70,35 @@ void lxfsOpen(OpenCommand *ocmd) {
 
     // ensure this is a file
     uint8_t type = (entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK;
-    if((type != LXFS_DIR_TYPE_FILE) && (type != LXFS_DIR_TYPE_HARD_LINK)) {
+    if(type == LXFS_DIR_TYPE_DIR) {
         ocmd->header.header.status = -EISDIR;
         luxSendKernel(ocmd);
         return;
     }
 
-    // and that the requester has appropriate permissions
+    // recursively redirect for soft links
+    if(type == LXFS_DIR_TYPE_SOFT_LINK) {
+        if(lxfsReadBlock(mp, entry.block, mp->meta)) {
+            ocmd->header.header.status = -EIO;
+            luxSendKernel(ocmd);
+            return;
+        }
+
+        memset(ocmd->path, 0, sizeof(ocmd->path));
+        memcpy(ocmd->path, mp->meta, entry.size);
+        if(ocmd->path[0] == '/') {
+            memmove(ocmd->path, ocmd->path+1, entry.size-1);
+            ocmd->path[entry.size-1] = 0;
+        }
+
+        strcpy(ocmd->abspath+1, ocmd->path);
+        ocmd->abspath[0] = '/';
+
+        lxfsOpen(ocmd);
+        return;
+    }
+
+    // for hard links and regular files proceed as usual
     ocmd->header.header.status = 0;
     if(ocmd->uid == entry.owner) {
         if((ocmd->flags & O_RDONLY) && !(entry.permissions & LXFS_PERMS_OWNER_R)) ocmd->header.header.status = -EACCES;
