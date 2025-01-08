@@ -213,22 +213,12 @@ void vfsDispatchUnlink(SyscallHeader *hdr) {
 void vfsDispatchSymlink(SyscallHeader *hdr) {
     LinkCommand *cmd = (LinkCommand *) hdr;
     char type[32];
-    char device[MAX_FILE_PATH];
-    char *ptr = resolve(cmd->newPath, type, cmd->device, cmd->newPath);
-    if(ptr) ptr = resolve(cmd->oldPath, type, device, cmd->oldPath);
-    if(ptr) {
-        if(strcmp(cmd->device, device)) {
-            cmd->header.header.response = 1;
-            cmd->header.header.status = -EXDEV;
-            luxSendKernel(cmd);
-            return;
-        }
-
+    if(resolve(cmd->newPath, type, cmd->device, cmd->newPath)) {
         int sd = findFSServer(type);
         if(sd <= 0) luxLogf(KPRINT_LEVEL_WARNING, "no file system driver loaded for '%s'\n", type);
         else luxSend(sd, cmd);
     } else {
-        luxLogf(KPRINT_LEVEL_WARNING, "could not resolve paths '%s', '%s'\n", cmd->newPath, cmd->oldPath);
+        luxLogf(KPRINT_LEVEL_WARNING, "could not resolve path '%s'\n", cmd->newPath);
     }
 }
 
