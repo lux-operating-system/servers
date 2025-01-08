@@ -292,3 +292,48 @@ void lxfsSymlink(LinkCommand *cmd) {
     cmd->header.header.status = lxfsCreate(&entry, mp, cmd->newPath, mode, cmd->uid, cmd->gid, cmd->oldPath);
     luxSendKernel(cmd);
 }
+
+/* lxfsReadLink(): reads the contents of a symbolic link
+ * params: cmd - readlink command message
+ * returns: nothing, response relayed to kernel
+ */
+
+void lxfsReadLink(ReadLinkCommand *cmd) {
+    cmd->header.header.response = 1;
+    cmd->header.header.length = sizeof(ReadLinkCommand);
+
+    Mountpoint *mp = findMP(cmd->device);
+    if(!mp) {
+        cmd->header.header.status = -EIO;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    LXFSDirectoryEntry entry;
+    if(!lxfsFind(&entry, mp, cmd->path, NULL, NULL)) {
+        cmd->header.header.status = -ENOENT;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    uint8_t type = (entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK;
+    if(type != LXFS_DIR_TYPE_SOFT_LINK) {
+        cmd->header.header.status = -EINVAL;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    if(lxfsReadBlock(mp, entry.block, mp->meta)) {
+        cmd->header.header.status = -EIO;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    memset(cmd->path, 0, sizeof(cmd->path));
+    size_t truelen = entry.size;
+    if(truelen > sizeof(cmd->path)) truelen = sizeof(cmd->path);
+    memcpy(cmd->path, mp->meta, truelen);
+    
+    cmd->header.header.status = truelen;
+    luxSendKernel(cmd);
+}

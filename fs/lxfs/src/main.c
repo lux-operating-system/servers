@@ -56,6 +56,7 @@ int main() {
             case COMMAND_LINK: lxfsLink((LinkCommand *) msg); break;
             case COMMAND_UNLINK: lxfsUnlink((UnlinkCommand *) msg); break;
             case COMMAND_SYMLINK: lxfsSymlink((LinkCommand *) msg); break;
+            case COMMAND_READLINK: lxfsReadLink((ReadLinkCommand *) msg); break;
             default:
                 msg->header.response = 1;
                 msg->header.status = -ENOSYS;

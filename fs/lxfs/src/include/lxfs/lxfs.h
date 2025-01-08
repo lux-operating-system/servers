@@ -159,4 +159,4 @@ void lxfsUtime(UtimeCommand *);
 void lxfsLink(LinkCommand *);
 void lxfsSymlink(LinkCommand *);
 void lxfsUnlink(UnlinkCommand *);
-void lxfsReadlink(ReadLinkCommand *);
+void lxfsReadLink(ReadLinkCommand *);
