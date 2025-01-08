@@ -252,3 +252,43 @@ void lxfsUnlink(UnlinkCommand *cmd) {
     cmd->header.header.status = 0;
     luxSendKernel(cmd);
 }
+
+/* lxfsSymlink(): creates a symbolic link to a file or directory
+ * params: cmd - symlink command message
+ * returns: nothing, response relayed to kernel
+ */
+
+void lxfsSymlink(LinkCommand *cmd) {
+    cmd->header.header.response = 1;
+    cmd->header.header.length = sizeof(LinkCommand);
+
+    Mountpoint *mp = findMP(cmd->device);
+    if(!mp) {
+        cmd->header.header.status = -EIO;
+        luxSendKernel(cmd);
+        return;
+    }
+
+    // POSIX doesn't specify mode bits for symbolic links so we can innovate
+    // here -- if the target file exists, copy the mode from it
+    // if not, default to rw-r--r--
+    mode_t mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH;
+    LXFSDirectoryEntry entry;
+    if(lxfsFind(&entry, mp, cmd->oldPath, NULL, NULL)) {
+        mode = 0;
+        if(entry.permissions & LXFS_PERMS_OWNER_R) mode |= S_IRUSR;
+        if(entry.permissions & LXFS_PERMS_OWNER_W) mode |= S_IWUSR;
+        if(entry.permissions & LXFS_PERMS_OWNER_X) mode |= S_IXUSR;
+        if(entry.permissions & LXFS_PERMS_GROUP_R) mode |= S_IRGRP;
+        if(entry.permissions & LXFS_PERMS_GROUP_W) mode |= S_IWGRP;
+        if(entry.permissions & LXFS_PERMS_GROUP_X) mode |= S_IXGRP;
+        if(entry.permissions & LXFS_PERMS_OTHER_R) mode |= S_IROTH;
+        if(entry.permissions & LXFS_PERMS_OTHER_W) mode |= S_IWOTH;
+        if(entry.permissions & LXFS_PERMS_OTHER_X) mode |= S_IXOTH;
+    }
+
+    mode |= S_IFLNK;
+    entry.block = 0;
+    cmd->header.header.status = lxfsCreate(&entry, mp, cmd->newPath, mode, cmd->uid, cmd->gid, cmd->oldPath);
+    luxSendKernel(cmd);
+}
