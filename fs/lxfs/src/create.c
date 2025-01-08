@@ -15,6 +15,7 @@
 
 /* lxfsCreate(): creates a file or directory on the lxfs volume
  * params: dest - destination buffer to store directory entry
+ * non-zero block in the dest structure indicates hard link creation
  * params: mp - mountpoint
  * params: path - path to create
  * params: mode - file mode bits
@@ -25,6 +26,8 @@
 
 int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
                mode_t mode, uid_t uid, gid_t gid) {
+    uint64_t hardLink = dest->block;
+
     // get the parent directory
     LXFSDirectoryEntry parent;
     int depth = pathDepth(path);
@@ -67,9 +70,10 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
 
     dest->entrySize = sizeof(LXFSDirectoryEntry) + strlen((const char *) dest->name) - 511;
     dest->flags = LXFS_DIR_VALID;
-    if(S_ISREG(mode)) dest->flags |= (LXFS_DIR_TYPE_FILE << LXFS_DIR_TYPE_SHIFT);
-    if(S_ISLNK(mode)) dest->flags |= (LXFS_DIR_TYPE_SOFT_LINK << LXFS_DIR_TYPE_SHIFT);
-    if(S_ISDIR(mode)) dest->flags |= (LXFS_DIR_TYPE_DIR << LXFS_DIR_TYPE_SHIFT);
+    if(hardLink) dest->flags |= (LXFS_DIR_TYPE_HARD_LINK << LXFS_DIR_TYPE_SHIFT);
+    else if(S_ISREG(mode)) dest->flags |= (LXFS_DIR_TYPE_FILE << LXFS_DIR_TYPE_SHIFT);
+    else if(S_ISLNK(mode)) dest->flags |= (LXFS_DIR_TYPE_SOFT_LINK << LXFS_DIR_TYPE_SHIFT);
+    else if(S_ISDIR(mode)) dest->flags |= (LXFS_DIR_TYPE_DIR << LXFS_DIR_TYPE_SHIFT);
     
     if(mode & S_IRUSR) dest->permissions |= LXFS_PERMS_OWNER_R;
     if(mode & S_IWUSR) dest->permissions |= LXFS_PERMS_OWNER_W;
@@ -91,33 +95,41 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
     dest->modTime = timestamp;
 
     memset(dest->reserved, 0, sizeof(dest->reserved));
-    dest->block = lxfsFindFreeBlock(mp, 0);
-    if(!dest->block) return -ENOSPC;
-    if(lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_EOF))
-        return -EIO;
 
-    memset(mp->dataBuffer, 0, mp->blockSizeBytes);
-    
-    if(S_ISREG(mode)) {
+    if(!hardLink) {
+        dest->block = lxfsFindFreeBlock(mp, 0);
+        if(!dest->block) return -ENOSPC;
+        if(lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_EOF))
+            return -EIO;
+
+        memset(mp->dataBuffer, 0, mp->blockSizeBytes);
+        
+        if(S_ISREG(mode)) {
+            LXFSFileHeader *fileHeader = (LXFSFileHeader *) mp->dataBuffer;
+            fileHeader->refCount = 1;
+            fileHeader->size = 0;
+            if(lxfsWriteBlock(mp, dest->block, mp->dataBuffer)) {
+                lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
+                return -EIO;
+            }
+        } else if(S_ISDIR(mode)) {
+            LXFSDirectoryHeader *dirHeader = (LXFSDirectoryHeader *) mp->dataBuffer;
+            dirHeader->accessTime = timestamp;
+            dirHeader->createTime = timestamp;
+            dirHeader->modTime = timestamp;
+            dirHeader->reserved = 0;
+            dirHeader->sizeBytes = sizeof(LXFSDirectoryHeader);
+            dirHeader->sizeEntries = 0;
+            if(lxfsWriteBlock(mp, dest->block, mp->dataBuffer)) {
+                lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
+                return -EIO;
+            }
+        }
+    } else {
+        if(lxfsReadBlock(mp, dest->block, mp->dataBuffer)) return -EIO;
         LXFSFileHeader *fileHeader = (LXFSFileHeader *) mp->dataBuffer;
-        fileHeader->refCount = 1;
-        fileHeader->size = 0;
-        if(lxfsWriteBlock(mp, dest->block, mp->dataBuffer)) {
-            lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
-            return -EIO;
-        }
-    } else if(S_ISDIR(mode)) {
-        LXFSDirectoryHeader *dirHeader = (LXFSDirectoryHeader *) mp->dataBuffer;
-        dirHeader->accessTime = timestamp;
-        dirHeader->createTime = timestamp;
-        dirHeader->modTime = timestamp;
-        dirHeader->reserved = 0;
-        dirHeader->sizeBytes = sizeof(LXFSDirectoryHeader);
-        dirHeader->sizeEntries = 0;
-        if(lxfsWriteBlock(mp, dest->block, mp->dataBuffer)) {
-            lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
-            return -EIO;
-        }
+        fileHeader->refCount++;
+        if(lxfsWriteBlock(mp, dest->block, mp->dataBuffer)) return -EIO;
     }
 
     uint64_t block = parent.block;
@@ -147,7 +159,7 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
                 // directory entry doesn't cross block boundary
                 memcpy(dir, dest, dest->entrySize);
                 if(lxfsWriteBlock(mp, prevBlock, mp->dataBuffer)) {
-                    lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
+                    if(!hardLink) lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
                     return -EIO;
                 }
             } else {
