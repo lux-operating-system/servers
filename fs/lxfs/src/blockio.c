@@ -198,7 +198,8 @@ int lxfsSetNextBlock(Mountpoint *mp, uint64_t block, uint64_t next) {
 
     uint64_t *data = (uint64_t *) mp->blockTableBuffer;
     data[tableIndex] = next;
-    return lxfsWriteBlock(mp, tableBlock, mp->blockTableBuffer);
+    if(lxfsWriteBlock(mp, tableBlock, mp->blockTableBuffer)) return 1;
+    return lxfsFlushBlock(mp, tableBlock);
 }
 
 /* lxfsAllocate(): allocates new blocks
