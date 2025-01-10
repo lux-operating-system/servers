@@ -128,6 +128,7 @@ typedef struct {
 } __attribute__((packed)) LXFSFileHeader;
 
 void lxfsMount(MountCommand *);
+int lxfsFlushSlot(Mountpoint *, uint64_t);
 int lxfsFlushBlock(Mountpoint *, uint64_t);
 int lxfsReadBlock(Mountpoint *, uint64_t, void *);
 int lxfsWriteBlock(Mountpoint *, uint64_t, const void *);

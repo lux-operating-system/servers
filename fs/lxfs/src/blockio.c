@@ -10,13 +10,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* lxfsFlushBlock(): flush a dirty block from the cache to the physical drive
+/* lxfsFlushSlot(): flush a slot from the cache to the physical drive
  * params: mp - mountpoint
- * params: index - cache index
+ * params: index - cache slot index
  * returns: zero on success
  */
 
-int lxfsFlushBlock(Mountpoint *mp, uint64_t index) {
+int lxfsFlushSlot(Mountpoint *mp, uint64_t index) {
     if(!mp->cache[index].valid || !mp->cache[index].dirty) return 0;
     uint64_t block = (mp->cache[index].tag*CACHE_SIZE) + (index%CACHE_SIZE);
 
@@ -26,6 +26,21 @@ int lxfsFlushBlock(Mountpoint *mp, uint64_t index) {
 
     mp->cache[index].dirty = 0;
     return 0;
+}
+
+/* lxfsFlushBlock(): checks if a block is in the cache and flushes it if needed
+ * params: mp - mountpoint
+ * params: block - block number
+ * returns: zero on success
+ */
+
+int lxfsFlushBlock(Mountpoint *mp, uint64_t block) {
+    uint64_t tag = block / CACHE_SIZE;
+    uint64_t i = block % CACHE_SIZE;
+
+    if(!mp->cache[i].valid || !mp->cache[i].dirty || (mp->cache[i].tag != tag))
+        return 0;
+    return lxfsFlushSlot(mp, i);
 }
 
 /* lxfsReadBlock(): reads a block on a mounted lxfs partition
@@ -47,7 +62,7 @@ int lxfsReadBlock(Mountpoint *mp, uint64_t block, void *buffer) {
 
     // flush the cache if necessary
     if(mp->cache[index].valid && mp->cache[index].dirty) {
-        if(lxfsFlushBlock(mp, index)) return 1;
+        if(lxfsFlushSlot(mp, index)) return 1;
     }
 
     mp->cache[index].valid = 1;
@@ -89,7 +104,7 @@ int lxfsWriteBlock(Mountpoint *mp, uint64_t block, const void *buffer) {
     }
 
     if(mp->cache[index].valid && mp->cache[index].dirty) {
-        if(lxfsFlushBlock(mp, index)) return 1;
+        if(lxfsFlushSlot(mp, index)) return 1;
     }
 
     mp->cache[index].valid = 1;
