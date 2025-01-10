@@ -151,6 +151,7 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
         if(lxfsWriteBlock(mp, dest->block, mp->dataBuffer)) return -EIO;
     }
 
+    lxfsFlushBlock(mp, dest->block);
     uint64_t block = parent.block;
     uint64_t prevBlock;
 
@@ -181,6 +182,7 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
                     if(!hardLink) lxfsSetNextBlock(mp, dest->block, LXFS_BLOCK_FREE);
                     return -EIO;
                 }
+                lxfsFlushBlock(mp, prevBlock);
             } else {
                 // free entry but it crosses a block boundary, so allocate one more block
                 block = lxfsFindFreeBlock(mp, 0);
@@ -197,6 +199,9 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
                     return -EIO;
                 if(lxfsWriteBlock(mp, block, mp->dataBuffer + mp->blockSizeBytes))
                     return -EIO;
+                
+                lxfsFlushBlock(mp, prevBlock);
+                lxfsFlushBlock(mp, block);
             }
 
             // TODO: is there a better way to handle errors here?
@@ -210,6 +215,7 @@ int lxfsCreate(LXFSDirectoryEntry *dest, Mountpoint *mp, const char *path,
             parentHeader->accessTime = timestamp;
             parentHeader->modTime = timestamp;
             lxfsWriteBlock(mp, parent.block, mp->dataBuffer);
+            lxfsFlushBlock(mp, parent.block);
             return 0;
         }
 
