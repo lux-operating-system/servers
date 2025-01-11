@@ -133,6 +133,14 @@ void lxfsUnlink(UnlinkCommand *cmd) {
     // delete the associated directory entry
     LXFSDirectoryEntry *dir = (LXFSDirectoryEntry *)((uintptr_t)mp->dataBuffer+offset);
     dir->flags = LXFS_DIR_DELETED;
+    dir->block = 0;
+    dir->permissions = 0;
+    dir->createTime = 0;
+    dir->accessTime = 0;
+    dir->modTime = 0;
+    dir->owner = 0;
+    dir->group = 0;
+    memset(dir->name, 0, dir->entrySize - offsetof(LXFSDirectoryEntry, name));
     uint64_t next = lxfsWriteNextBlock(mp, block, mp->dataBuffer);
     if(!next) {
         cmd->header.header.status = -EIO;
