@@ -148,12 +148,16 @@ void lxfsUnlink(UnlinkCommand *cmd) {
         return;
     }
 
+    lxfsFlushBlock(mp, block);
+
     if((offset + entry.entrySize) > mp->blockSizeBytes) {
         if(lxfsWriteBlock(mp, next, (const void *)((uintptr_t)mp->dataBuffer + mp->blockSizeBytes))) {
             cmd->header.header.status = -EIO;
             luxSendKernel(cmd);
             return;
         }
+
+        lxfsFlushBlock(mp, next);
     }
 
     // for regular files and hard links, decrement file ref counter
@@ -173,6 +177,8 @@ void lxfsUnlink(UnlinkCommand *cmd) {
                 luxSendKernel(cmd);
                 return;
             }
+
+            lxfsFlushBlock(mp, entry.block);
         } else {
             // last reference deleted, free up all blocks used by the file
             uint64_t prev = entry.block;
@@ -257,6 +263,7 @@ void lxfsUnlink(UnlinkCommand *cmd) {
         return;
     }
 
+    lxfsFlushBlock(mp, parent.block);
     cmd->header.header.status = 0;
     luxSendKernel(cmd);
 }
