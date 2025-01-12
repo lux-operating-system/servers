@@ -37,6 +37,9 @@
 #define PTY_GET_LOCAL           (0xB0 | IOCTL_OUT_PARAM)
 #define PTY_GET_CONTROL         (0xC0 | IOCTL_OUT_PARAM)
 
+#define PTY_SET_WINSIZE         (0xD0 | IOCTL_IN_PARAM)
+#define PTY_GET_WINSIZE         (0xE0 | IOCTL_OUT_PARAM)
+
 typedef struct {
     // master read() will read from slave, write() will write to master
     // slave read() will read from master, write() will write to slave
@@ -45,6 +48,7 @@ typedef struct {
     size_t masterSize, slaveSize;           // buffer size
     size_t masterDataSize, slaveDataSize;   // available data size
     struct termios termios;
+    struct winsize ws;
 } Pty;
 
 extern Pty *ptys;
