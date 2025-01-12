@@ -234,9 +234,21 @@ void vfsDispatchReadLink(SyscallHeader *hdr) {
     }
 }
 
+void vfsDispatchFsync(SyscallHeader *hdr) {
+    FsyncCommand *cmd = (FsyncCommand *) hdr;
+    char type[32];
+    if(resolve(cmd->path, type, cmd->device, cmd->path)) {
+        int sd = findFSServer(type);
+        if(sd <= 0) luxLogf(KPRINT_LEVEL_WARNING, "no file system driver loaded for '%s'\n", type);
+        else luxSend(sd, cmd);
+    } else {
+        luxLogf(KPRINT_LEVEL_WARNING, "could not resolve path '%s'\n", cmd->path);
+    }
+}
+
 void (*vfsDispatchTable[])(SyscallHeader *) = {
     vfsDispatchStat,    // 0 - stat()
-    NULL,               // 1 - flush()
+    vfsDispatchFsync,   // 1 - fsync()
     vfsDispatchMount,   // 2 - mount()
     NULL,               // 3 - umount()
     vfsDispatchOpen,    // 4 - open()
