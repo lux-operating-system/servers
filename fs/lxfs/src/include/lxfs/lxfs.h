@@ -161,3 +161,4 @@ void lxfsLink(LinkCommand *);
 void lxfsSymlink(LinkCommand *);
 void lxfsUnlink(UnlinkCommand *);
 void lxfsReadLink(ReadLinkCommand *);
+void lxfsFsync(FsyncCommand *);
