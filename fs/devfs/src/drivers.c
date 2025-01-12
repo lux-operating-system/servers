@@ -122,6 +122,10 @@ void driverRegister(int sd, MessageHeader *cmd, MessageHeader *buf) {
     dev->handleOpen = regcmd->handleOpen;
 
     //luxLogf(KPRINT_LEVEL_DEBUG, "device '/dev%s' handled by server '%s' on socket %d\n", dev->name, &dev->server[9], dev->socket);
+
+    regcmd->header.response = 1;
+    regcmd->header.status = 0;
+    luxSend(sd, regcmd);
 }
 
 /* driverChstat(): change the status of a device managaed by an external driver
