@@ -82,7 +82,7 @@ int main() {
     ssize_t rs = luxRecvDependency(regcmd, regcmd->header.length, true, false);
     if(rs < sizeof(DevfsRegisterCommand) || regcmd->header.status
     || regcmd->header.command != COMMAND_DEVFS_REGISTER) {
-        luxLogf(KPRINT_LEVEL_ERROR, "failed to register keyboard device, error code = %d\n", regcmd->header.status);
+        luxLogf(KPRINT_LEVEL_ERROR, "failed to register frame buffer device, error code = %d\n", regcmd->header.status);
         for(;;);
     }
 
