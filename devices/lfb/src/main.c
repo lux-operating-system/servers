@@ -176,6 +176,9 @@ int main() {
                 luxSendKernel(fscmd);
             } else {
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", cmd->header.header.command);
+                cmd->header.header.response = 1;
+                cmd->header.header.status = -ENOSYS;
+                luxSendKernel(cmd);
             }
         } else {
             sched_yield();
