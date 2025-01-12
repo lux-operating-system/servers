@@ -74,6 +74,17 @@ void ptyOpenMaster(OpenCommand *opencmd) {
     ptys[slaveID].termios.c_oflag = DEFAULT_OFLAG;
     ptys[slaveID].termios.c_cflag = DEFAULT_CFLAG;
     ptys[slaveID].termios.c_lflag = DEFAULT_LFLAG;
+    ptys[slaveID].termios.c_cc[VEOF] = PTY_EOF;
+    ptys[slaveID].termios.c_cc[VEOL] = PTY_EOL;
+    ptys[slaveID].termios.c_cc[VERASE] = PTY_ERASE;
+    ptys[slaveID].termios.c_cc[VINTR] = PTY_INTR;
+    ptys[slaveID].termios.c_cc[VKILL] = PTY_KILL;
+    ptys[slaveID].termios.c_cc[VMIN] = PTY_MIN;
+    ptys[slaveID].termios.c_cc[VQUIT] = PTY_QUIT;
+    ptys[slaveID].termios.c_cc[VSTART] = PTY_START;
+    ptys[slaveID].termios.c_cc[VSTOP] = PTY_STOP;
+    ptys[slaveID].termios.c_cc[VSUSP] = PTY_SUSP;
+    ptys[slaveID].termios.c_cc[VTIME] = PTY_TIME;
 
     ptyCount++;
 
