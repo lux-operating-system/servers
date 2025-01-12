@@ -72,6 +72,17 @@ void ptyIoctlMaster(IOCTLCommand *cmd) {
         ptys[cmd->id].locked = 0;
         cmd->header.header.status = 0;
         break;
+    
+    case PTY_GET_WINSIZE:
+        cmd->parameter = (ptys[cmd->id].ws.ws_col << 16) | ptys[cmd->id].ws.ws_row;
+        cmd->header.header.status = 0;
+        break;
+    
+    case PTY_SET_WINSIZE:
+        ptys[cmd->id].ws.ws_row = cmd->parameter & 0xFFFF;
+        ptys[cmd->id].ws.ws_col = (cmd->parameter >> 16) & 0xFFFF;
+        cmd->header.header.status = 0;
+        break;
 
     default:
         if((cmd->opcode & IOCTL_IN_PARAM) || (cmd->opcode & IOCTL_OUT_PARAM))
@@ -142,6 +153,17 @@ void ptyIoctlSlave(IOCTLCommand *cmd) {
 
     case PTY_SET_LOCAL:
         pty->termios.c_lflag = cmd->parameter;
+        cmd->header.header.status = 0;
+        break;
+    
+    case PTY_GET_WINSIZE:
+        cmd->parameter = (pty->ws.ws_col << 16) | pty->ws.ws_row;
+        cmd->header.header.status = 0;
+        break;
+    
+    case PTY_SET_WINSIZE:
+        pty->ws.ws_row = cmd->parameter & 0xFFFF;
+        pty->ws.ws_col = (cmd->parameter >> 16) & 0xFFFF;
         cmd->header.header.status = 0;
         break;
 
