@@ -46,6 +46,15 @@ void registerDevice(int sd, SDevRegisterCommand *cmd) {
     sprintf(regcmd->path, "/sd%d", devCount);
     luxSendDependency(regcmd);
 
+    ssize_t rs = luxRecvDependency(regcmd, regcmd->header.length, true, false);
+    if(rs < sizeof(DevfsRegisterCommand) || regcmd->header.status
+    || regcmd->header.command != COMMAND_DEVFS_REGISTER) {
+        luxLogf(KPRINT_LEVEL_ERROR, "failed to register storage device, error code = %d\n", regcmd->header.status);
+        free(regcmd);
+        free(dev);
+        return;
+    }
+
     dev->next = NULL;
     sprintf(dev->name, "/sd%d", devCount);
     strcpy(dev->server, cmd->server);
@@ -70,8 +79,17 @@ void registerDevice(int sd, SDevRegisterCommand *cmd) {
                 sprintf(regcmd->path, "/sd%dp%d", devCount, dev->partitionCount);
                 regcmd->status.st_size = part[i].size * cmd->sectorSize;
                 regcmd->status.st_blocks = part[i].size;
+                regcmd->header.response = 0;
 
                 luxSendDependency(regcmd);
+
+                rs = luxRecvDependency(regcmd, regcmd->header.length, true, false);
+                if(rs < sizeof(DevfsRegisterCommand) || regcmd->header.status
+                || regcmd->header.command != COMMAND_DEVFS_REGISTER) {
+                    luxLogf(KPRINT_LEVEL_ERROR, "failed to register storage partition, error code = %d\n", regcmd->header.status);
+                    free(regcmd);
+                    return;
+                }
 
                 luxLogf(KPRINT_LEVEL_DEBUG, "registered block device /dev%s (%d -> %d)\n",
                     regcmd->path, part[i].start, part[i].start+part[i].size-1);
@@ -81,6 +99,7 @@ void registerDevice(int sd, SDevRegisterCommand *cmd) {
     }
 
     // and now we're done
+    free(regcmd);
     devCount++;
 
     if(!sdev) {
