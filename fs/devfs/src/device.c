@@ -7,6 +7,7 @@
 
 #include <devfs/devfs.h>
 #include <liblux/liblux.h>
+#include <time.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -84,30 +85,6 @@ int createDevice(const char *name, ssize_t (*handler)(int, const char *, off_t *
     if(deviceCount >= MAX_DEVICES) return -1;
     if(createDirectories(name)) return -1;
 
-    char *mode = NULL;
-    switch(status->st_mode & S_IFMT) {
-    case S_IFBLK:
-        mode = "block special file";
-        break;
-    case S_IFCHR:
-        mode = "character special file";
-        break;
-    case S_IFDIR:
-        mode = "directory";
-        break;
-    case S_IFIFO:
-        mode = "named pipe";
-        break;
-    case S_IFREG:
-        mode = "regular file";
-        break;
-    case S_IFLNK:
-        mode = "symlink";
-        break;
-    default:
-        return -1;
-    }
-
     devices[deviceCount].name = malloc(MAX_FILE_PATH);
     if(!devices[deviceCount].name) return -1;
 
@@ -116,6 +93,9 @@ int createDevice(const char *name, ssize_t (*handler)(int, const char *, off_t *
     strcpy(devices[deviceCount].name, name);
 
     devices[deviceCount].status.st_ino = deviceCount + 1;   // fake inode number
+    devices[deviceCount].status.st_ctime = time(NULL);
+    devices[deviceCount].status.st_mtime = devices[deviceCount].status.st_ctime;
+    devices[deviceCount].status.st_atime = devices[deviceCount].status.st_ctime;
     devices[deviceCount].external = 0;
 
     //luxLogf(KPRINT_LEVEL_DEBUG, "created %s '/dev%s'\n", mode, name);
