@@ -40,6 +40,27 @@
 #define PTY_SET_WINSIZE         (0xD0 | IOCTL_IN_PARAM)
 #define PTY_GET_WINSIZE         (0xE0 | IOCTL_OUT_PARAM)
 
+#define PTY_SET_FOREGROUND      (0xF0 | IOCTL_IN_PARAM)
+#define PTY_GET_FOREGROUND      (0x100 | IOCTL_OUT_PARAM)
+
+#define PTY_SET_NCSS1           (0x110 | IOCTL_IN_PARAM)
+#define PTY_SET_NCSS2           (0x120 | IOCTL_IN_PARAM)
+#define PTY_GET_NCSS1           (0x130 | IOCTL_OUT_PARAM)
+#define PTY_GET_NCSS2           (0x140 | IOCTL_OUT_PARAM)
+
+/* default control characters */
+#define PTY_EOF                 0x04
+#define PTY_EOL                 0xFF
+#define PTY_ERASE               0x7F
+#define PTY_INTR                0x03
+#define PTY_KILL                0x15
+#define PTY_MIN                 0x01
+#define PTY_QUIT                0x1C
+#define PTY_START               0x11
+#define PTY_STOP                0x13
+#define PTY_SUSP                0x1A
+#define PTY_TIME                0x00
+
 typedef struct {
     // master read() will read from slave, write() will write to master
     // slave read() will read from master, write() will write to slave
@@ -49,6 +70,7 @@ typedef struct {
     size_t masterDataSize, slaveDataSize;   // available data size
     struct termios termios;
     struct winsize ws;
+    pid_t group;    // foreground process group
 } Pty;
 
 extern Pty *ptys;
