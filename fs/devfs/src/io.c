@@ -111,3 +111,32 @@ void devfsMmap(SyscallHeader *req, SyscallHeader *res) {
         luxSendKernel(res);
     }
 }
+
+/* devfsFsync(): handler for fsync() on the /dev file system
+ * params: req - request buffer
+ * params: res - response buffer
+ * returns: nothing, response relayed to kernel
+ */
+
+void devfsFsync(SyscallHeader *req, SyscallHeader *res) {
+    FsyncCommand *cmd = (FsyncCommand *) req;
+    memcpy(res, req, sizeof(FsyncCommand));
+
+    res->header.response = 1;
+    res->header.length = sizeof(FsyncCommand);
+
+    DeviceFile *dev = findDevice(cmd->path);
+    if(!dev) {
+        res->header.status = -ENOENT;       // file doesn't exist
+        luxSendKernel(res);
+    } else {
+        if(!dev->external) {
+            // for devices built-in to the /dev server there isn't anything to do
+            res->header.status = 0;
+            luxSendKernel(res);
+        } else {
+            // for external devices, relay the request again
+            luxSend(dev->socket, req);
+        }
+    }
+}

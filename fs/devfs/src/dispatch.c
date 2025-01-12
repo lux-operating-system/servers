@@ -10,6 +10,7 @@
 #include <devfs/devfs.h>
 
 void devfsStat(SyscallHeader *, SyscallHeader *);
+void devfsFsync(SyscallHeader *, SyscallHeader *);
 void devfsMount(SyscallHeader *, SyscallHeader *);
 void devfsOpen(SyscallHeader *, SyscallHeader *);
 void devfsRead(SyscallHeader *, SyscallHeader *);
@@ -21,7 +22,7 @@ void devfsMmap(SyscallHeader *, SyscallHeader *);
 
 void (*dispatchTable[])(SyscallHeader *, SyscallHeader *) = {
     devfsStat,          // 0 - stat()
-    NULL,               // 1 - flush()
+    devfsFsync,         // 1 - fsync()
     devfsMount,         // 2 - mount()
     NULL,               // 3 - umount()
     devfsOpen,          // 4 - open()
