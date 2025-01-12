@@ -166,6 +166,14 @@ int main() {
                 mmapcmd->mmio = fb.bufferPhysical;
                 
                 luxSendKernel(mmapcmd);
+            } else if(cmd->header.header.command == COMMAND_FSYNC) {
+                // dummy response where we don't need to do anything because
+                // we already kept everything in sync in write()
+                FsyncCommand *fscmd = (FsyncCommand *) cmd;
+                fscmd->header.header.response = 1;
+                fscmd->header.header.length = sizeof(FsyncCommand);
+                fscmd->header.header.status = 0;
+                luxSendKernel(fscmd);
             } else {
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", cmd->header.header.command);
             }
