@@ -89,6 +89,7 @@ int main() {
             case COMMAND_IOCTL: ptyIoctl((IOCTLCommand *) msg); break;
             case COMMAND_WRITE: ptyWrite((RWCommand *) msg); break;
             case COMMAND_READ: ptyRead((RWCommand *) msg); break;
+            case COMMAND_FSYNC: ptyFsync((FsyncCommand *) msg); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%X, dropping message...\n", msg->header.command);
             }

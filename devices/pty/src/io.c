@@ -275,3 +275,17 @@ void ptyRead(RWCommand *rcmd) {
         luxSendKernel(rcmd);
     }
 }
+
+/* ptyFsync(): implementation of fsync() for pseudo-terminal devices
+ * params: cmd - fsync command message
+ * returns: nothing, response relayed to kernel
+ */
+
+void ptyFsync(FsyncCommand *cmd) {
+    /* there really isn't anything to do here because we don't support real
+     * hardware terminals, but the kernel doesn't know that, so just return
+     * a success return value */
+    cmd->header.header.response = 1;
+    cmd->header.header.status = 0;
+    luxSendKernel(cmd);
+}
