@@ -16,6 +16,12 @@
  */
 
 static char *clean(char *path) {
+    if(!strlen(path)) {
+        path[0] = '/';
+        path[1] = 0;
+        return path;
+    }
+
     if(strlen(path) == 1) return path;  // root will never need to be cleaned
 
     // first try to get rid of excessive slashes
@@ -29,6 +35,17 @@ static char *clean(char *path) {
     // if the last character is a slash, remove it except for the root dir
     if(strlen(path) == 1) return path;
     while(path[strlen(path)-1] == '/') path[strlen(path)-1] = 0;
+
+    // prevent '..' from doing anything on the root dir
+    if(!strcmp(path, "/..")) {
+        path[1] = 0;
+        return path;
+    }
+
+    if(!memcmp(path, "/../", 4)) {
+        memmove(path, path+3, strlen(path+3)+1);
+        return clean(path);
+    }
 
     // parse '../' to reflect the parent directory
     for(int i = 0; i < strlen(path); i++) {
