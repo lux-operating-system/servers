@@ -11,6 +11,8 @@
 #include <vfs.h>
 #include <devfs/devfs.h>
 
+extern time_t startupTime;
+
 /* devfsStat(): returns the file status of a file on the /dev file system
  * params: req - request buffer
  * params: res - response buffer
@@ -31,6 +33,9 @@ void devfsStat(SyscallHeader *req, SyscallHeader *res) {
         response->buffer.st_uid = 0;
         response->buffer.st_gid = 0;
         response->buffer.st_size = deviceCount;
+        response->buffer.st_ctime = startupTime;
+        response->buffer.st_mtime = startupTime;
+        response->buffer.st_atime = startupTime;
         luxSendDependency(response);
 
         return;

@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 #include <sys/socket.h>
 #include <liblux/liblux.h>
 #include <liblux/devfs.h>
@@ -17,6 +18,7 @@
 
 DeviceFile *devices;
 int deviceCount = 0;
+time_t startupTime;
 
 int main(int argc, char **argv) {
     luxInit("devfs");                   // this will connect to lux and lumen
@@ -53,6 +55,8 @@ int main(int argc, char **argv) {
 
     // and create the socket for handling external device drivers
     driverInit();
+
+    startupTime = time(NULL);
 
     // notify the virtual file system that we are a file system driver
     VFSInitCommand init;
