@@ -94,6 +94,13 @@ void ptyOpenMaster(OpenCommand *opencmd) {
 
     luxSendDependency(&regcmd);
 
+    ssize_t rs = luxRecvDependency(&regcmd, regcmd.header.length, true, false);
+    if(rs < sizeof(DevfsRegisterCommand) || regcmd.header.status
+    || regcmd.header.command != COMMAND_DEVFS_REGISTER) {
+        luxLogf(KPRINT_LEVEL_ERROR, "failed to register pty device, error code = %d\n", regcmd.header.status);
+        for(;;);
+    }
+
     // and assign the ID to the master's file descriptor because no master file
     // exists on the file system
     opencmd->header.header.length = sizeof(OpenCommand);

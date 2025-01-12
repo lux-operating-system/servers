@@ -75,6 +75,13 @@ int main() {
     memcpy(&regcmd->status, status, sizeof(struct stat));
     luxSendDependency(regcmd);
 
+    ssize_t rs = luxRecvDependency(regcmd, regcmd->header.length, true, false);
+    if(rs < sizeof(DevfsRegisterCommand) || regcmd->header.status
+    || regcmd->header.command != COMMAND_DEVFS_REGISTER) {
+        luxLogf(KPRINT_LEVEL_ERROR, "failed to register pty device, error code = %d\n", regcmd->header.status);
+        for(;;);
+    }
+
     free(status);
     free(regcmd);
 
