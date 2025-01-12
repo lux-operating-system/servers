@@ -65,6 +65,12 @@ void pciCreateFile(uint8_t bus, uint8_t slot, uint8_t function, uint16_t reg,
     regcmd.status.st_size = size;
 
     luxSendDependency(&regcmd);
+
+    ssize_t rs = luxRecvDependency(&regcmd, regcmd.header.length, true, false);
+    if(rs < sizeof(DevfsRegisterCommand) || regcmd.header.status
+    || regcmd.header.command != COMMAND_DEVFS_REGISTER) {
+        luxLogf(KPRINT_LEVEL_ERROR, "failed to register /dev/%s, error code = %d\n", regcmd.path, regcmd.header.status);
+    }
 }
 
 /* pciFindFile(): finds a PCI file structure by name
