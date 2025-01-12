@@ -10,6 +10,7 @@
 #include <pty/pty.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <errno.h>
 
 /* ptyIoctl(): handles ioctl() syscalls for a pseudo-terminal
@@ -81,6 +82,25 @@ void ptyIoctlMaster(IOCTLCommand *cmd) {
     case PTY_SET_WINSIZE:
         ptys[cmd->id].ws.ws_row = cmd->parameter & 0xFFFF;
         ptys[cmd->id].ws.ws_col = (cmd->parameter >> 16) & 0xFFFF;
+        cmd->header.header.status = 0;
+        break;
+    
+    case PTY_SET_FOREGROUND:
+        if(cmd->parameter <= 0) {
+            cmd->header.header.status = -EINVAL;
+        } else if(kill((pid_t) cmd->parameter, 0)) {
+            cmd->header.header.status = -EPERM;
+        } else {
+            ptys[cmd->id].group = (pid_t) cmd->parameter;
+            cmd->header.header.status = 0;
+        }
+
+        break;
+    
+    case PTY_GET_FOREGROUND:
+        if(ptys[cmd->id].group < 0) cmd->parameter = (1 << (sizeof(pid_t) - 1));
+        else cmd->parameter = ptys[cmd->id].group;
+
         cmd->header.header.status = 0;
         break;
 
@@ -164,6 +184,25 @@ void ptyIoctlSlave(IOCTLCommand *cmd) {
     case PTY_SET_WINSIZE:
         pty->ws.ws_row = cmd->parameter & 0xFFFF;
         pty->ws.ws_col = (cmd->parameter >> 16) & 0xFFFF;
+        cmd->header.header.status = 0;
+        break;
+
+    case PTY_SET_FOREGROUND:
+        if(cmd->parameter <= 0) {
+            cmd->header.header.status = -EINVAL;
+        } else if(kill((pid_t) cmd->parameter, 0)) {
+            cmd->header.header.status = -EPERM;
+        } else {
+            pty->group = (pid_t) cmd->parameter;
+            cmd->header.header.status = 0;
+        }
+
+        break;
+
+    case PTY_GET_FOREGROUND:
+        if(pty->group < 0) cmd->parameter = (1 << (sizeof(pid_t) - 1));
+        else cmd->parameter = pty->group;
+
         cmd->header.header.status = 0;
         break;
 
