@@ -58,3 +58,4 @@ void ptyIoctlMaster(IOCTLCommand *);
 void ptyIoctlSlave(IOCTLCommand *);
 void ptyWrite(RWCommand *);
 void ptyRead(RWCommand *);
+void ptyFsync(FsyncCommand *);
