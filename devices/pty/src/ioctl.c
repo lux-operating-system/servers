@@ -205,6 +205,25 @@ void ptyIoctlSlave(IOCTLCommand *cmd) {
 
         cmd->header.header.status = 0;
         break;
+    
+    case PTY_GET_NCSS1:
+        cmd->parameter = pty->termios.c_cc[VEOF] & 0xFF;
+        cmd->parameter |= (pty->termios.c_cc[VEOL] & 0xFF) << 8;
+        cmd->parameter |= (pty->termios.c_cc[VERASE] & 0xFF) << 16;
+        cmd->parameter |= (pty->termios.c_cc[VINTR] & 0xFF) << 24;
+        cmd->parameter |= (pty->termios.c_cc[VKILL] & 0xFF) << 32;
+        cmd->parameter |= (pty->termios.c_cc[VMIN] & 0xFF) << 40;
+        cmd->parameter |= (pty->termios.c_cc[VQUIT] & 0xFF) << 48;
+        cmd->parameter |= (pty->termios.c_cc[VSTART] & 0xFF) << 56;
+        cmd->header.header.status = 0;
+        break;
+    
+    case PTY_GET_NCSS2:
+        cmd->parameter = pty->termios.c_cc[VSTOP] & 0xFF;
+        cmd->parameter |= (pty->termios.c_cc[VSUSP] & 0xFF) << 8;
+        cmd->parameter |= (pty->termios.c_cc[VTIME] & 0xFF) << 16;
+        cmd->header.header.status = 0;
+        break;
 
     default:
         if((cmd->opcode & IOCTL_IN_PARAM) || (cmd->opcode & IOCTL_OUT_PARAM))
