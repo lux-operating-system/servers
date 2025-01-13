@@ -98,7 +98,7 @@ void ptyIoctlMaster(IOCTLCommand *cmd) {
         break;
     
     case PTY_GET_FOREGROUND:
-        if(ptys[cmd->id].group < 0) cmd->parameter = (1 << (sizeof(pid_t) - 1));
+        if(ptys[cmd->id].group <= 0) cmd->parameter = (1 << ((sizeof(pid_t) * 8) - 2));
         else cmd->parameter = ptys[cmd->id].group;
 
         cmd->header.header.status = 0;
@@ -200,7 +200,7 @@ void ptyIoctlSlave(IOCTLCommand *cmd) {
         break;
 
     case PTY_GET_FOREGROUND:
-        if(pty->group < 0) cmd->parameter = (1 << (sizeof(pid_t) - 1));
+        if(pty->group <= 0) cmd->parameter = (1 << ((sizeof(pid_t) * 8) - 2));
         else cmd->parameter = pty->group;
 
         cmd->header.header.status = 0;
@@ -222,6 +222,25 @@ void ptyIoctlSlave(IOCTLCommand *cmd) {
         cmd->parameter = pty->termios.c_cc[VSTOP] & 0xFF;
         cmd->parameter |= (pty->termios.c_cc[VSUSP] & 0xFF) << 8;
         cmd->parameter |= (pty->termios.c_cc[VTIME] & 0xFF) << 16;
+        cmd->header.header.status = 0;
+        break;
+    
+    case PTY_SET_NCSS1:
+        pty->termios.c_cc[VEOF] = cmd->parameter & 0xFF;
+        pty->termios.c_cc[VEOL] = (cmd->parameter >> 8) & 0xFF;
+        pty->termios.c_cc[VERASE] = (cmd->parameter >> 16) & 0xFF;
+        pty->termios.c_cc[VINTR] = (cmd->parameter >> 24) & 0xFF;
+        pty->termios.c_cc[VKILL] = (cmd->parameter >> 32) & 0xFF;
+        pty->termios.c_cc[VMIN] = (cmd->parameter >> 40) & 0xFF;
+        pty->termios.c_cc[VQUIT] = (cmd->parameter >> 48) & 0xFF;
+        pty->termios.c_cc[VSTART] = (cmd->parameter >> 56) & 0xFF;
+        cmd->header.header.status = 0;
+        break;
+    
+    case PTY_SET_NCSS2:
+        pty->termios.c_cc[VSTOP] = cmd->parameter & 0xFF;
+        pty->termios.c_cc[VSUSP] = (cmd->parameter >> 8) & 0xFF;
+        pty->termios.c_cc[VTIME] = (cmd->parameter >> 16) & 0xFF;
         cmd->header.header.status = 0;
         break;
 
