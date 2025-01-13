@@ -18,7 +18,7 @@
 #define DEFAULT_IFLAG           (ICRNL | IGNCR | IGNPAR)
 #define DEFAULT_OFLAG           (ONLRET)
 #define DEFAULT_CFLAG           (CS8 | HUPCL)
-#define DEFAULT_LFLAG           (ECHO | ECHOE | ECHOK | ECHONL | ICANON)
+#define DEFAULT_LFLAG           (ECHO | ECHOE | ECHOK | ECHONL | ICANON | ISIG)
 
 /* ioctl commands, more to come for controlling terminal size/scroll/etc */
 #define PTY_GET_SLAVE           (0x10 | IOCTL_OUT_PARAM)
