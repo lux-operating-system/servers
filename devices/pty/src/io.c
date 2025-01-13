@@ -9,6 +9,7 @@
 #include <pty/pty.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <errno.h>
 
 /* pushSlave(): helper function to push one character to the slave terminal
@@ -74,6 +75,22 @@ void ptyWrite(RWCommand *wcmd) {
 
             ptys[id].master = newptr;
             ptys[id].masterSize += wcmd->length;
+        }
+
+        // check for control characters
+        if(ptys[id].termios.c_lflag & ISIG) {
+            char control = wcmd->data[0];
+            if(control == ptys[id].termios.c_cc[VINTR]) {
+                kill(-1 * ptys[id].group, SIGINT);
+                wcmd->header.header.status = wcmd->length;
+                if(!wcmd->silent) luxSendKernel(wcmd);
+                return;
+            } else if(control == ptys[id].termios.c_cc[VQUIT]) {
+                kill(-1 * ptys[id].group, SIGQUIT);
+                wcmd->header.header.status = wcmd->length;
+                if(!wcmd->silent) luxSendKernel(wcmd);
+                return;
+            }
         }
 
         // now we can safely write to the buffer
