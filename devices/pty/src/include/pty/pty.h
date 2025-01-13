@@ -20,6 +20,14 @@
 #define DEFAULT_CFLAG           (CS8 | HUPCL)
 #define DEFAULT_LFLAG           (ECHO | ECHOE | ECHOK | ECHONL | ICANON | ISIG)
 
+/* terminal window sizes should be initialized to an "appropriate" default
+ * according to POSIX Issue 8, and so this number makes a little sense
+ * https://pubs.opengroup.org/onlinepubs/9799919799/functions/tcgetwinsize.html
+ */
+
+#define DEFAULT_WIDTH           80
+#define DEFAULT_HEIGHT          25
+
 /* ioctl commands, more to come for controlling terminal size/scroll/etc */
 #define PTY_GET_SLAVE           (0x10 | IOCTL_OUT_PARAM)
 #define PTY_GRANT_PT            0x20

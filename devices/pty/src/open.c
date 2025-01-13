@@ -86,6 +86,9 @@ void ptyOpenMaster(OpenCommand *opencmd) {
     ptys[slaveID].termios.c_cc[VSUSP] = PTY_SUSP;
     ptys[slaveID].termios.c_cc[VTIME] = PTY_TIME;
 
+    ptys[slaveID].ws.ws_col = DEFAULT_WIDTH;
+    ptys[slaveID].ws.ws_row = DEFAULT_HEIGHT;
+
     ptyCount++;
 
     // create the slave under /dev
