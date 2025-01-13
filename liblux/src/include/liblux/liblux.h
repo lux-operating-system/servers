@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <sys/socket.h>
 
 #define SERVER_MAX_SIZE         0x8000             // default max msg size is 32 KiB
@@ -59,8 +60,9 @@
 #define COMMAND_UNLINK          0x8014
 #define COMMAND_SYMLINK         0x8015
 #define COMMAND_READLINK        0x8016
+#define COMMAND_STATVFS         0x8017
 
-#define MAX_SYSCALL_COMMAND     0x8016
+#define MAX_SYSCALL_COMMAND     0x8017
 
 /* these commands are for device drivers */
 #define COMMAND_IRQ             0xC000
@@ -357,6 +359,14 @@ typedef struct {
 
     uint64_t data[];
 } MsyncCommand;
+
+/* statvfs() */
+typedef struct {
+    SyscallHeader header;
+    char path[MAX_FILE_PATH];
+    char device[MAX_FILE_PATH];
+    struct statvfs buffer;
+} StatvfsCommand;
 
 /* wrapper functions */
 pid_t luxGetSelf();
