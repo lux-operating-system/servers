@@ -108,7 +108,7 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
     // indexes 0 and 1 will always be '.' and '..'
     if(!rcmd->position) {
         strcpy(rcmd->entry.d_name, ".");
-        rcmd->entry.d_ino = 1;
+        rcmd->entry.d_ino = entry.block;    // self
         rcmd->position++;
         rcmd->end = 0;
         rcmd->header.header.status = 0;
@@ -116,7 +116,32 @@ void lxfsReaddir(ReaddirCommand *rcmd) {
         return;
     } else if(rcmd->position == 1) {
         strcpy(rcmd->entry.d_name, "..");
-        rcmd->entry.d_ino = 2;
+        if(strlen(rcmd->path) <= 1) {
+            rcmd->entry.d_ino = entry.block;
+        } else {
+            // find the parent so we can use its inode number
+            char *parentPath = strdup(rcmd->path);
+            if(!parentPath) {
+                rcmd->header.header.status = -ENOMEM;
+                luxSendKernel(rcmd);
+                return;
+            }
+
+            char *last = strrchr(parentPath, '/');
+            if(!last || (last == parentPath)) {
+                rcmd->entry.d_ino = entry.block;
+            } else {
+                *last = 0;  // truncate
+                LXFSDirectoryEntry parent;
+                if(!lxfsFind(&parent, mp, parentPath, NULL, NULL))
+                    rcmd->entry.d_ino = entry.block;
+                else
+                    rcmd->entry.d_ino = parent.block;
+            }
+
+            free(parentPath);
+        }
+
         rcmd->position++;
         rcmd->end = 0;
         rcmd->header.header.status = 0;
