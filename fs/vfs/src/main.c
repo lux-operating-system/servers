@@ -63,7 +63,10 @@ int main(int argc, char **argv) {
                 if(req->header.command == COMMAND_VFS_INIT) {   // special command
                     VFSInitCommand *init = (VFSInitCommand *)req;
                     strcpy(servers[i].type, init->fsType);
-                    luxLogf(KPRINT_LEVEL_DEBUG, "loaded file system driver for '%s'\n", servers[i].type);
+                    luxLogf(KPRINT_LEVEL_DEBUG, "loaded file system driver for '%s' at socket %d\n", servers[i].type, servers[i].socket);
+                    init->header.status = 0;
+                    init->header.response = 1;
+                    luxSend(servers[i].socket, init);
                 } else if(req->header.command >= 0x8000 && req->header.command <= MAX_SYSCALL_COMMAND) {
                     if(req->header.command == COMMAND_MOUNT) registerMountpoint((MountCommand *)req);
                     luxSendKernel(req);     // relay response directly to the kernel
