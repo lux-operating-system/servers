@@ -67,6 +67,14 @@ int main(int argc, char **argv) {
     strcpy(init.fsType, "devfs");
     luxSendDependency(&init);
 
+    // and wait for acknowledgement
+    ssize_t rs = luxRecvDependency(&init, sizeof(VFSInitCommand), true, false);
+    if(rs < sizeof(VFSInitCommand) || init.header.command != COMMAND_VFS_INIT
+    || init.header.status) {
+        luxLogf(KPRINT_LEVEL_ERROR, "failed to register file system driver\n");
+        for(;;);
+    }
+
     // and notify lumen that the startup is complete
     luxReady();
 
