@@ -1,6 +1,6 @@
 /*
  * luxOS - a unix-like operating system
- * Omar Elghoul, 2024
+ * Omar Elghoul, 2024-25
  * 
  * ide: Device driver for IDE (ATA HDDs)
  */
