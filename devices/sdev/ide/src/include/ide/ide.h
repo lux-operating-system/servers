@@ -35,6 +35,7 @@
 #define ATA_STATUS_ERROR            0x01
 #define ATA_STATUS_DATA_REQUEST     0x08
 #define ATA_STATUS_DRIVE_FAULT      0x20
+#define ATA_STATUS_BUSY             0x80
 
 /* ATA identify data */
 #define ATA_CONFIG1_ATA             0x8000
@@ -185,6 +186,7 @@ typedef struct {
     char serial[21];
     char model[41];
     int lba28, lba48;
+    int valid;
 } ATADevice;
 
 struct IDEController {
