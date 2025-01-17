@@ -12,30 +12,30 @@
 #include <signal.h>
 #include <errno.h>
 
-/* pushSlave(): helper function to push one character to the slave terminal
+/* pushSec(): helper function to push one character to the secondary terminal
  * params: pty - pty to push to
  * params: c - character to push
  * returns: nothing
  */
 
-static void pushSlave(Pty *pty, int c) {
-    if(!pty->slave || !pty->slaveSize) {
-        pty->slave = malloc(32);
-        if(!pty->slave) return;
-        pty->slaveSize = 32;
+static void pushSec(Pty *pty, int c) {
+    if(!pty->secondary || !pty->secondarySize) {
+        pty->secondary = malloc(32);
+        if(!pty->secondary) return;
+        pty->secondarySize = 32;
     }
 
-    if(pty->slaveDataSize+1 > pty->slaveSize) {
-        void *newptr = realloc(pty->slave, pty->slaveSize+32);
+    if(pty->secondaryDataSize+1 > pty->secondarySize) {
+        void *newptr = realloc(pty->secondary, pty->secondarySize+32);
         if(!newptr) return;
 
-        pty->slave = newptr;
-        pty->slaveSize += 32;
+        pty->secondary = newptr;
+        pty->secondarySize += 32;
     }
 
-    char *ptr = pty->slave;
+    char *ptr = pty->secondary;
     *ptr = c;
-    pty->slaveDataSize++;
+    pty->secondaryDataSize++;
 }
 
 /* ptyWrite(): writes to a pty device
@@ -47,25 +47,25 @@ void ptyWrite(RWCommand *wcmd) {
     wcmd->header.header.response = 1;
     wcmd->header.header.length = sizeof(RWCommand);
 
-    // first determine if we are writing to the master or the slave
+    // first determine if we are writing to the primary or the secondary
     if(!strcmp(wcmd->path, "/ptmx")) {
-        // master
+        // primary
         int id = wcmd->id;
-        if(!ptys[id].master) {
-            ptys[id].master = malloc(wcmd->length);
-            if(!ptys[id].master) {
+        if(!ptys[id].primary) {
+            ptys[id].primary = malloc(wcmd->length);
+            if(!ptys[id].primary) {
                 wcmd->header.header.status = -ENOMEM;
                 wcmd->length = 0;
                 luxSendKernel(wcmd);
                 return;
             }
 
-            ptys[id].masterSize = wcmd->length;
+            ptys[id].primarySize = wcmd->length;
         }
 
-        if((wcmd->length + ptys[id].masterDataSize) > ptys[id].masterSize) {
+        if((wcmd->length + ptys[id].primaryDataSize) > ptys[id].primarySize) {
             // allocate more memory if necessary
-            void *newptr = realloc(ptys[id].master, wcmd->length + ptys[id].masterDataSize);
+            void *newptr = realloc(ptys[id].primary, wcmd->length + ptys[id].primaryDataSize);
             if(!newptr) {
                 wcmd->header.header.status = -ENOMEM;
                 wcmd->length = 0;
@@ -73,8 +73,8 @@ void ptyWrite(RWCommand *wcmd) {
                 return;
             }
 
-            ptys[id].master = newptr;
-            ptys[id].masterSize += wcmd->length;
+            ptys[id].primary = newptr;
+            ptys[id].primarySize += wcmd->length;
         }
 
         // check for control characters
@@ -95,43 +95,43 @@ void ptyWrite(RWCommand *wcmd) {
 
         // now we can safely write to the buffer
         if(!(ptys[id].termios.c_lflag & ICANON)) {
-            memcpy((void *)((uintptr_t)ptys[id].master + ptys[id].masterDataSize), wcmd->data, wcmd->length);
-            ptys[id].masterDataSize += wcmd->length;
+            memcpy((void *)((uintptr_t)ptys[id].primary + ptys[id].primaryDataSize), wcmd->data, wcmd->length);
+            ptys[id].primaryDataSize += wcmd->length;
         } else {
             // for canonical mode, we need special handling for backspace
             char *input = (char *) wcmd->data;
-            char *master = (char *) ptys[id].master;
+            char *primary = (char *) ptys[id].primary;
             for(int i = 0; i < wcmd->length; i++) {
                 if(input[i] == '\b') {
-                    if(ptys[id].masterDataSize) {
-                        ptys[id].masterDataSize--;
-                        if(ptys[id].termios.c_lflag & ECHO) pushSlave(&ptys[id], '\b');
+                    if(ptys[id].primaryDataSize) {
+                        ptys[id].primaryDataSize--;
+                        if(ptys[id].termios.c_lflag & ECHO) pushSec(&ptys[id], '\b');
                     }
                 } else {
-                    master[ptys[id].masterDataSize] = input[i];
-                    ptys[id].masterDataSize++;
-                    if(ptys[id].termios.c_lflag & ECHO) pushSlave(&ptys[id], input[i]);
+                    primary[ptys[id].primaryDataSize] = input[i];
+                    ptys[id].primaryDataSize++;
+                    if(ptys[id].termios.c_lflag & ECHO) pushSec(&ptys[id], input[i]);
                 }
             }
         }
 
-        // if ECHO is enabled, write to the slave as well for echo
+        // if ECHO is enabled, write to the secondary as well for echo
         if((!(ptys[id].termios.c_lflag & ICANON) && (ptys[id].termios.c_lflag & ECHO))) {
-            if(!ptys[id].slave) {
-                ptys[id].slave = malloc(wcmd->length);
-                if(!ptys[id].slave) {
+            if(!ptys[id].secondary) {
+                ptys[id].secondary = malloc(wcmd->length);
+                if(!ptys[id].secondary) {
                     wcmd->header.header.status = -ENOMEM;
                     wcmd->length = 0;
                     luxSendKernel(wcmd);
                     return;
                 }
 
-                ptys[id].slaveSize = wcmd->length;
+                ptys[id].secondarySize = wcmd->length;
             }
 
-            if((wcmd->length + ptys[id].slaveDataSize) > ptys[id].slaveSize) {
+            if((wcmd->length + ptys[id].secondaryDataSize) > ptys[id].secondarySize) {
                 // allocate more memory if necessary
-                void *newptr = realloc(ptys[id].slave, wcmd->length + ptys[id].slaveDataSize);
+                void *newptr = realloc(ptys[id].secondary, wcmd->length + ptys[id].secondaryDataSize);
                 if(!newptr) {
                     wcmd->header.header.status = -ENOMEM;
                     wcmd->length = 0;
@@ -139,34 +139,34 @@ void ptyWrite(RWCommand *wcmd) {
                     return;
                 }
 
-                ptys[id].slave = newptr;
-                ptys[id].slaveSize += wcmd->length;
+                ptys[id].secondary = newptr;
+                ptys[id].secondarySize += wcmd->length;
             }
 
-            memcpy((void *)((uintptr_t)ptys[id].slave + ptys[id].slaveDataSize), wcmd->data, wcmd->length);
-            ptys[id].slaveDataSize += wcmd->length;
+            memcpy((void *)((uintptr_t)ptys[id].secondary + ptys[id].secondaryDataSize), wcmd->data, wcmd->length);
+            ptys[id].secondaryDataSize += wcmd->length;
         }
 
         wcmd->header.header.status = wcmd->length;
         if(!wcmd->silent) luxSendKernel(wcmd);
     } else {
-        // slave
+        // secondary
         int id = atoi(&wcmd->path[4]);
-        if(!ptys[id].slave) {
-            ptys[id].slave = malloc(wcmd->length);
-            if(!ptys[id].slave) {
+        if(!ptys[id].secondary) {
+            ptys[id].secondary = malloc(wcmd->length);
+            if(!ptys[id].secondary) {
                 wcmd->header.header.status = -ENOMEM;
                 wcmd->length = 0;
                 luxSendKernel(wcmd);
                 return;
             }
 
-            ptys[id].slaveSize = wcmd->length;
+            ptys[id].secondarySize = wcmd->length;
         }
 
-        if((wcmd->length + ptys[id].slaveDataSize) > ptys[id].slaveSize) {
+        if((wcmd->length + ptys[id].secondaryDataSize) > ptys[id].secondarySize) {
             // allocate more memory if necessary
-            void *newptr = realloc(ptys[id].slave, wcmd->length + ptys[id].slaveDataSize);
+            void *newptr = realloc(ptys[id].secondary, wcmd->length + ptys[id].secondaryDataSize);
             if(!newptr) {
                 wcmd->header.header.status = -ENOMEM;
                 wcmd->length = 0;
@@ -174,13 +174,13 @@ void ptyWrite(RWCommand *wcmd) {
                 return;
             }
 
-            ptys[id].slave = newptr;
-            ptys[id].slaveSize += wcmd->length;
+            ptys[id].secondary = newptr;
+            ptys[id].secondarySize += wcmd->length;
         }
 
         // now we can safely write to the buffer
-        memcpy((void *)((uintptr_t)ptys[id].slave + ptys[id].slaveDataSize), wcmd->data, wcmd->length);
-        ptys[id].slaveDataSize += wcmd->length;
+        memcpy((void *)((uintptr_t)ptys[id].secondary + ptys[id].secondaryDataSize), wcmd->data, wcmd->length);
+        ptys[id].secondaryDataSize += wcmd->length;
 
         wcmd->header.header.status = wcmd->length;
         if(!wcmd->silent) luxSendKernel(wcmd);
@@ -196,11 +196,11 @@ void ptyRead(RWCommand *rcmd) {
     rcmd->header.header.response = 1;
     rcmd->header.header.length = sizeof(RWCommand);
 
-    // determine if we're reading from the master or the slave
+    // determine if we're reading from the primary or the secondary
     if(!strcmp(rcmd->path, "/ptmx")) {
-        // master, so we read from the slave
+        // primary, so we read from the secondary
         int id = rcmd->id;
-        if(!ptys[id].slave || !ptys[id].slaveDataSize || !ptys[id].slaveSize) {
+        if(!ptys[id].secondary || !ptys[id].secondaryDataSize || !ptys[id].secondarySize) {
             rcmd->header.header.status = -EWOULDBLOCK;  // no data available
             rcmd->length = 0;
             luxSendKernel(rcmd);
@@ -208,13 +208,13 @@ void ptyRead(RWCommand *rcmd) {
         }
 
         size_t truelen;
-        if(rcmd->length > ptys[id].slaveDataSize) truelen = ptys[id].slaveDataSize;
+        if(rcmd->length > ptys[id].secondaryDataSize) truelen = ptys[id].secondaryDataSize;
         else truelen = rcmd->length;
 
         // and read the data
-        memcpy(rcmd->data, ptys[id].slave, truelen);
-        memmove(ptys[id].slave, (const void *)(uintptr_t)ptys[id].slave + truelen, ptys[id].slaveDataSize - truelen);
-        ptys[id].slaveDataSize -= truelen;
+        memcpy(rcmd->data, ptys[id].secondary, truelen);
+        memmove(ptys[id].secondary, (const void *)(uintptr_t)ptys[id].secondary + truelen, ptys[id].secondaryDataSize - truelen);
+        ptys[id].secondaryDataSize -= truelen;
 
         // respond
         rcmd->header.header.status = truelen;
@@ -222,9 +222,9 @@ void ptyRead(RWCommand *rcmd) {
         rcmd->length = truelen;
         luxSendKernel(rcmd);
     } else {
-        // slave, read from the master
+        // secondary, read from the primary
         int id = atoi(&rcmd->path[4]);
-        if(!ptys[id].master || !ptys[id].masterDataSize || !ptys[id].masterSize) {
+        if(!ptys[id].primary || !ptys[id].primaryDataSize || !ptys[id].primarySize) {
             rcmd->header.header.status = -EWOULDBLOCK;  // no data available
             rcmd->length = 0;
             luxSendKernel(rcmd);
@@ -232,24 +232,24 @@ void ptyRead(RWCommand *rcmd) {
         }
 
         size_t truelen;
-        if(rcmd->length > ptys[id].masterDataSize) truelen = ptys[id].masterDataSize;
+        if(rcmd->length > ptys[id].primaryDataSize) truelen = ptys[id].primaryDataSize;
         else truelen = rcmd->length;
 
         if(!(ptys[id].termios.c_lflag & ICANON)) {
-            memcpy(rcmd->data, ptys[id].master, truelen);
-            memmove(ptys[id].master, (const void *)(uintptr_t)ptys[id].master + truelen, ptys[id].masterDataSize - truelen);
-            ptys[id].masterDataSize -= truelen;
+            memcpy(rcmd->data, ptys[id].primary, truelen);
+            memmove(ptys[id].primary, (const void *)(uintptr_t)ptys[id].primary + truelen, ptys[id].primaryDataSize - truelen);
+            ptys[id].primaryDataSize -= truelen;
 
             rcmd->header.header.status = truelen;
             rcmd->header.header.length += truelen;
             rcmd->length = truelen;
         } else {
             // in canonical mode, no input is available until the user presses enter
-            const char *master = (const char *) ptys[id].master;
+            const char *primary = (const char *) ptys[id].primary;
 
             bool readable = false;
-            for(int i = 0; i < ptys[id].masterDataSize; i++) {
-                if(master[i] == '\n') {
+            for(int i = 0; i < ptys[id].primaryDataSize; i++) {
+                if(primary[i] == '\n') {
                     readable = true;
                     break;
                 }
@@ -270,23 +270,23 @@ void ptyRead(RWCommand *rcmd) {
             for(int i = 0; i < truelen; i++) {
                 canonicalCount++;
 
-                if(master[i] == '\b') {
+                if(primary[i] == '\b') {
                     if(rcmd->length) {
                         rcmd->length--;
                         rcmd->header.header.status--;
                         rcmd->header.header.length--;
                     }
                 } else {
-                    data[rcmd->length] = master[i];
+                    data[rcmd->length] = primary[i];
                     rcmd->length++;
                     rcmd->header.header.status++;
                     rcmd->header.header.length++;
-                    if(master[i] == '\n') break;
+                    if(primary[i] == '\n') break;
                 }
             }
 
-            memmove(ptys[id].master, (const void *)(uintptr_t)ptys[id].master + canonicalCount, ptys[id].masterDataSize - canonicalCount);
-            ptys[id].masterDataSize -= canonicalCount;
+            memmove(ptys[id].primary, (const void *)(uintptr_t)ptys[id].primary + canonicalCount, ptys[id].primaryDataSize - canonicalCount);
+            ptys[id].primaryDataSize -= canonicalCount;
         }
 
         luxSendKernel(rcmd);

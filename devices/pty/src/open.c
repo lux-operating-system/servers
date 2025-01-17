@@ -19,8 +19,8 @@
  */
 
 void ptyOpen(OpenCommand *opencmd) {
-    if(!strcmp(opencmd->path, "/ptmx")) return ptyOpenMaster(opencmd);
-    else if(!memcmp(opencmd->path, "/pts", 4)) return ptyOpenSlave(opencmd);
+    if(!strcmp(opencmd->path, "/ptmx")) return ptyOpenPrimary(opencmd);
+    else if(!memcmp(opencmd->path, "/pts", 4)) return ptyOpenSecondary(opencmd);
 
     // no such file
     opencmd->header.header.length = sizeof(OpenCommand);
@@ -29,24 +29,24 @@ void ptyOpen(OpenCommand *opencmd) {
     luxSendKernel(opencmd);
 }
 
-/* ptyOpenMaster(): handles open() syscalls for the master multiplexer
+/* ptyOpenPrimary(): handles open() syscalls for the primary multiplexer
  * params: opencmd - open command message
  * returns: nothing, response relayed back to driver
  */
 
-void ptyOpenMaster(OpenCommand *opencmd) {
-    // create a new slave terminal for this
-    char slave[9];
-    int slaveID = -1;
+void ptyOpenPrimary(OpenCommand *opencmd) {
+    // create a new secondary terminal for this
+    char secondary[9];
+    int secondaryID = -1;
 
     for(int i = 0; i < MAX_PTYS; i++) {
         if(!ptys[i].valid) {
-            slaveID = i;
+            secondaryID = i;
             break;
         }
     }
 
-    if(slaveID < 0) {
+    if(secondaryID < 0) {
         // no free terminals
         opencmd->header.header.length = sizeof(OpenCommand);
         opencmd->header.header.status = -ENOENT;
@@ -55,51 +55,51 @@ void ptyOpenMaster(OpenCommand *opencmd) {
         return;
     }
 
-    strcpy(slave, "/pts");
-    itoa(slaveID, &slave[4], DECIMAL);
+    strcpy(secondary, "/pts");
+    itoa(secondaryID, &secondary[4], DECIMAL);
 
-    ptys[slaveID].valid = 1;
-    ptys[slaveID].index = slaveID;
-    ptys[slaveID].openCount = 1;    // master
-    ptys[slaveID].master = NULL;
-    ptys[slaveID].slave = NULL;
-    ptys[slaveID].masterSize = 0;
-    ptys[slaveID].slaveSize = 0;
-    ptys[slaveID].masterDataSize = 0;
-    ptys[slaveID].slaveDataSize = 0;
-    ptys[slaveID].locked = 1;
+    ptys[secondaryID].valid = 1;
+    ptys[secondaryID].index = secondaryID;
+    ptys[secondaryID].openCount = 1;    // primary
+    ptys[secondaryID].primary = NULL;
+    ptys[secondaryID].secondary = NULL;
+    ptys[secondaryID].primarySize = 0;
+    ptys[secondaryID].secondarySize = 0;
+    ptys[secondaryID].primaryDataSize = 0;
+    ptys[secondaryID].secondaryDataSize = 0;
+    ptys[secondaryID].locked = 1;
 
     /* reset default terminal state */
-    ptys[slaveID].termios.c_iflag = DEFAULT_IFLAG;
-    ptys[slaveID].termios.c_oflag = DEFAULT_OFLAG;
-    ptys[slaveID].termios.c_cflag = DEFAULT_CFLAG;
-    ptys[slaveID].termios.c_lflag = DEFAULT_LFLAG;
-    ptys[slaveID].termios.c_cc[VEOF] = PTY_EOF;
-    ptys[slaveID].termios.c_cc[VEOL] = PTY_EOL;
-    ptys[slaveID].termios.c_cc[VERASE] = PTY_ERASE;
-    ptys[slaveID].termios.c_cc[VINTR] = PTY_INTR;
-    ptys[slaveID].termios.c_cc[VKILL] = PTY_KILL;
-    ptys[slaveID].termios.c_cc[VMIN] = PTY_MIN;
-    ptys[slaveID].termios.c_cc[VQUIT] = PTY_QUIT;
-    ptys[slaveID].termios.c_cc[VSTART] = PTY_START;
-    ptys[slaveID].termios.c_cc[VSTOP] = PTY_STOP;
-    ptys[slaveID].termios.c_cc[VSUSP] = PTY_SUSP;
-    ptys[slaveID].termios.c_cc[VTIME] = PTY_TIME;
+    ptys[secondaryID].termios.c_iflag = DEFAULT_IFLAG;
+    ptys[secondaryID].termios.c_oflag = DEFAULT_OFLAG;
+    ptys[secondaryID].termios.c_cflag = DEFAULT_CFLAG;
+    ptys[secondaryID].termios.c_lflag = DEFAULT_LFLAG;
+    ptys[secondaryID].termios.c_cc[VEOF] = PTY_EOF;
+    ptys[secondaryID].termios.c_cc[VEOL] = PTY_EOL;
+    ptys[secondaryID].termios.c_cc[VERASE] = PTY_ERASE;
+    ptys[secondaryID].termios.c_cc[VINTR] = PTY_INTR;
+    ptys[secondaryID].termios.c_cc[VKILL] = PTY_KILL;
+    ptys[secondaryID].termios.c_cc[VMIN] = PTY_MIN;
+    ptys[secondaryID].termios.c_cc[VQUIT] = PTY_QUIT;
+    ptys[secondaryID].termios.c_cc[VSTART] = PTY_START;
+    ptys[secondaryID].termios.c_cc[VSTOP] = PTY_STOP;
+    ptys[secondaryID].termios.c_cc[VSUSP] = PTY_SUSP;
+    ptys[secondaryID].termios.c_cc[VTIME] = PTY_TIME;
 
-    ptys[slaveID].ws.ws_col = DEFAULT_WIDTH;
-    ptys[slaveID].ws.ws_row = DEFAULT_HEIGHT;
+    ptys[secondaryID].ws.ws_col = DEFAULT_WIDTH;
+    ptys[secondaryID].ws.ws_row = DEFAULT_HEIGHT;
 
     ptyCount++;
 
-    // create the slave under /dev
-    // the default mode of the slave is that of the master; it is owned by
+    // create the secondary under /dev
+    // the default mode of the secondary is that of the primary; it is owned by
     // root:root with permissions rw-rw-rw-
 
     DevfsRegisterCommand regcmd;
     memset(&regcmd, 0, sizeof(DevfsRegisterCommand));
     regcmd.header.command = COMMAND_DEVFS_REGISTER;
     regcmd.header.length = sizeof(DevfsRegisterCommand);
-    strcpy(regcmd.path, slave);
+    strcpy(regcmd.path, secondary);
     strcpy(regcmd.server, "lux:///dspty");  // server name prefixed with "lux:///ds"
 
     regcmd.status.st_mode = (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH | S_IFCHR);
@@ -119,34 +119,34 @@ void ptyOpenMaster(OpenCommand *opencmd) {
         return;
     }
 
-    // and assign the ID to the master's file descriptor because no master file
+    // and assign the ID to the primary's file descriptor because no primary file
     // exists on the file system
     opencmd->header.header.length = sizeof(OpenCommand);
     opencmd->header.header.response = 1;
     opencmd->header.header.status = 0;  // success
-    opencmd->id = (uint64_t) slaveID;
+    opencmd->id = (uint64_t) secondaryID;
     opencmd->charDev = 1;
 
     luxSendKernel(opencmd);
 }
 
-/* ptyOpenSlave(): handles open() syscalls for slave terminals
+/* ptyOpenSecondary(): handles open() syscalls for secondary terminals
  * params: opencmd - open command message
  * returns: nothing, response relayed back to driver
  */
 
-void ptyOpenSlave(OpenCommand *opencmd) {
+void ptyOpenSecondary(OpenCommand *opencmd) {
     opencmd->header.header.response = 1;
     opencmd->header.header.length = sizeof(OpenCommand);
     opencmd->header.header.status = 0;
 
-    int slaveID = atoi(&opencmd->path[8]);
-    if(slaveID < 0 || slaveID > MAX_PTYS || !ptys[slaveID].valid)
+    int secondaryID = atoi(&opencmd->path[8]);
+    if(secondaryID < 0 || secondaryID > MAX_PTYS || !ptys[secondaryID].valid)
         opencmd->header.header.status = -ENOENT;
-    else if(ptys[slaveID].locked)
+    else if(ptys[secondaryID].locked)
         opencmd->header.header.status = -EIO;
     else
-        opencmd->id = slaveID;
+        opencmd->id = secondaryID;
     
     if(!opencmd->header.header.status)
         opencmd->charDev = 1;

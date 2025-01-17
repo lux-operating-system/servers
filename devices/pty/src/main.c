@@ -7,22 +7,22 @@
 
 /* Note to self:
  *
- * The master pseudo-terminal multiplexer is located at /dev/ptmx, and slave
- * pseudo-terminals are at /dev/ptsX. Master pseudo-terminals do not have a
+ * The primary pseudo-terminal multiplexer is located at /dev/ptmx, and secondary
+ * pseudo-terminals are at /dev/ptsX. Primary pseudo-terminals do not have a
  * file system representation, and they are only accessed through their file
- * descriptors. Every time an open() syscall opens /dev/ptmx, a new master-
- * slave pseudo-terminal pair is created, the file descriptor of the master is
- * returned, and the slave is created in /dev/ptsX. The master can find the
- * name of the slave using ptsname(), and the slave is deleted from the file
+ * descriptors. Every time an open() syscall opens /dev/ptmx, a new primary-
+ * secondary pseudo-terminal pair is created, the file descriptor of the primary is
+ * returned, and the secondary is created in /dev/ptsX. The primary can find the
+ * name of the secondary using ptsname(), and the secondary is deleted from the file
  * system after no more processes have an open file descriptor pointing to it.
  * 
- * After the master is created, the slave's permissions are adjusted by calling
- * grantpt() with the master file descriptor. Next, the slave is unlocked by
- * calling unlockpt() with the master file descriptor. Finally, the controlling
- * process calls ptsname() to find the slave's file name and opens it using the
- * standard open(). The opened slave file descriptor can then be set to the
+ * After the primary is created, the secondary's permissions are adjusted by calling
+ * grantpt() with the primary file descriptor. Next, the secondary is unlocked by
+ * calling unlockpt() with the primary file descriptor. Finally, the controlling
+ * process calls ptsname() to find the secondary's file name and opens it using the
+ * standard open(). The opened secondary file descriptor can then be set to the
  * controlling pseudo-terminal of a process using ioctl(). The input/output of
- * the slave can be read/written through the master, enabling the controlling
+ * the secondary can be read/written through the primary, enabling the controlling
  * process to implement a terminal emulator.
  * 
  * https://unix.stackexchange.com/questions/405972/
@@ -47,7 +47,7 @@ int main() {
     luxInit("pty");
     while(luxConnectDependency("devfs"));   // depend on /dev
 
-    // create the master multiplexer device, /dev/ptmx
+    // create the primary multiplexer device, /dev/ptmx
     struct stat *status = calloc(1, sizeof(struct stat));
     DevfsRegisterCommand *regcmd = calloc(1, sizeof(DevfsRegisterCommand));
     SyscallHeader *msg = calloc(1, SERVER_MAX_SIZE);

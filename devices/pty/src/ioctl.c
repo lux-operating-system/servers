@@ -19,9 +19,8 @@
  */
 
 void ptyIoctl(IOCTLCommand *cmd) {
-    // verify if this is a master or slave terminal
-    if(!strcmp(cmd->path, "/ptmx")) return ptyIoctlMaster(cmd);
-    else if(!memcmp(cmd->path, "/pts", 4)) return ptyIoctlSlave(cmd);
+    if(!strcmp(cmd->path, "/ptmx")) return ptyIoctlPrimary(cmd);
+    else if(!memcmp(cmd->path, "/pts", 4)) return ptyIoctlSecondary(cmd);
 
     // no such file
     cmd->header.header.length = sizeof(IOCTLCommand);
@@ -30,23 +29,23 @@ void ptyIoctl(IOCTLCommand *cmd) {
     luxSendDependency(cmd);
 }
 
-/* ptyIoctlMaster(): handles ioctl() syscalls for a master terminal
+/* ptyIoctlPrimary(): handles ioctl() syscalls for the primary terminal
  * params: cmd - ioctl() command message
  * returns: nothing, response relayed back to driver
  */
 
-void ptyIoctlMaster(IOCTLCommand *cmd) {
+void ptyIoctlPrimary(IOCTLCommand *cmd) {
     cmd->header.header.response = 1;
     cmd->header.header.length = sizeof(IOCTLCommand);
 
     switch(cmd->opcode) {
-    case PTY_GET_SLAVE:
+    case PTY_GET_SECONDARY:
         cmd->parameter = cmd->id;
         cmd->header.header.status = 0;
         break;
     
     case PTY_GRANT_PT:
-        // grantpt() changes the owner of the slave to match the UID of the
+        // grantpt() changes the owner of the secondary to match the UID of the
         // calling process, and changes its permissions to rw--w----
         // request this change from the devfs driver
         DevfsChstatCommand chstat;
@@ -59,7 +58,7 @@ void ptyIoctlMaster(IOCTLCommand *cmd) {
         chstat.status.st_mode = (S_IRUSR | S_IWUSR | S_IWGRP | S_IFCHR);
         chstat.status.st_size = 4096;
         chstat.status.st_uid = cmd->header.header.requester;
-        chstat.status.st_gid = 0;   // TODO: the group of the slave pty should not be root
+        chstat.status.st_gid = 0;   // TODO: the group of the secondary pty should not be root
 
         luxSendDependency(&chstat);
 
@@ -67,9 +66,9 @@ void ptyIoctlMaster(IOCTLCommand *cmd) {
         break;
     
     case PTY_UNLOCK_PT:
-        // unlocks the slave pty such that it can be opened
+        // unlocks the secondary pty such that it can be opened
         // i'm actually not sure what this does, but for now we will enforce
-        // not allowing slave ptys to be opened without being unlocked
+        // not allowing secondary ptys to be opened without being unlocked
         ptys[cmd->id].locked = 0;
         cmd->header.header.status = 0;
         break;
@@ -106,9 +105,9 @@ void ptyIoctlMaster(IOCTLCommand *cmd) {
 
     default:
         if((cmd->opcode & IOCTL_IN_PARAM) || (cmd->opcode & IOCTL_OUT_PARAM))
-            luxLogf(KPRINT_LEVEL_WARNING, "unimplemented master pty %d ioctl() opcode 0x%X with input param %d\n", cmd->id, cmd->opcode, cmd->parameter);
+            luxLogf(KPRINT_LEVEL_WARNING, "unimplemented primary pty %d ioctl() opcode 0x%X with input param %d\n", cmd->id, cmd->opcode, cmd->parameter);
         else
-            luxLogf(KPRINT_LEVEL_WARNING, "unimplemented master pty %d ioctl() opcode 0x%X\n", cmd->id, cmd->opcode);
+            luxLogf(KPRINT_LEVEL_WARNING, "unimplemented primary pty %d ioctl() opcode 0x%X\n", cmd->id, cmd->opcode);
         
         cmd->header.header.status = -ENOTTY;
         break;
@@ -117,16 +116,16 @@ void ptyIoctlMaster(IOCTLCommand *cmd) {
     luxSendDependency(cmd);
 }
 
-/* ptyIoctlSlave(): handles ioctl() syscalls for a slave terminal
+/* ptyIoctlSecondary(): handles ioctl() syscalls for a secondary terminal
  * params: cmd - ioctl() command message
  * returns: nothing, response relayed back to driver
  */
 
-void ptyIoctlSlave(IOCTLCommand *cmd) {
+void ptyIoctlSecondary(IOCTLCommand *cmd) {
     cmd->header.header.response = 1;
     cmd->header.header.length = sizeof(IOCTLCommand);
 
-    int id = atoi(&cmd->path[4]);   // slave ID
+    int id = atoi(&cmd->path[4]);   // secondary ID
     Pty *pty = &ptys[id];
 
     switch(cmd->opcode) {
@@ -246,9 +245,9 @@ void ptyIoctlSlave(IOCTLCommand *cmd) {
 
     default:
         if((cmd->opcode & IOCTL_IN_PARAM) || (cmd->opcode & IOCTL_OUT_PARAM))
-            luxLogf(KPRINT_LEVEL_WARNING, "unimplemented slave pty %d ioctl() opcode 0x%X with input param %d\n", cmd->id, cmd->opcode, cmd->parameter);
+            luxLogf(KPRINT_LEVEL_WARNING, "unimplemented secondary pty %d ioctl() opcode 0x%X with input param %d\n", cmd->id, cmd->opcode, cmd->parameter);
         else
-            luxLogf(KPRINT_LEVEL_WARNING, "unimplemented slave pty %d ioctl() opcode 0x%X\n", cmd->id, cmd->opcode);
+            luxLogf(KPRINT_LEVEL_WARNING, "unimplemented secondary pty %d ioctl() opcode 0x%X\n", cmd->id, cmd->opcode);
         
         cmd->header.header.status = -ENOTTY;
     }
