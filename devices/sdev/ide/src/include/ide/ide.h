@@ -15,6 +15,13 @@
 #define ATA_SECONDARY_BASE          0x0170
 #define ATA_SECONDARY_STATUS        0x0376
 
+#define ATA_SECTOR_COUNT            0x02
+#define ATA_LBA_LOW                 0x03
+#define ATA_LBA_MID                 0x04
+#define ATA_LBA_HIGH                0x05
+#define ATA_DRIVE_SELECT            0x06
+#define ATA_COMMAND_STATUS          0x07
+
 /* ATA command set */
 #define ATA_IDENTIFY                0xEC
 #define ATA_READ28                  0x20
@@ -23,6 +30,11 @@
 #define ATA_WRITE48                 0x34
 #define ATA_FLUSH28                 0xE7
 #define ATA_FLUSH48                 0xEA
+
+/* ATA status bits */
+#define ATA_STATUS_ERROR            0x01
+#define ATA_STATUS_DATA_REQUEST     0x08
+#define ATA_STATUS_DRIVE_FAULT      0x20
 
 /* ATA identify data */
 #define ATA_CONFIG1_ATA             0x8000
@@ -189,6 +201,7 @@ struct IDEController {
 
 void ideInit(const char *, uint8_t);
 ATADevice *ideGetDrive(uint64_t);
+void ataDelay(uint16_t);
 int ataIdentify(IDEController *, int, int);
 
 extern IDEController *controllers;
