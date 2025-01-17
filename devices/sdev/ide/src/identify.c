@@ -131,7 +131,7 @@ int ataIdentify(IDEController *ctrl, int channel, int drive) {
 
     if((!dev->lba28) && (!dev->lba48)) {
         luxLogf(KPRINT_LEVEL_ERROR, " - %s port %d: %s, does not implement LBA, ignoring device\n",
-            channel ? "secondary" : "primary", drive);
+            channel ? "secondary" : "primary", drive, dev->model);
         return -1;
     }
 
@@ -143,7 +143,7 @@ int ataIdentify(IDEController *ctrl, int channel, int drive) {
 
     if(!dev->size) {
         luxLogf(KPRINT_LEVEL_ERROR, " - %s port %d: %s, returned logical size zero, ignoring device\n",
-            channel ? "secondary" : "primary", drive);
+            channel ? "secondary" : "primary", drive, dev->model);
         return -1;
     }
 
