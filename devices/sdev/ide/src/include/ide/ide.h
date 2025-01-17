@@ -161,3 +161,34 @@ typedef struct {
     uint16_t reserved11[19];
     uint16_t checksum;
 }__attribute__((packed)) IdentifyDevice;
+
+/* internal structures used to represent devices */
+typedef struct IDEController IDEController;
+
+typedef struct {
+    IdentifyDevice identify;
+    IDEController *controller;
+    uint64_t size;      // number of sectors
+    uint16_t sectorSize;
+    char serial[21];
+    char model[41];
+    int lba28, lba48;
+} ATADevice;
+
+struct IDEController {
+    uint16_t primaryBase;
+    uint16_t primaryStatus;
+    uint16_t secondaryBase;
+    uint16_t secondaryStatus;
+
+    ATADevice primary[2];
+    ATADevice secondary[2];
+
+    struct IDEController *next;
+};
+
+void ideInit(const char *, uint8_t);
+ATADevice *ideGetDrive(uint64_t);
+
+extern IDEController *controllers;
+extern int controllerCount;
