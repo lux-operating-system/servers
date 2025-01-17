@@ -189,6 +189,7 @@ struct IDEController {
 
 void ideInit(const char *, uint8_t);
 ATADevice *ideGetDrive(uint64_t);
+int ataIdentify(IDEController *, int, int);
 
 extern IDEController *controllers;
 extern int controllerCount;
