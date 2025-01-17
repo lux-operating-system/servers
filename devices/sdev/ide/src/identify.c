@@ -50,6 +50,12 @@ int ataIdentify(IDEController *ctrl, int channel, int drive) {
         return -1;
     }
 
+    if(inb(port + ATA_LBA_HIGH) == 0xEB) {
+        luxLogf(KPRINT_LEVEL_WARNING, " - %s port %d: unimplemented ATAPI device\n",
+            channel ? "secondary" : "primary", drive);
+        return -1;
+    }
+
     int timeout = 0;
     while(inb(port + ATA_COMMAND_STATUS) & ATA_STATUS_BUSY) {
         timeout++;
