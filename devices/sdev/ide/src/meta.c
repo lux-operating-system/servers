@@ -99,17 +99,21 @@ void ideInit(const char *address, uint8_t progif) {
         progif & 0x02 ? "variable" : "fixed",
         progif & 0x01 ? "native" : "compatibility",
         ide->primaryBase, ide->primaryStatus);
-    
-    ataIdentify(ide, 0, 0);
-    ataIdentify(ide, 0, 1);
+
+    int drives = 0;
+    if(!ataIdentify(ide, 0, 0)) drives++;
+    if(!ataIdentify(ide, 0, 1)) drives++;
 
     luxLogf(KPRINT_LEVEL_DEBUG, "- secondary: %s %s mode: I/O ports 0x%04X, 0x%04X\n",
         progif & 0x02 ? "variable" : "fixed",
         progif & 0x01 ? "native" : "compatibility",
         ide->secondaryBase, ide->secondaryStatus);
 
-    ataIdentify(ide, 1, 0);
-    ataIdentify(ide, 1, 1);
+    if(!ataIdentify(ide, 1, 0)) drives++;
+    if(!ataIdentify(ide, 1, 1)) drives++;
+
+    if(drives) ideRegister(ide);
+    else goto fail;
 
     return;
 
