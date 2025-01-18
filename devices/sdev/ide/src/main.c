@@ -9,8 +9,10 @@
 #include <liblux/sdev.h>
 #include <ide/ide.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <errno.h>
 
 int main(void) {
     luxInit("ide");
@@ -43,9 +45,46 @@ int main(void) {
         }
     }
 
-    //luxReady();
+    MessageHeader *msg = calloc(1, SERVER_MAX_SIZE);
+    if(!msg) {
+        luxLogf(KPRINT_LEVEL_ERROR, "failed to allocate memory for message passing\n");
+        for(;;);
+    }
+
+    luxReady();
 
     for(;;) {
-        sched_yield();
+        int busy = 0;
+        ssize_t s = luxRecvDependency(msg, SERVER_MAX_SIZE, false, true);
+        if(s > 0 && s <= SERVER_MAX_SIZE) {
+            busy++;
+            if(msg->length > SERVER_MAX_SIZE) {
+                void *newptr = realloc(msg, msg->length);
+                if(!newptr) {
+                    luxLogf(KPRINT_LEVEL_ERROR, "unable to allocate memory for I/O\n");
+                    msg->length = sizeof(MessageHeader);
+                    msg->status = -ENOMEM;
+                    msg->response = 1;
+                    luxSendDependency(msg);
+                    continue;
+                }
+
+                msg = newptr;
+            }
+
+            luxRecvDependency(msg, msg->length, false, false);
+
+            switch(msg->command) {
+            case COMMAND_SDEV_READ: ideRead((SDevRWCommand *) msg); break;
+            default:
+                luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X\n", msg->command);
+                msg->length = sizeof(MessageHeader);
+                msg->status = -ENOSYS;
+                msg->response = 1;
+                luxSendDependency(msg);
+            }
+        }
+
+        if(!busy) sched_yield();
     }
 }
