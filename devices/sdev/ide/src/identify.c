@@ -69,7 +69,8 @@ int ataIdentify(IDEController *ctrl, int channel, int drive) {
     }
 
     timeout = 0;
-    while(!(status = inb(port + ATA_COMMAND_STATUS) & ATA_STATUS_DATA_REQUEST)) {
+    while(!(status & ATA_STATUS_DATA_REQUEST)) {
+        status = inb(port + ATA_COMMAND_STATUS);
         if((status & ATA_STATUS_DRIVE_FAULT) || (status & ATA_STATUS_ERROR)) {
             luxLogf(KPRINT_LEVEL_WARNING, " - %s port %d: %s\n",
                 channel ? "secondary" : "primary", drive,
