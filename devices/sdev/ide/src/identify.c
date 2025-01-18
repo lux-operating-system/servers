@@ -11,6 +11,7 @@
 #include <sys/io.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define IDENTIFY_TIMEOUT            20  /* in units of scheduler yields */
 
@@ -172,9 +173,34 @@ int ataIdentify(IDEController *ctrl, int channel, int drive) {
         dev->lba28 ? "LBA28 " : "",
         dev->lba48 ? "LBA48 " : "");
 
-    dev->valid = 1;
+    // read the device's partition table and register the device
     dev->controller = ctrl;
     dev->channel = channel;
     dev->port = drive;
+
+    SDevRegisterCommand *regcmd = calloc(1, sizeof(SDevRegisterCommand));
+    if(!regcmd) {
+        luxLogf(KPRINT_LEVEL_ERROR, " - %s port %d: failed to allocate memory to register device\n",
+            channel ? "secondary" : "primary", drive);
+        return -1;
+    }
+
+    regcmd->header.command = COMMAND_SDEV_REGISTER;
+    regcmd->header.length = sizeof(SDevRegisterCommand);
+    regcmd->device = (controllerCount << 2) | (channel << 1) | drive;
+    regcmd->partitions = 1;
+    regcmd->size = dev->size;
+    regcmd->sectorSize = dev->sectorSize;
+    strcpy(regcmd->server, "lux:///dside");     // server name with prefix
+    if(ataReadSector(dev, 0, 1, regcmd->boot)) {
+        luxLogf(KPRINT_LEVEL_ERROR, " - %s port %d: failed to read partition table while registering device\n",
+            channel ? "secondary" : "primary", drive);
+        free(regcmd);
+        return -1;
+    }
+
+    luxSendDependency(regcmd);
+    free(regcmd);
+    dev->valid = 1;
     return 0;
 }
