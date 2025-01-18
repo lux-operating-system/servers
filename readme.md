@@ -2,7 +2,7 @@
 
 [![luxOS logo](https://jewelcodes.io/lux/logo-small.png)](https://github.com/lux-operating-system)
 
-[![License: MIT](https://img.shields.io/github/license/lux-operating-system/servers?color=red)](https://github.com/lux-operating-system/servers/blob/main/LICENSE) [![GitHub commit activity](https://img.shields.io/github/commit-activity/w/lux-operating-system/servers)](https://github.com/lux-operating-system/servers/commits/main/) [![Build Status](https://github.com/lux-operating-system/servers/actions/workflows/build-mac.yml/badge.svg)](https://github.com/lux-operating-system/servers/actions) [![GitHub Issues](https://img.shields.io/github/issues/lux-operating-system/servers)](https://github.com/lux-operating-system/servers/issues) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/d525486004314ee4911b888b54058ced)](https://app.codacy.com/gh/lux-operating-system/servers/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![License: MIT](https://img.shields.io/github/license/lux-operating-system/servers?color=red)](https://github.com/lux-operating-system/servers/blob/main/LICENSE) [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/lux-operating-system/servers)](https://github.com/lux-operating-system/servers/commits/main/) [![Build Status](https://github.com/lux-operating-system/servers/actions/workflows/build-mac.yml/badge.svg)](https://github.com/lux-operating-system/servers/actions) [![GitHub Issues](https://img.shields.io/github/issues/lux-operating-system/servers)](https://github.com/lux-operating-system/servers/issues) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/d525486004314ee4911b888b54058ced)](https://app.codacy.com/gh/lux-operating-system/servers/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 #
 
@@ -23,6 +23,7 @@ Below is an alphabetically sorted list of the servers implemented thus far, thei
 | Server | Dependency | Purpose |
 | ------ | ---------- | ------- |
 | [devfs](https://github.com/lux-operating-system/servers/tree/main/fs/devfs) | vfs | Implementation of the `/dev` file system |
+| [ide](https://github.com/lux-operating-system/servers/tree/main/devices/sdev/ide) | sdev | Device driver for IDE storage (ATA HDDs) |
 | [kbd](https://github.com/lux-operating-system/servers/tree/main/devices/kbd) | devfs | Generic keyboard device interface `/dev/kbd` |
 | [lfb](https://github.com/lux-operating-system/servers/tree/main/devices/lfb) | devfs | Generic linear frame buffer interface `/dev/lfbX` |
 | [lxfs](https://github.com/lux-operating-system/servers/tree/main/fs/lxfs) | vfs | File system driver for [lxfs](https://github.com/lux-operating-system/lxfs), a custom 64-bit FAT-like file system with native support for Unix file permissions, long file names, and Unicode |
