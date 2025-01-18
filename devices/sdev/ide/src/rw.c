@@ -174,6 +174,12 @@ int ataWriteSector(ATADevice *drive, uint64_t lba, uint16_t count, const void *b
         ataDelay(port);
     }
 
+    // wait for the write to finish
+    while((status = inb(port + ATA_COMMAND_STATUS)) & ATA_STATUS_BUSY) {
+        if(time(NULL) >= timeout) return -1;
+        sched_yield();
+    }
+
     // flush the disk cache - reselecting the drive is probably necessary on
     // some older controllers, so we reset the timeout too but be less lenient
     // with it this time
