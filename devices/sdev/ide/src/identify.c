@@ -172,5 +172,6 @@ int ataIdentify(IDEController *ctrl, int channel, int drive) {
         dev->lba48 ? "LBA48 " : "");
 
     dev->valid = 1;
+    dev->controller = ctrl;
     return 0;
 }
