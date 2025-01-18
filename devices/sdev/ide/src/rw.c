@@ -10,6 +10,13 @@
 #include <ide/ide.h>
 #include <sys/io.h>
 #include <unistd.h>
+#include <time.h>
+
+/* 20 seconds seems pretty much insane but I'm trying to account for possible
+ * scenarios where we actually have to wait for the drive to start spinning and
+ * come up to speed and seek to the correct location and so forth */
+
+#define IO_TIMEOUT              20
 
 /* ataSelect(): helper function to select a drive and send it an address
  * params: port - I/O port base for the IDE channel
@@ -80,16 +87,20 @@ int ataReadSector(ATADevice *drive, uint64_t lba, uint16_t count, void *buffer) 
     uint8_t status = inb(port + ATA_COMMAND_STATUS);
     if(!status || (status == 0xFF)) return -1;
 
+    time_t timeout = time(NULL) + IO_TIMEOUT;
     uint16_t *raw = (uint16_t *) buffer;
 
     for(uint16_t cc = 0; cc < count; cc++) {
-        while((status = inb(port + ATA_COMMAND_STATUS)) & ATA_STATUS_BUSY)
+        while((status = inb(port + ATA_COMMAND_STATUS)) & ATA_STATUS_BUSY) {
+            if(time(NULL) >= timeout) return -1;
             sched_yield();
+        }
 
         while(!(status & ATA_STATUS_DATA_REQUEST)) {
             status = inb(port + ATA_COMMAND_STATUS);
             if((status & ATA_STATUS_ERROR) || (status & ATA_STATUS_DRIVE_FAULT))
                 return -1;
+            if(time(NULL) >= timeout) return -1;
             sched_yield();
         }
 
