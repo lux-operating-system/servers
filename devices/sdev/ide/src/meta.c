@@ -135,6 +135,10 @@ ATADevice *ideGetDrive(uint64_t id) {
         if(!ctrl) return NULL;
     }
 
-    if(id & 2) return &ctrl->secondary[id&1];
-    else return &ctrl->primary[id&1];
+    ATADevice *dev;
+    if(id & 2) dev = &ctrl->secondary[id&1];
+    else dev = &ctrl->primary[id&1];
+
+    if(dev->valid) return dev;
+    return NULL;
 }
