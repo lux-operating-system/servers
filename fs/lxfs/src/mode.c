@@ -64,12 +64,16 @@ void lxfsChmod(ChmodCommand *cmd) {
         return;
     }
 
+    lxfsFlushBlock(mp, block);
+
     if((offset + entry.entrySize) > mp->blockSizeBytes) {
         if(lxfsWriteBlock(mp, next, (const void *)((uintptr_t)mp->dataBuffer + mp->blockSizeBytes))) {
             cmd->header.header.status = -EIO;
             luxSendKernel(cmd);
             return;
         }
+
+        lxfsFlushBlock(mp, next);
     }
 
     cmd->header.header.status = 0;
@@ -127,12 +131,16 @@ void lxfsChown(ChownCommand *cmd) {
         return;
     }
 
+    lxfsFlushBlock(mp, block);
+
     if((offset + entry.entrySize) > mp->blockSizeBytes) {
         if(lxfsWriteBlock(mp, next, (const void *)((uintptr_t)mp->dataBuffer + mp->blockSizeBytes))) {
             cmd->header.header.status = -EIO;
             luxSendKernel(cmd);
             return;
         }
+
+        lxfsFlushBlock(mp, next);
     }
 
     cmd->header.header.status = 0;
@@ -190,12 +198,16 @@ void lxfsUtime(UtimeCommand *cmd) {
         return;
     }
 
+    lxfsFlushBlock(mp, block);
+
     if((offset + entry.entrySize) > mp->blockSizeBytes) {
         if(lxfsWriteBlock(mp, next, (const void *)((uintptr_t)mp->dataBuffer + mp->blockSizeBytes))) {
             cmd->header.header.status = -EIO;
             luxSendKernel(cmd);
             return;
         }
+
+        lxfsFlushBlock(mp, next);
     }
 
     // update the directory header as well
@@ -214,6 +226,8 @@ void lxfsUtime(UtimeCommand *cmd) {
             luxSendKernel(cmd);
             return;
         }
+
+        lxfsFlushBlock(mp, entry.block);
     }
 
     cmd->header.header.status = 0;
