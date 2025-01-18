@@ -8,6 +8,7 @@
 #pragma once
 
 #include <sys/types.h>
+#include <liblux/sdev.h>
 
 /* default base I/O ports */
 #define ATA_PRIMARY_BASE            0x01F0
@@ -209,6 +210,8 @@ void ataDelay(uint16_t);
 int ataIdentify(IDEController *, int, int);
 int ataReadSector(ATADevice *, uint64_t, uint16_t, void *);
 int ataWriteSector(ATADevice *, uint64_t, uint16_t, const void *);
+void ideRead(SDevRWCommand *);
+void ideWrite(SDevRWCommand *);
 
 extern IDEController *controllers;
 extern int controllerCount;
