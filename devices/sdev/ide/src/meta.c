@@ -142,3 +142,21 @@ ATADevice *ideGetDrive(uint64_t id) {
     if(dev->valid) return dev;
     return NULL;
 }
+
+/* ideRegister(): registers an IDE controller
+ * params: ctrl - pointer to controller structure
+ * returns: nothing
+ */
+
+void ideRegister(IDEController *ctrl) {
+    if(!controllers) {
+        controllers = ctrl;
+        controllerCount++;
+        return;
+    }
+
+    IDEController *list = controllers;
+    while(list->next) list = list->next;
+    list->next = ctrl;
+    controllerCount++;
+}
