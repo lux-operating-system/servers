@@ -70,3 +70,40 @@ void ideRead(SDevRWCommand *cmd) {
     luxSendDependency(res);
     free(res);
 }
+
+/* ideWrite(): handler for write requests for an IDE ATA drive
+ * params: cmd - write command message
+ * returns: nothing, response relayed to sdev server
+ */
+
+void ideWrite(SDevRWCommand *cmd) {
+    cmd->header.response = 1;
+    cmd->header.length = sizeof(SDevRWCommand);
+
+    ATADevice *dev = ideGetDrive(cmd->device);
+    if(!dev) {
+        cmd->header.status = -ENODEV;
+        luxSendDependency(cmd);
+        return;
+    }
+
+    if((cmd->start % dev->sectorSize) || (cmd->count % dev->sectorSize)) {
+        cmd->header.status = -EIO;
+        luxSendDependency(cmd);
+        return;
+    }
+
+    uint64_t lba = cmd->start / dev->sectorSize;
+    uint16_t count = cmd->count / dev->sectorSize;
+
+    if(ataWriteSector(dev, lba, count, cmd->buffer)) {
+        luxLogf(KPRINT_LEVEL_WARNING, "I/O error on %s channel port %d\n",
+            dev->channel ? "secondary" : "primary", dev->port);
+        cmd->header.status = -EIO;
+        luxSendDependency(cmd);
+        return;
+    }
+
+    cmd->header.status = 0;
+    luxSendDependency(cmd);
+}

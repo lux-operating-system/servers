@@ -76,6 +76,7 @@ int main(void) {
 
             switch(msg->command) {
             case COMMAND_SDEV_READ: ideRead((SDevRWCommand *) msg); break;
+            case COMMAND_SDEV_WRITE: ideWrite((SDevRWCommand *) msg); break;
             default:
                 luxLogf(KPRINT_LEVEL_WARNING, "unimplemented command 0x%04X\n", msg->command);
                 msg->length = sizeof(MessageHeader);
