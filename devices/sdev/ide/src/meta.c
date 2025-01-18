@@ -116,3 +116,25 @@ void ideInit(const char *address, uint8_t progif) {
 fail:
     free(ide);
 }
+
+/* ideGetDrive(): returns a pointer to an ATA device from its identifier
+ * params: id - internal drive identifier:
+ *  bit 0 - port 0/1 toggle
+ *  bit 1 - primary/secondary channel toggle
+ *  higher bits - IDE controller index
+ * returns: pointer to ATA device, NULL if no such device
+ */
+
+ATADevice *ideGetDrive(uint64_t id) {
+    int ctrlIndex = id >> 2;
+    if(ctrlIndex >= controllerCount) return NULL;
+
+    IDEController *ctrl = controllers;
+    for(int i = 0; ctrlIndex && i < ctrlIndex; i++) {
+        ctrl = ctrl->next;
+        if(!ctrl) return NULL;
+    }
+
+    if(id & 2) return &ctrl->secondary[id&1];
+    else return &ctrl->primary[id&1];
+}
