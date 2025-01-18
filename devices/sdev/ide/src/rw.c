@@ -113,3 +113,85 @@ int ataReadSector(ATADevice *drive, uint64_t lba, uint16_t count, void *buffer) 
 
     return 0;
 }
+
+/* ataWriteSector(): writes contiguous sectors to an ATA drive
+ * params: drive - drive to write to
+ * params: lba - starting LBA address
+ * params: count - number of sectors to write
+ * params: buffer - buffer to write from
+ * returns: zero on success
+ */
+
+int ataWriteSector(ATADevice *drive, uint64_t lba, uint16_t count, const void *buffer) {
+    if(!count) return -1;
+
+    uint16_t port;
+    if(drive->channel) port = drive->controller->secondaryBase;
+    else port = drive->controller->primaryBase;
+
+    if(!port) return -1;
+    if((lba+count) >= drive->size) return -1;
+
+    // prefer 28-bit mode over 48 because less I/O overhead
+    int using48 = (lba >= (1 << 28)) || (!drive->lba28);
+    if(using48 && (!drive->lba48)) {
+        luxLogf(KPRINT_LEVEL_ERROR, "%s channel port %d: tried to write large address to device that doesn't support LBA48\n",
+            drive->channel ? "secondary" : "primary", drive->port);
+        return -1;
+    }
+
+    ataSelect(port, using48, drive->port, lba, count);
+
+    if(using48) outb(port + ATA_COMMAND_STATUS, ATA_WRITE48);
+    else outb(port + ATA_COMMAND_STATUS, ATA_WRITE28);
+
+    ataDelay(port);
+    uint8_t status = inb(port + ATA_COMMAND_STATUS);
+    if(!status || (status == 0xFF)) return -1;
+
+    // assume writes take twice as long as reads
+    time_t timeout = time(NULL) + (IO_TIMEOUT*2);
+    const uint16_t *raw = (const uint16_t *) buffer;
+
+    for(uint16_t cc = 0; cc < count; cc++) {
+        while((status = inb(port + ATA_COMMAND_STATUS)) & ATA_STATUS_BUSY) {
+            if(time(NULL) >= timeout) return -1;
+            sched_yield();
+        }
+
+        while(!(status & ATA_STATUS_DATA_REQUEST)) {
+            status = inb(port + ATA_COMMAND_STATUS);
+            if((status & ATA_STATUS_ERROR) || (status & ATA_STATUS_DRIVE_FAULT))
+                return -1;
+            if(time(NULL) >= timeout) return -1;
+            sched_yield();
+        }
+
+        for(int i = 0; i < drive->sectorSize/2; i++)
+            outw(port, raw[i]);
+
+        raw = (const uint16_t *)((uintptr_t) raw + drive->sectorSize);
+        ataDelay(port);
+    }
+
+    // flush the disk cache - reselecting the drive is probably necessary on
+    // some older controllers, so we reset the timeout too but be less lenient
+    // with it this time
+    timeout = time(NULL) + IO_TIMEOUT;
+    ataSelect(port, using48, drive->port, lba, count);
+
+    if(using48) outb(port + ATA_COMMAND_STATUS, ATA_FLUSH48);
+    else outb(port + ATA_COMMAND_STATUS, ATA_FLUSH28);
+    ataDelay(port);
+
+    while((status = inb(port + ATA_COMMAND_STATUS)) & ATA_STATUS_BUSY) {
+        if(time(NULL) >= timeout) return -1;
+        sched_yield();
+    }
+
+    ataDelay(port);
+    status = inb(port + ATA_COMMAND_STATUS);
+    if((status & ATA_STATUS_ERROR) || (status & ATA_STATUS_DRIVE_FAULT))
+        return -1;
+    return 0;
+}
