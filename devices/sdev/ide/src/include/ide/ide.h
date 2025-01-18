@@ -186,6 +186,7 @@ typedef struct {
     char serial[21];
     char model[41];
     int lba28, lba48;
+    int channel, port;
     int valid;
 } ATADevice;
 

@@ -173,5 +173,7 @@ int ataIdentify(IDEController *ctrl, int channel, int drive) {
 
     dev->valid = 1;
     dev->controller = ctrl;
+    dev->channel = channel;
+    dev->port = drive;
     return 0;
 }
