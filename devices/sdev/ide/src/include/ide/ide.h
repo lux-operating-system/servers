@@ -206,6 +206,8 @@ void ideInit(const char *, uint8_t);
 ATADevice *ideGetDrive(uint64_t);
 void ataDelay(uint16_t);
 int ataIdentify(IDEController *, int, int);
+int ataReadSector(ATADevice *, uint64_t, uint16_t, void *);
+int ataWriteSector(ATADevice *, uint64_t, uint16_t, const void *);
 
 extern IDEController *controllers;
 extern int controllerCount;
