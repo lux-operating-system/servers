@@ -162,6 +162,9 @@ NVMECompletionQueue *nvmeStatus(NVMEController *drive, int q, uint16_t id) {
             int head = i + 1;
             if(head >= drive->ioQSize) head = 0;
 
+            if(head > cq[i].sqHeadPointer)
+                head = cq[i].sqHeadPointer;
+
             nvmeCompleteDoorbell(drive, q, head);
             return &cq[i];
         }
