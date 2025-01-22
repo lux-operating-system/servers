@@ -284,6 +284,14 @@ void lxfsSymlink(LinkCommand *cmd) {
         return;
     }
 
+    // ensure the new file doesn't already exist
+    LXFSDirectoryEntry new;
+    if(lxfsFind(&new, mp, cmd->newPath, NULL, NULL)) {
+        cmd->header.header.status = -EEXIST;
+        luxSendKernel(cmd);
+        return;
+    }
+
     // POSIX doesn't specify mode bits for symbolic links so we can innovate
     // here -- if the target file exists, copy the mode from it
     // if not, default to rw-r--r--
