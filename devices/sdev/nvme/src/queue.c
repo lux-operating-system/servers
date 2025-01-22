@@ -74,6 +74,9 @@ NVMECompletionQueue *nvmePoll(NVMEController *drive, int q, uint16_t id, int tim
     }
 
     // acknowledge the completion doorbell
+    if(head > cq[entry].sqHeadPointer)
+        head = cq[entry].sqHeadPointer;
+
     nvmeCompleteDoorbell(drive, q, head);
 
     // for I/O queues, update the busy status as well
