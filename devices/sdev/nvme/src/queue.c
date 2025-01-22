@@ -119,13 +119,10 @@ void nvmeSubmit(NVMEController *drive, int q, NVMECommonCommand *cmd) {
         drive->ioBusy[q-1]++;
     }
 
-    // copy the command into the submission queue
+    memset(&cq[tail], 0, sizeof(NVMECompletionQueue));
     memcpy(&sq[tail], cmd, sizeof(NVMECommonCommand));
 
-    // reset the corresponding completion queue entry
-    memset(&cq[tail], 0, sizeof(NVMECompletionQueue));
-
-    // and notify the controler by updating the queue tail doorbell
+    // notify the controller by updating the queue tail doorbell
     nvmeSubmitDoorbell(drive, q, nextTail);
 }
 
