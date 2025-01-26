@@ -61,6 +61,14 @@ void lxfsOpen(OpenCommand *ocmd) {
         return;
     }
 
+    // ensure this is a file
+    uint8_t type = (entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK;
+    if(type == LXFS_DIR_TYPE_DIR) {
+        ocmd->header.header.status = -EISDIR;
+        luxSendKernel(ocmd);
+        return;
+    }
+
     // file exists, ensure O_CREATE | O_EXCL are not set
     if((ocmd->flags & O_CREAT) && (ocmd->flags & O_EXCL)) {
         ocmd->header.header.status = -EEXIST;
@@ -68,12 +76,41 @@ void lxfsOpen(OpenCommand *ocmd) {
         return;
     }
 
-    // ensure this is a file
-    uint8_t type = (entry.flags >> LXFS_DIR_TYPE_SHIFT) & LXFS_DIR_TYPE_MASK;
-    if(type == LXFS_DIR_TYPE_DIR) {
-        ocmd->header.header.status = -EISDIR;
-        luxSendKernel(ocmd);
-        return;
+    // delete file contents for O_TRUNC
+    if(ocmd->flags & O_TRUNC) {
+        if(lxfsReadBlock(mp, entry.block, mp->meta)) {
+            ocmd->header.header.status = -EIO;
+            luxSendKernel(ocmd);
+            return;
+        }
+
+        LXFSFileHeader *meta = (LXFSFileHeader *) mp->meta;
+        meta->size = 0;
+        if(lxfsWriteBlock(mp, entry.block, mp->meta)) {
+            ocmd->header.header.status = -EIO;
+            luxSendKernel(ocmd);
+            return;
+        }
+
+        uint64_t next = entry.block;
+        while(next != LXFS_BLOCK_EOF) {
+            int s;
+            if(next == entry.block) s = lxfsSetNextBlock(mp, next, LXFS_BLOCK_EOF);
+            else s = lxfsSetNextBlock(mp, next, 0);
+
+            if(s) {
+                ocmd->header.header.status = -EIO;
+                luxSendKernel(ocmd);
+                return;
+            }
+
+            next = lxfsNextBlock(mp, next);
+            if(!next) {
+                ocmd->header.header.status = -EIO;
+                luxSendKernel(ocmd);
+                return;
+            }
+        }
     }
 
     // recursively redirect for soft links
