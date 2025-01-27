@@ -36,16 +36,22 @@ void devfsOpen(SyscallHeader *req, SyscallHeader *res) {
 
     if(cmd->uid == file->status.st_uid) {
         // owner
-        if(((cmd->flags & O_RDONLY) && !(file->status.st_mode & S_IRUSR))) res->header.status = -EACCES;
-        if(((cmd->flags & O_WRONLY) && !(file->status.st_mode & S_IWUSR))) res->header.status = -EACCES;
+        if(((cmd->flags & O_RDONLY) && !(file->status.st_mode & S_IRUSR)))
+            res->header.status = -EACCES;
+        if(((cmd->flags & O_WRONLY) && !(file->status.st_mode & S_IWUSR)))
+            res->header.status = -EACCES;
     } else if(cmd->gid == file->status.st_gid) {
         // group
-        if(((cmd->flags & O_RDONLY) && !(file->status.st_mode & S_IRGRP))) res->header.status = -EACCES;
-        if(((cmd->flags & O_WRONLY) && !(file->status.st_mode & S_IWGRP))) res->header.status = -EACCES;
+        if(((cmd->flags & O_RDONLY) && !(file->status.st_mode & S_IRGRP)))
+            res->header.status = -EACCES;
+        if(((cmd->flags & O_WRONLY) && !(file->status.st_mode & S_IWGRP)))
+            res->header.status = -EACCES;
     } else {
         // other
-        if(((cmd->flags & O_RDONLY) && !(file->status.st_mode & S_IROTH))) res->header.status = -EACCES;
-        if(((cmd->flags & O_WRONLY) && !(file->status.st_mode & S_IWOTH))) res->header.status = -EACCES;
+        if(((cmd->flags & O_RDONLY) && !(file->status.st_mode & S_IROTH)))
+            res->header.status = -EACCES;
+        if(((cmd->flags & O_WRONLY) && !(file->status.st_mode & S_IWOTH)))
+            res->header.status = -EACCES;
     }
 
     // we can only open files this way
