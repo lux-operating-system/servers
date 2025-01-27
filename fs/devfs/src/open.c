@@ -21,7 +21,13 @@ void devfsOpen(SyscallHeader *req, SyscallHeader *res) {
     if(!file) {
         res->header.status = -ENOENT;   // file doesn't exist
         luxSendKernel(res);
+        return;
+    }
 
+    // O_CREAT and O_EXCL will not be supported on /dev
+    if((cmd->flags & O_CREAT) && (cmd->flags & O_EXCL)) {
+        res->header.status = -EINVAL;
+        luxSendKernel(res);
         return;
     }
 
